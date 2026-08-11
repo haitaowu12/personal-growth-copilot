@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "release": "0.3.0-alpha.0",
+  "status": "blocked",
+  "production_claim_allowed": false,
+  "activation": "explicit-only-unregistered",
+  "required_gates": {
+    "structural_validation": "pending",
+    "source_provenance": "pending",
+    "community_pattern_audit": "pending",
+    "behavioral_comparison": "pending",
+    "independent_untouched_holdouts": "pending",
+    "bilingual_human_review": "pending",
+    "judge_calibration": "pending",
+    "privacy_safe_controlled_pilot": "pending",
+    "independent_release_review": "pending"
+  }
+}
