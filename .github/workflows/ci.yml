@@ -15,5 +15,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - run: python3 -m pip install PyYAML==6.0.2
       - run: python3 scripts/validate.py
+      - run: python3 scripts/evaluate_contract.py
       - run: python3 -m unittest discover -s tests -v
+      - run: python3 skill/personal-growth-copilot/scripts/growth_record.py validate examples/growth-record.example.json
+      - run: python3 .ci/quick_validate.py skill/personal-growth-copilot

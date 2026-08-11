@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haitaowu12/personal-growth-copilot/growth-record.schema.json",
+  "title": "Personal Growth Copilot portable growth record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record_id", "updated_at", "memory_policy", "goals", "hypotheses", "experiments", "learning", "corrections"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "record_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "purpose": {"type": "string", "maxLength": 500},
+    "memory_policy": {"enum": ["OFF", "SESSION_ONLY", "CONFIRM_EACH"]},
+    "boundaries": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {"type": "string", "maxLength": 300}
+    },
+    "preferences": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {"$ref": "#/$defs/sourcedStatement"}
+    },
+    "goals": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {"$ref": "#/$defs/goal"}
+    },
+    "hypotheses": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {"$ref": "#/$defs/hypothesis"}
+    },
+    "experiments": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {"$ref": "#/$defs/experiment"}
+    },
+    "learning": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/learning"}
+    },
+    "corrections": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/correction"}
+    }
+  },
+  "$defs": {
+    "source": {
+      "enum": ["USER-REPORTED", "OBSERVED-IN-CHAT", "HYPOTHESIS", "ALTERNATIVE", "UNKNOWN", "CORRECTION"]
+    },
+    "sourcedStatement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "source", "context", "confirmed_at"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "source": {"$ref": "#/$defs/source"},
+        "context": {"type": "string", "maxLength": 500},
+        "confirmed_at": {"type": "string", "format": "date-time"},
+        "superseded": {"type": "boolean", "default": false}
+      }
+    },
+    "goal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "goal_type", "status", "source"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "goal_type": {"enum": ["exploration", "learning", "performance", "maintenance", "recovery", "decision"]},
+        "status": {"enum": ["proposed", "active", "paused", "completed", "abandoned"]},
+        "source": {"$ref": "#/$defs/source"},
+        "review_at": {"type": "string", "format": "date-time"},
+        "success_evidence": {"type": "string", "maxLength": 1000},
+        "stop_condition": {"type": "string", "maxLength": 1000}
+      }
+    },
+    "hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "confidence", "source", "supporting_evidence", "alternatives", "status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "confidence": {"enum": ["low", "medium", "high"]},
+        "source": {"enum": ["HYPOTHESIS", "ALTERNATIVE"]},
+        "context_boundary": {"type": "string", "maxLength": 1000},
+        "supporting_evidence": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 500}},
+        "disconfirming_or_missing_evidence": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 500}},
+        "alternatives": {"type": "array", "maxItems": 10, "items": {"type": "string", "maxLength": 500}},
+        "status": {"enum": ["active", "superseded", "rejected"]},
+        "updated_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "question", "action", "evidence", "status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "question": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "hypothesis_id": {"type": "string", "maxLength": 128},
+        "action": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "trigger": {"type": "string", "maxLength": 1000},
+        "coping_response": {"type": "string", "maxLength": 1000},
+        "evidence": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "start_at": {"type": "string", "format": "date-time"},
+        "review_at": {"type": "string", "format": "date-time"},
+        "stop_condition": {"type": "string", "maxLength": 1000},
+        "status": {"enum": ["proposed", "active", "completed", "paused", "stopped"]}
+      }
+    },
+    "learning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "observed", "learned", "recorded_at", "source"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "experiment_id": {"type": "string", "maxLength": 128},
+        "observed": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "learned": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "next_decision": {"type": "string", "maxLength": 1000},
+        "recorded_at": {"type": "string", "format": "date-time"},
+        "source": {"$ref": "#/$defs/source"}
+      }
+    },
+    "correction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target_id", "replacement_or_action", "recorded_at"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "target_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "replacement_or_action": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "recorded_at": {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}

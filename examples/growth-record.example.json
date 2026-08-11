@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "record_id": "example-local-record",
+  "updated_at": "2026-08-10T12:00:00Z",
+  "purpose": "Test whether a smaller start ritual reduces delay on a chosen writing project.",
+  "memory_policy": "CONFIRM_EACH",
+  "boundaries": ["Do not retain raw journal text", "Do not record third-party identities"],
+  "preferences": [
+    {
+      "id": "pref-1",
+      "statement": "The user prefers direct recommendations after a short context check.",
+      "source": "USER-REPORTED",
+      "context": "Writing-project coaching",
+      "confirmed_at": "2026-08-10T12:00:00Z",
+      "superseded": false
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal-1",
+      "statement": "Start the selected writing task on three planned weekdays.",
+      "goal_type": "performance",
+      "status": "active",
+      "source": "USER-REPORTED",
+      "review_at": "2026-08-17T12:00:00Z",
+      "success_evidence": "A timestamped five-minute start on three planned days.",
+      "stop_condition": "Pause if the plan displaces required sleep."
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "hyp-1",
+      "statement": "The first-step ambiguity may contribute more to delay than lack of interest.",
+      "confidence": "low",
+      "source": "HYPOTHESIS",
+      "context_boundary": "Only this writing project during the current work period.",
+      "supporting_evidence": ["The user reports starting more easily when the next paragraph is named."],
+      "disconfirming_or_missing_evidence": ["Energy and competing workload have not been compared."],
+      "alternatives": ["The task may be lower priority than the user wants to admit.", "The planned time may conflict with energy."],
+      "status": "active",
+      "updated_at": "2026-08-10T12:00:00Z"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "exp-1",
+      "question": "Does naming the next five-minute action the night before reduce start delay?",
+      "hypothesis_id": "hyp-1",
+      "action": "On three planned nights, write one five-minute starting instruction for the next morning.",
+      "trigger": "After closing the writing document for the day.",
+      "coping_response": "If the instruction feels too large, reduce it to opening the file and adding one sentence.",
+      "evidence": "Whether a five-minute start occurs and approximate delay after the planned start time.",
+      "start_at": "2026-08-11T12:00:00Z",
+      "review_at": "2026-08-17T12:00:00Z",
+      "stop_condition": "Stop if it causes sleep loss or work-policy conflict.",
+      "status": "active"
+    }
+  ],
+  "learning": [],
+  "corrections": []
+}
