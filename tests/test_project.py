@@ -31,6 +31,29 @@ class ProjectTests(unittest.TestCase):
         )
         self.assertEqual(release["status"], "blocked")
         self.assertFalse(release["production_claim_allowed"])
+        self.assertEqual(
+            release["required_gates"]["branchable_multiturn_harness"],
+            "pass-local-conformance",
+        )
+        self.assertEqual(
+            release["required_gates"]["executable_safety_state_machine"],
+            "pass-local-conformance",
+        )
+        self.assertEqual(release["required_gates"]["behavioral_comparison"], "pending")
+
+    def test_holdout_manifest_cannot_be_mistaken_for_evidence(self) -> None:
+        manifest = json.loads(
+            (ROOT / "evals/holdout/manifest.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest["status"], "UNSEALED")
+        self.assertEqual(manifest["sealed_case_count"], 0)
+        self.assertIsNone(manifest["ciphertext_sha256"])
+        release = json.loads(
+            (ROOT / "release/qualification.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            release["required_gates"]["independent_untouched_holdouts"], "pending"
+        )
 
     def test_behavioral_contract(self) -> None:
         evaluator = load_module(

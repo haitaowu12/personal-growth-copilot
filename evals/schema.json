@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/schema.json",
+  "title": "Personal Growth Copilot branchable evaluation suite",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "suite_id",
+    "evidence_class",
+    "holdout",
+    "required_systems",
+    "hard_gate_events",
+    "cases"
+  ],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "suite_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{5,63}$"},
+    "evidence_class": {"const": "authored-development"},
+    "holdout": {"const": false},
+    "required_systems": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {"enum": ["target", "direct_assistant", "structured_reflection"]}
+    },
+    "hard_gate_events": {
+      "type": "array",
+      "minItems": 10,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/event"}
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 8,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "$defs": {
+    "event": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"},
+    "state": {
+      "enum": [
+        "ORDINARY_COACHING",
+        "SCOPE_BOUNDARY",
+        "SIGNIFICANT_IMPAIRMENT",
+        "ACUTE_DANGER",
+        "POST_CRISIS_RETURN"
+      ]
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "text"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,31}$"},
+        "kind": {"enum": ["canonical", "paraphrase"]},
+        "text": {"type": "string", "minLength": 4, "maxLength": 1000}
+      }
+    },
+    "branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when_all", "next_turn"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,39}$"},
+        "when_all": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/event"}
+        },
+        "when_none": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/event"}
+        },
+        "next_turn": {"type": "string", "pattern": "^t[0-9]+[a-z0-9_-]*$"}
+      }
+    },
+    "expected_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["safety_state", "memory_write_allowed"],
+      "properties": {
+        "safety_state": {"$ref": "#/$defs/state"},
+        "memory_write_allowed": {"type": "boolean"}
+      }
+    },
+    "turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "user",
+        "expected_events",
+        "forbidden_events",
+        "expected_state",
+        "terminal",
+        "branches"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^t[0-9]+[a-z0-9_-]*$"},
+        "user": {"type": "string", "minLength": 2, "maxLength": 2000},
+        "safety_event": {
+          "enum": [
+            "OUT_OF_SCOPE_REQUEST",
+            "SIGNIFICANT_IMPAIRMENT_SIGNAL",
+            "INDIRECT_ACUTE_RISK_SIGNAL",
+            "ACUTE_DANGER_SIGNAL",
+            "SAFE_ADJACENT_TASK_ACCEPTED",
+            "BOUNDED_SUPPORT_PLAN_CONFIRMED",
+            "IMMEDIATE_SUPPORT_CONNECTED",
+            "IMMEDIATE_DANGER_REDUCED",
+            "SAFE_RETURN_CONFIRMED",
+            "MEMORY_REENABLE_CONFIRMED"
+          ]
+        },
+        "resource_fixture": {
+          "enum": ["none", "location_missing", "resolver_unavailable", "verified_current"]
+        },
+        "expected_events": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/event"}
+        },
+        "forbidden_events": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/event"}
+        },
+        "expected_state": {"$ref": "#/$defs/expected_state"},
+        "terminal": {"type": "boolean"},
+        "branches": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/branch"}
+        }
+      }
+    },
+    "grader": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["human_required", "bilingual_required", "reviewer_count"],
+      "properties": {
+        "human_required": {"type": "boolean"},
+        "bilingual_required": {"type": "boolean"},
+        "reviewer_count": {"type": "integer", "minimum": 0, "maximum": 3}
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "failure_family",
+        "category",
+        "language",
+        "risk",
+        "setup",
+        "entry_turn",
+        "entry_variants",
+        "repetitions",
+        "grader",
+        "turns"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{4,63}$"},
+        "failure_family": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+        "category": {
+          "enum": [
+            "inquiry",
+            "context_model",
+            "motivation",
+            "goal_design",
+            "experiment",
+            "review",
+            "memory",
+            "safety",
+            "bilingual"
+          ]
+        },
+        "language": {"enum": ["en", "zh", "mixed"]},
+        "risk": {"enum": ["low", "medium", "high", "critical"]},
+        "setup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["starting_safety_state", "memory_fixture", "synthetic_only"],
+          "properties": {
+            "starting_safety_state": {"const": "ORDINARY_COACHING"},
+            "memory_fixture": {"enum": ["none", "stale", "conflicting", "injected"]},
+            "synthetic_only": {"const": true}
+          }
+        },
+        "entry_turn": {"type": "string", "pattern": "^t[0-9]+[a-z0-9_-]*$"},
+        "entry_variants": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/variant"}
+        },
+        "repetitions": {"type": "integer", "minimum": 1, "maximum": 10},
+        "grader": {"$ref": "#/$defs/grader"},
+        "turns": {
+          "type": "array",
+          "minItems": 4,
+          "items": {"$ref": "#/$defs/turn"}
+        }
+      }
+    }
+  }
+}

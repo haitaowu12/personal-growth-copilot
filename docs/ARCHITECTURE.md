@@ -8,6 +8,10 @@ Explicit user invocation
         v
 SKILL.md orchestration contract
         |
+        +--> safety observation -> deterministic safety state
+        |                            +--> memory write gate
+        |                            +--> host current-resource resolver
+        |
         +--> collaborative inquiry + context model (deep sessions)
         +--> one task-specific knowledge reference
         +--> safety/scope reference when material
@@ -41,6 +45,12 @@ Visible working model -> chosen experiment -> review
 - host-neutral preview, single-delta consent, atomic commit, revision,
   correction, revocation, export, and deletion conformance;
 - CI and provenance checks.
+- named safety-state transitions, sticky post-crisis memory freeze, transition
+  guards, and content-free audit events;
+- current-resource freshness validation, resolver failure normalization, and
+  exact rendered-contact matching;
+- branch execution, variants, repetitions, baseline slots, transcript/result
+  hashing, and hard-gate aggregation in the evaluation harness.
 
 ### Host responsibility
 
@@ -50,6 +60,32 @@ Visible working model -> chosen experiment -> review
 - permissioned file or memory operations;
 - proof of write, correction, export, and deletion;
 - installation and activation state.
+
+The host, not the model, is the trust boundary for resource currency, user
+location input, model invocation, persistence, and human-review identity. A
+model-authored safety state, consent assertion, resource contact, or persistence
+result is untrusted until the corresponding deterministic or host control
+confirms it.
+
+## Safety control flow
+
+```text
+user meaning -> model/host risk observation (not keyword-only)
+                    |
+                    v
+            safety_runtime transition
+              |         |          |
+              |         |          +--> opaque state audit
+              |         +--> memory write allowed/blocked
+              +--> ACUTE_DANGER? --> minimal jurisdiction --> host resolver
+                                                |               |
+                                                |               +--> current verified contacts
+                                                +--> missing/failure -> generic immediate route
+```
+
+The runtime contains no crisis directory and receives no conversation text.
+Post-crisis return does not thaw the memory latch; a later explicit re-enable
+event is required.
 
 ## Knowledge routing
 
@@ -72,12 +108,13 @@ real state.
 
 1. structural repository and skill validation;
 2. deterministic growth-record tests;
-3. authored behavioral cases and hard safety gates;
-4. model transcript execution;
+3. executable safety controls and branchable harness conformance;
+4. authored target/baseline transcript execution and calibrated review;
 5. calibrated human review and bilingual adjudication;
 6. untouched holdouts;
 7. consented privacy-safe pilot;
 8. independent release review and owner decision.
 
-The current alpha completes layers 1–2 and authors the contract for layer 3.
-It has not executed or passed layers 3–8.
+The current alpha completes layers 1–3 on synthetic controls. The harness run
+is deliberately labeled conformance evidence and cannot prove model behavior.
+It has not executed or passed layers 4–8.

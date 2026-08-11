@@ -1,0 +1,112 @@
+schema_version: "1.0"
+initial_state: ORDINARY_COACHING
+states:
+  ORDINARY_COACHING:
+    coaching_allowed: true
+    memory_write_allowed: true
+    resource_requirement: NONE
+  SCOPE_BOUNDARY:
+    coaching_allowed: false
+    memory_write_allowed: false
+    resource_requirement: SAFE_ADJACENT_ONLY
+  SIGNIFICANT_IMPAIRMENT:
+    coaching_allowed: false
+    memory_write_allowed: false
+    resource_requirement: QUALIFIED_SUPPORT
+  ACUTE_DANGER:
+    coaching_allowed: false
+    memory_write_allowed: false
+    resource_requirement: CURRENT_OR_FALLBACK
+  POST_CRISIS_RETURN:
+    coaching_allowed: false
+    memory_write_allowed: false
+    resource_requirement: BOUNDED_SUPPORT_ONLY
+transitions:
+  - id: SAFE-TRANS-001
+    from: ORDINARY_COACHING
+    event: OUT_OF_SCOPE_REQUEST
+    to: SCOPE_BOUNDARY
+  - id: SAFE-TRANS-002
+    from: ORDINARY_COACHING
+    event: SIGNIFICANT_IMPAIRMENT_SIGNAL
+    to: SIGNIFICANT_IMPAIRMENT
+  - id: SAFE-TRANS-003
+    from: ORDINARY_COACHING
+    event: INDIRECT_ACUTE_RISK_SIGNAL
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-004
+    from: ORDINARY_COACHING
+    event: ACUTE_DANGER_SIGNAL
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-005
+    from: SCOPE_BOUNDARY
+    event: SAFE_ADJACENT_TASK_ACCEPTED
+    to: ORDINARY_COACHING
+  - id: SAFE-TRANS-006
+    from: SCOPE_BOUNDARY
+    event: SIGNIFICANT_IMPAIRMENT_SIGNAL
+    to: SIGNIFICANT_IMPAIRMENT
+  - id: SAFE-TRANS-007
+    from: SCOPE_BOUNDARY
+    event: INDIRECT_ACUTE_RISK_SIGNAL
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-008
+    from: SCOPE_BOUNDARY
+    event: ACUTE_DANGER_SIGNAL
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-009
+    from: SIGNIFICANT_IMPAIRMENT
+    event: BOUNDED_SUPPORT_PLAN_CONFIRMED
+    to: ORDINARY_COACHING
+  - id: SAFE-TRANS-010
+    from: SIGNIFICANT_IMPAIRMENT
+    event: OUT_OF_SCOPE_REQUEST
+    to: SCOPE_BOUNDARY
+  - id: SAFE-TRANS-011
+    from: SIGNIFICANT_IMPAIRMENT
+    event: INDIRECT_ACUTE_RISK_SIGNAL
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-012
+    from: SIGNIFICANT_IMPAIRMENT
+    event: ACUTE_DANGER_SIGNAL
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-013
+    from: ACUTE_DANGER
+    event: IMMEDIATE_SUPPORT_CONNECTED
+    to: ACUTE_DANGER
+    effects: [mark_support_connected]
+  - id: SAFE-TRANS-014
+    from: ACUTE_DANGER
+    event: IMMEDIATE_DANGER_REDUCED
+    to: POST_CRISIS_RETURN
+    requires: [support_connected]
+  - id: SAFE-TRANS-015
+    from: ACUTE_DANGER
+    event: ACUTE_DANGER_SIGNAL
+    to: ACUTE_DANGER
+  - id: SAFE-TRANS-016
+    from: POST_CRISIS_RETURN
+    event: ACUTE_DANGER_SIGNAL
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-017
+    from: POST_CRISIS_RETURN
+    event: INDIRECT_ACUTE_RISK_SIGNAL
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-018
+    from: POST_CRISIS_RETURN
+    event: SAFE_RETURN_CONFIRMED
+    to: ORDINARY_COACHING
+  - id: SAFE-TRANS-019
+    from: ORDINARY_COACHING
+    event: MEMORY_REENABLE_CONFIRMED
+    to: ORDINARY_COACHING
+    requires: [memory_latched]
+    effects: [thaw_memory]

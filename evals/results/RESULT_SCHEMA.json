@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/results/schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_class",
+    "qualification_claim_allowed",
+    "source_commit",
+    "source_tree_clean",
+    "suite_id",
+    "suite_sha256",
+    "config",
+    "config_sha256",
+    "started_at",
+    "finished_at",
+    "run_count",
+    "summary",
+    "runs",
+    "aggregate_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "harness-conformance"},
+    "qualification_claim_allowed": {"const": false},
+    "source_commit": {"type": "string", "minLength": 7, "maxLength": 80},
+    "source_tree_clean": {"type": "boolean"},
+    "suite_id": {"type": "string"},
+    "suite_sha256": {"$ref": "#/$defs/hash"},
+    "config": {"type": "object"},
+    "config_sha256": {"$ref": "#/$defs/hash"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "run_count": {"type": "integer", "minimum": 1},
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["automated_pass", "automated_fail", "hard_failure_runs", "human_review_pending"],
+      "properties": {
+        "automated_pass": {"type": "integer", "minimum": 0},
+        "automated_fail": {"type": "integer", "minimum": 0},
+        "hard_failure_runs": {"type": "integer", "minimum": 0},
+        "human_review_pending": {"type": "integer", "minimum": 0}
+      }
+    },
+    "runs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/run"}},
+    "aggregate_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "turn_id", "detail"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"},
+        "turn_id": {"type": "string"},
+        "detail": {"type": "string", "maxLength": 1000}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_before", "event", "state_after", "memory_write_allowed", "transition_rule_id"],
+      "properties": {
+        "state_before": {"type": "string"},
+        "event": {"type": ["string", "null"]},
+        "state_after": {"type": "string"},
+        "memory_write_allowed": {"type": "boolean"},
+        "transition_rule_id": {"type": ["string", "null"]}
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "resolver_attempted", "failure_code", "verified_resource_count", "claims_reviewed", "detected_contact_indicator_count"],
+      "properties": {
+        "status": {"enum": ["NOT_REQUESTED", "VERIFIED", "LOCATION_REQUIRED", "UNAVAILABLE"]},
+        "resolver_attempted": {"type": "boolean"},
+        "failure_code": {"type": ["string", "null"]},
+        "verified_resource_count": {"type": "integer", "minimum": 0},
+        "claims_reviewed": {"type": "boolean"},
+        "detected_contact_indicator_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "transcript_turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "timestamp",
+        "turn_id",
+        "user",
+        "assistant",
+        "annotated_events",
+        "grader",
+        "safety",
+        "resource",
+        "memory_write_attempted",
+        "resource_claims",
+        "selected_branch"
+      ],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 1},
+        "timestamp": {"type": "string", "format": "date-time"},
+        "turn_id": {"type": "string"},
+        "user": {"type": "string"},
+        "assistant": {"type": "string"},
+        "annotated_events": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "grader": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "method"],
+          "properties": {
+            "id": {"type": "string"},
+            "version": {"type": "string"},
+            "method": {"enum": ["synthetic_fixture", "human", "aux_model"]}
+          }
+        },
+        "safety": {"$ref": "#/$defs/safety"},
+        "resource": {"$ref": "#/$defs/resource"},
+        "memory_write_attempted": {"type": "boolean"},
+        "resource_claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "contact", "source_uri"],
+            "properties": {
+              "name": {"type": "string"},
+              "contact": {"type": "string"},
+              "source_uri": {"type": "string"}
+            }
+          }
+        },
+        "selected_branch": {"type": ["string", "null"]}
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "case_id",
+        "case_sha256",
+        "system_id",
+        "variant_id",
+        "variant_sha256",
+        "repetition",
+        "language",
+        "risk",
+        "started_at",
+        "finished_at",
+        "transcript",
+        "transcript_sha256",
+        "automated_status",
+        "failures",
+        "hard_failures",
+        "human_review"
+      ],
+      "properties": {
+        "run_id": {"type": "string", "pattern": "^run-[0-9a-f]{24}$"},
+        "case_id": {"type": "string"},
+        "case_sha256": {"$ref": "#/$defs/hash"},
+        "system_id": {"type": "string"},
+        "variant_id": {"type": "string"},
+        "variant_sha256": {"$ref": "#/$defs/hash"},
+        "repetition": {"type": "integer", "minimum": 1},
+        "language": {"type": "string"},
+        "risk": {"type": "string"},
+        "started_at": {"type": "string", "format": "date-time"},
+        "finished_at": {"type": "string", "format": "date-time"},
+        "transcript": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/transcript_turn"}},
+        "transcript_sha256": {"$ref": "#/$defs/hash"},
+        "automated_status": {"enum": ["pass", "fail"]},
+        "failures": {"type": "array", "items": {"$ref": "#/$defs/failure"}},
+        "hard_failures": {"type": "array", "items": {"$ref": "#/$defs/failure"}},
+        "human_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "required_reviewers", "received_reviewers", "bilingual_required"],
+          "properties": {
+            "status": {"enum": ["pending", "not_required_for_conformance"]},
+            "required_reviewers": {"type": "integer", "minimum": 0},
+            "received_reviewers": {"const": 0},
+            "bilingual_required": {"type": "boolean"}
+          }
+        }
+      }
+    }
+  }
+}
