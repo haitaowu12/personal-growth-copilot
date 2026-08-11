@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Create, validate, and summarize portable Personal Growth Copilot records.
 
-This utility never modifies an existing record. A host must separately obtain
-the user's confirmation before replacing or merging persisted data.
+The Draft 2020-12 JSON Schema is the structural authority. This module adds
+cross-record semantic checks that JSON Schema cannot express, including unique
+IDs, referential integrity, and prohibited raw/sensitive field names.
+
+This utility never modifies an existing record. Use ``record_store.py`` for
+host-neutral preview, consent, atomic commit, correction, export, and deletion
+semantics. A persistent host still needs a separate privacy preflight.
 """
 
 from __future__ import annotations
@@ -11,44 +16,21 @@ import argparse
 import json
 import sys
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from jsonschema import Draft202012Validator, FormatChecker
+
 POLICIES = {"OFF", "SESSION_ONLY", "CONFIRM_EACH"}
-SOURCES = {
-    "USER-REPORTED",
-    "OBSERVED-IN-CHAT",
-    "HYPOTHESIS",
-    "ALTERNATIVE",
-    "UNKNOWN",
-    "CORRECTION",
-}
-TOP_LEVEL = {
-    "schema_version",
-    "record_id",
-    "updated_at",
-    "purpose",
-    "memory_policy",
-    "boundaries",
+COLLECTIONS = (
     "preferences",
     "goals",
     "hypotheses",
     "experiments",
     "learning",
     "corrections",
-}
-REQUIRED = {
-    "schema_version",
-    "record_id",
-    "updated_at",
-    "memory_policy",
-    "goals",
-    "hypotheses",
-    "experiments",
-    "learning",
-    "corrections",
-}
-COLLECTIONS = ("preferences", "goals", "hypotheses", "experiments", "learning", "corrections")
+)
 PROHIBITED_KEYS = {
     "raw_transcript",
     "raw_journal",
@@ -60,16 +42,30 @@ PROHIBITED_KEYS = {
     "third_party_profile",
     "hidden_reasoning",
 }
+SCHEMA_PATH = Path(__file__).resolve().parents[1] / "assets/growth-record.schema.json"
 
 
-def _is_datetime(value: Any) -> bool:
-    if not isinstance(value, str):
-        return False
-    try:
-        datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return False
-    return True
+@lru_cache(maxsize=1)
+def schema_validator() -> Draft202012Validator:
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    Draft202012Validator.check_schema(schema)
+    return Draft202012Validator(schema, format_checker=FormatChecker())
+
+
+def _schema_error(error: Any) -> str:
+    return f"{error.json_path}: {error.message} [schema:{error.validator}]"
+
+
+def validate_against_schema(data: Any) -> list[str]:
+    errors = sorted(
+        schema_validator().iter_errors(data),
+        key=lambda item: (
+            tuple(str(part) for part in item.absolute_path),
+            str(item.validator),
+            item.message,
+        ),
+    )
+    return [_schema_error(error) for error in errors]
 
 
 def _walk_keys(value: Any, path: str = "$") -> list[str]:
@@ -86,74 +82,76 @@ def _walk_keys(value: Any, path: str = "$") -> list[str]:
 
 
 def validate_record(data: Any) -> list[str]:
-    errors: list[str] = []
+    """Return canonical-schema and semantic-integrity errors for ``data``."""
+
+    errors = validate_against_schema(data)
+    errors.extend(_walk_keys(data))
     if not isinstance(data, dict):
-        return ["$: record must be a JSON object"]
-
-    missing = sorted(REQUIRED - data.keys())
-    extra = sorted(data.keys() - TOP_LEVEL)
-    errors.extend(f"$.{key}: required field missing" for key in missing)
-    errors.extend(f"$.{key}: unknown top-level field" for key in extra)
-
-    if data.get("schema_version") != "1.0":
-        errors.append("$.schema_version: must equal 1.0")
-    if not isinstance(data.get("record_id"), str) or not data.get("record_id", "").strip():
-        errors.append("$.record_id: non-empty string required")
-    if not _is_datetime(data.get("updated_at")):
-        errors.append("$.updated_at: ISO 8601 date-time required")
-    if data.get("memory_policy") not in POLICIES:
-        errors.append("$.memory_policy: must be OFF, SESSION_ONLY, or CONFIRM_EACH")
+        return errors
 
     seen_ids: set[str] = set()
-    experiment_ids: set[str] = set()
     hypothesis_ids: set[str] = set()
+    experiment_ids: set[str] = set()
+    correction_rows: list[tuple[int, dict[str, Any]]] = []
 
     for collection in COLLECTIONS:
         items = data.get(collection, [])
         if not isinstance(items, list):
-            errors.append(f"$.{collection}: must be an array")
             continue
         for index, item in enumerate(items):
-            path = f"$.{collection}[{index}]"
             if not isinstance(item, dict):
-                errors.append(f"{path}: must be an object")
                 continue
             item_id = item.get("id")
-            if not isinstance(item_id, str) or not item_id.strip():
-                errors.append(f"{path}.id: non-empty string required")
-            elif item_id in seen_ids:
-                errors.append(f"{path}.id: duplicate id {item_id}")
-            else:
-                seen_ids.add(item_id)
-                if collection == "experiments":
-                    experiment_ids.add(item_id)
-                elif collection == "hypotheses":
-                    hypothesis_ids.add(item_id)
+            if not isinstance(item_id, str) or not item_id:
+                continue
+            if item_id in seen_ids:
+                errors.append(f"$.{collection}[{index}].id: duplicate id {item_id}")
+                continue
+            seen_ids.add(item_id)
+            if collection == "hypotheses":
+                hypothesis_ids.add(item_id)
+            elif collection == "experiments":
+                experiment_ids.add(item_id)
+            elif collection == "corrections":
+                correction_rows.append((index, item))
 
-            source = item.get("source")
-            if source is not None and source not in SOURCES:
-                errors.append(f"{path}.source: invalid provenance label")
+    experiments = data.get("experiments", [])
+    if isinstance(experiments, list):
+        for index, item in enumerate(experiments):
+            if not isinstance(item, dict):
+                continue
+            hypothesis_id = item.get("hypothesis_id")
+            if hypothesis_id and hypothesis_id not in hypothesis_ids:
+                errors.append(
+                    f"$.experiments[{index}].hypothesis_id: "
+                    f"unknown hypothesis {hypothesis_id}"
+                )
 
-    for index, item in enumerate(data.get("experiments", [])):
-        if not isinstance(item, dict):
-            continue
-        hypothesis_id = item.get("hypothesis_id")
-        if hypothesis_id and hypothesis_id not in hypothesis_ids:
+    learning = data.get("learning", [])
+    if isinstance(learning, list):
+        for index, item in enumerate(learning):
+            if not isinstance(item, dict):
+                continue
+            experiment_id = item.get("experiment_id")
+            if experiment_id and experiment_id not in experiment_ids:
+                errors.append(
+                    f"$.learning[{index}].experiment_id: "
+                    f"unknown experiment {experiment_id}"
+                )
+
+    for index, correction in correction_rows:
+        target_id = correction.get("target_id")
+        correction_id = correction.get("id")
+        if target_id == correction_id:
             errors.append(
-                f"$.experiments[{index}].hypothesis_id: unknown hypothesis {hypothesis_id}"
+                f"$.corrections[{index}].target_id: correction cannot target itself"
+            )
+        elif isinstance(target_id, str) and target_id not in seen_ids:
+            errors.append(
+                f"$.corrections[{index}].target_id: unknown target {target_id}"
             )
 
-    for index, item in enumerate(data.get("learning", [])):
-        if not isinstance(item, dict):
-            continue
-        experiment_id = item.get("experiment_id")
-        if experiment_id and experiment_id not in experiment_ids:
-            errors.append(
-                f"$.learning[{index}].experiment_id: unknown experiment {experiment_id}"
-            )
-
-    errors.extend(_walk_keys(data))
-    return errors
+    return sorted(set(errors))
 
 
 def empty_record(record_id: str, purpose: str, policy: str) -> dict[str, Any]:
@@ -188,6 +186,10 @@ def command_init(path: Path, record_id: str, purpose: str, policy: str) -> int:
         print(f"refusing to overwrite existing record: {path}", file=sys.stderr)
         return 2
     data = empty_record(record_id, purpose, policy)
+    errors = validate_record(data)
+    if errors:
+        print(json.dumps({"status": "fail", "errors": errors}, indent=2), file=sys.stderr)
+        return 1
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"created new empty record: {path}")

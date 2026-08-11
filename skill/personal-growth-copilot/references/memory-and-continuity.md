@@ -6,6 +6,10 @@ No persistence is assumed. Use `CONFIRM_EACH` when a host provides memory.
 Never claim a write, read, correction, export, or deletion succeeded without a
 host result.
 
+For any record operation, also read `record-store-contract.md`. The in-memory
+implementation in `scripts/record_store.py` is a conformance target, not a
+persistent adapter or permission to initialize personal state.
+
 ## User-owned growth record
 
 The canonical portable schema is `assets/growth-record.schema.json`. A record
@@ -17,6 +21,10 @@ may contain:
 - source-tagged working hypotheses and alternatives;
 - active experiments and observations;
 - learning records and corrections.
+
+Use only opaque host-generated record identifiers. Never reuse a name, email,
+account identifier, or content-derived hash as a record, revision, consent, or
+audit identifier.
 
 It must not contain hidden model reasoning, raw transcripts, raw journals,
 trauma narratives, credentials, unnecessary identifiers, intimate media,
@@ -30,6 +38,10 @@ diagnoses, or profiles of other people.
 4. Ask for confirmation.
 5. Perform the host write only after confirmation.
 6. Report the actual result and how to correct/export/delete it.
+
+Bind consent to the exact preview, base revision, purpose, and expiry. Treat a
+revoked, consumed, expired, mismatched, or stale token as a hard failure with no
+partial write.
 
 Do not bundle consent into general use. Silence is not consent. “Remember this”
 authorizes only the stated content and purpose, not unrestricted memory.

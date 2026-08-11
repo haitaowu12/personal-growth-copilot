@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "release": "0.3.0-alpha.1",
+  "release": "0.3.0-alpha.2",
   "status": "blocked",
   "production_claim_allowed": false,
   "activation": "explicit-only-unregistered",
@@ -8,11 +8,37 @@
     "structural_validation": "pass-local",
     "source_provenance": "pass-local",
     "community_pattern_audit": "pass-local",
+    "schema_runtime_equivalence": "pass-local",
+    "record_store_conformance": "pass-local",
+    "deterministic_ci_definition": "pass-local",
+    "hosted_exact_head_ci": "blocked-external-billing",
     "behavioral_comparison": "pending",
     "independent_untouched_holdouts": "pending",
     "bilingual_human_review": "pending",
     "judge_calibration": "pending",
     "privacy_safe_controlled_pilot": "pending",
     "independent_release_review": "pending"
+  },
+  "evidence_contract": {
+    "deterministic_controls": {
+      "status": "pass-local",
+      "generator": "scripts/run_deterministic_qualification.py",
+      "ci_artifact": "deterministic-qualification-python-{python-version}",
+      "covers": [
+        "repository structure",
+        "evaluation manifest structure",
+        "canonical schema equivalence",
+        "record-store conformance",
+        "skill structure"
+      ],
+      "does_not_cover": [
+        "target-model behavior",
+        "human bilingual review",
+        "host privacy",
+        "controlled pilot",
+        "efficacy",
+        "release approval"
+      ]
+    }
   }
 }

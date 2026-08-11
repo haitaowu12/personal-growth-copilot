@@ -34,7 +34,7 @@ class ProjectTests(unittest.TestCase):
 
     def test_behavioral_contract(self) -> None:
         evaluator = load_module(
-            "contract_evaluator", ROOT / "scripts/evaluate_contract.py"
+            "manifest_linter", ROOT / "scripts/lint_eval_manifest.py"
         )
         self.assertEqual(evaluator.validate_cases(), [])
 
@@ -77,6 +77,17 @@ class ProjectTests(unittest.TestCase):
         example["experiments"][0]["hypothesis_id"] = "missing"
         errors = records.validate_record(example)
         self.assertTrue(any("unknown hypothesis" in error for error in errors))
+
+    def test_manual_invocation_and_release_block_are_enforced(self) -> None:
+        metadata = (
+            ROOT / "skill/personal-growth-copilot/agents/openai.yaml"
+        ).read_text(encoding="utf-8")
+        release = json.loads(
+            (ROOT / "release/qualification.json").read_text(encoding="utf-8")
+        )
+        self.assertIn("allow_implicit_invocation: false", metadata)
+        self.assertEqual(release["activation"], "explicit-only-unregistered")
+        self.assertFalse(release["production_claim_allowed"])
 
 
 if __name__ == "__main__":
