@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "mode": "synthetic-conformance",
+  "frozen_at": "2026-08-11T18:00:00Z",
+  "systems": ["target", "direct_assistant", "structured_reflection"],
+  "provider": {
+    "host": "local-fixture",
+    "model": "deterministic-conformance-v1",
+    "adapter_version": "1.0",
+    "settings": {"temperature": 0, "seed": 0},
+    "tool_permissions": []
+  },
+  "grader": {
+    "id": "deterministic-expected-event-fixture",
+    "version": "1.0",
+    "method": "synthetic_fixture"
+  },
+  "max_turns": 12
+}

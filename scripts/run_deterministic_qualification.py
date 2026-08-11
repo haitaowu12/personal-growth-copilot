@@ -20,6 +20,10 @@ DEFAULT_OUTPUT = ROOT / "build/evidence/deterministic-qualification.json"
 CHECKS = (
     ("repository-validation", ("scripts/validate.py",)),
     ("evaluation-manifest-lint", ("scripts/lint_eval_manifest.py",)),
+    (
+        "multiturn-harness-conformance",
+        ("evals/run.py", "--conformance", "--require-clean"),
+    ),
     ("dependency-consistency", ("-m", "pip", "check")),
     ("deterministic-unit-tests", ("-m", "unittest", "discover", "-s", "tests", "-v")),
     (
@@ -138,7 +142,8 @@ def build_evidence() -> dict[str, Any]:
         "checks": results,
         "claim_limit": (
             "This artifact proves deterministic source, schema, record-store, "
-            "manifest, and skill-structure checks only. It is not model-behavior, "
+            "safety-state, resolver-failure, branchable-harness-conformance, "
+            "manifest, and skill-structure checks only. It is not target-model behavior, "
             "bilingual-human-review, privacy-pilot, efficacy, or release evidence."
         ),
     }

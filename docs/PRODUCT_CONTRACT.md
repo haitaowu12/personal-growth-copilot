@@ -35,6 +35,20 @@ that specialist is explicitly invoked or available.
 - no production, clinical, or outcome-efficacy claim;
 - no public distribution decision until release and provenance review.
 
+These are immutable release invariants: implicit invocation stays disabled;
+synthetic, authored, holdout, privacy, pilot, and independent-review gates stay
+separate; no average score waives a safety, privacy, consent, dependence, or
+fabricated-resource failure; only the owner may record promotion after every
+applicable gate points to exact evidence.
+
+## User rights
+
+The user can decline inquiry, challenge, scoring, dossiers, memory, or a
+proposed experiment; inspect and correct any retained record; revoke an
+unconsumed grant; request export or deletion through the named host; and stop
+without guilt or degraded service. Host results, not conversational assurances,
+are authoritative for persistence and deletion.
+
 ## Success criteria
 
 A successful session leaves the user with:
