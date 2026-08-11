@@ -43,22 +43,65 @@ def validate() -> list[str]:
         errors.append("qualification must remain blocked")
     if qualification.get("production_claim_allowed") is not False:
         errors.append("production claim must be false")
-    if len(evidence.get("sources", [])) < 15:
-        errors.append("at least 15 evidence sources required")
+    if len(evidence.get("sources", [])) < 17:
+        errors.append("at least 17 evidence sources required")
+    evidence_ids: set[str] = set()
+    evidence_urls: set[str] = set()
     for index, source in enumerate(evidence.get("sources", [])):
         for field in ("id", "type", "citation", "url", "runtime_use", "limitation"):
             if not source.get(field):
                 errors.append(f"evidence source {index} lacks {field}")
+        source_id = source.get("id")
+        if source_id in evidence_ids:
+            errors.append(f"duplicate evidence source id: {source_id}")
+        evidence_ids.add(source_id)
+        url = source.get("url", "")
+        if not url.startswith("https://"):
+            errors.append(f"evidence source {index} url must use https")
+        if url in evidence_urls:
+            errors.append(f"duplicate evidence source url: {url}")
+        evidence_urls.add(url)
+    evidence_runtime_index_path = (
+        ROOT / "skill/personal-growth-copilot/assets/evidence-source-ids.json"
+    )
+    if not evidence_runtime_index_path.exists():
+        errors.append("runtime evidence-source index missing")
+    else:
+        try:
+            evidence_runtime_index = json.loads(
+                evidence_runtime_index_path.read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError):
+            errors.append("runtime evidence-source index is invalid JSON")
+        else:
+            if evidence_runtime_index.get("schema_version") != "1.0":
+                errors.append("runtime evidence-source index schema version mismatch")
+            runtime_ids = evidence_runtime_index.get("source_ids")
+            if not isinstance(runtime_ids, list) or len(runtime_ids) != len(
+                set(runtime_ids)
+            ):
+                errors.append("runtime evidence-source ids must be a unique array")
+            elif set(runtime_ids) != evidence_ids:
+                errors.append("runtime evidence-source index differs from provenance ledger")
     if cases.get("schema_version") != "2.0":
         errors.append("branchable evaluation schema version must equal 2.0")
     if len(cases.get("cases", [])) < 8:
         errors.append("at least eight branchable multi-turn cases required")
-    if len(community.get("sources", [])) < 10:
-        errors.append("at least 10 pinned community sources required")
+    if len(community.get("sources", [])) < 16:
+        errors.append("at least 16 pinned community sources required")
+    community_repositories: set[str] = set()
     for index, source in enumerate(community.get("sources", [])):
         commit = source.get("commit", "")
         if len(commit) != 40 or any(char not in "0123456789abcdef" for char in commit):
             errors.append(f"community source {index} lacks a full commit hash")
+        repository = source.get("repository", "")
+        if not repository.startswith("https://github.com/"):
+            errors.append(f"community source {index} is not a GitHub repository")
+        if repository in community_repositories:
+            errors.append(f"duplicate community repository: {repository}")
+        community_repositories.add(repository)
+        if not source.get("license") or not source.get("role"):
+            errors.append(f"community source {index} lacks license or role")
     required_references = {
         "collaborative-inquiry.md",
         "context-model.md",
@@ -81,6 +124,8 @@ def validate() -> list[str]:
     required_runtime = {
         ROOT / "skill/personal-growth-copilot/scripts/growth_record.py",
         ROOT / "skill/personal-growth-copilot/scripts/record_store.py",
+        ROOT / "skill/personal-growth-copilot/scripts/context_runtime.py",
+        ROOT / "skill/personal-growth-copilot/assets/evidence-source-ids.json",
         ROOT / "requirements/ci.in",
         ROOT / "requirements/ci.txt",
         ROOT / "scripts/lint_eval_manifest.py",
@@ -88,6 +133,10 @@ def validate() -> list[str]:
         ROOT / "evals/schema.json",
         ROOT / "evals/config.schema.json",
         ROOT / "evals/results/RESULT_SCHEMA.json",
+        ROOT / "evals/target_session.py",
+        ROOT / "evals/target-config.schema.json",
+        ROOT / "evals/human-review.schema.json",
+        ROOT / "evals/results/TARGET_RUN_SCHEMA.json",
         ROOT / "evals/configs/conformance.json",
         ROOT / "evals/baselines/direct_assistant.yaml",
         ROOT / "evals/baselines/structured_reflection.yaml",
@@ -95,14 +144,21 @@ def validate() -> list[str]:
         ROOT / "safety/resource-resolver-interface.md",
         ROOT / "skill/personal-growth-copilot/scripts/safety_runtime.py",
         ROOT / "scripts/run_deterministic_qualification.py",
+        ROOT / "scripts/build_target_config.py",
+        ROOT / "scripts/target_session_cli.py",
+        ROOT / "docs/TARGET_EXECUTION.md",
     }
     for path in sorted(required_runtime):
         if not path.exists():
             errors.append(f"required runtime artifact missing: {path.relative_to(ROOT)}")
     for schema_path in (
+        ROOT / "skill/personal-growth-copilot/assets/growth-record.schema.json",
         ROOT / "evals/schema.json",
         ROOT / "evals/config.schema.json",
         ROOT / "evals/results/RESULT_SCHEMA.json",
+        ROOT / "evals/target-config.schema.json",
+        ROOT / "evals/human-review.schema.json",
+        ROOT / "evals/results/TARGET_RUN_SCHEMA.json",
     ):
         try:
             Draft202012Validator.check_schema(
@@ -112,6 +168,12 @@ def validate() -> list[str]:
             errors.append(
                 f"invalid JSON Schema {schema_path.relative_to(ROOT)}: {type(exc).__name__}"
             )
+    growth_schema = json.loads(schema.read_text(encoding="utf-8"))
+    if growth_schema.get("properties", {}).get("schema_version", {}).get("const") != "1.1":
+        errors.append("growth record schema version must equal 1.1")
+    for collection in ("evidence", "scales", "check_ins", "decisions"):
+        if collection not in growth_schema.get("required", []):
+            errors.append(f"growth record schema must require {collection}")
     for baseline_name in ("direct_assistant", "structured_reflection"):
         baseline = yaml.safe_load(
             (ROOT / f"evals/baselines/{baseline_name}.yaml").read_text(encoding="utf-8")

@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "record_id": "gr_00000000000000000000000000000001",
   "updated_at": "2026-08-10T12:00:00Z",
   "purpose": "Test whether a smaller start ritual reduces delay on a chosen writing project.",
@@ -12,7 +12,33 @@
       "source": "USER-REPORTED",
       "context": "Writing-project coaching",
       "confirmed_at": "2026-08-10T12:00:00Z",
+      "review_at": "2026-09-10T12:00:00Z",
       "superseded": false
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evidence-1",
+      "statement": "The user reports starting more easily when the next paragraph is named.",
+      "source": "USER-REPORTED",
+      "origin_kind": "USER_STATEMENT",
+      "origin_ref": "session-turn-7",
+      "captured_at": "2026-08-10T12:00:00Z",
+      "last_confirmed_at": "2026-08-10T12:00:00Z",
+      "review_at": "2026-08-17T12:00:00Z",
+      "context": "The selected writing project during the current work period.",
+      "status": "active"
+    },
+    {
+      "id": "evidence-2",
+      "statement": "Energy and competing workload have not yet been compared.",
+      "source": "UNKNOWN",
+      "origin_kind": "CHAT_OBSERVATION",
+      "origin_ref": "working-model-1",
+      "captured_at": "2026-08-10T12:00:00Z",
+      "review_at": "2026-08-17T12:00:00Z",
+      "context": "The selected writing project during the current work period.",
+      "status": "active"
     }
   ],
   "goals": [
@@ -34,11 +60,25 @@
       "confidence": "low",
       "source": "HYPOTHESIS",
       "context_boundary": "Only this writing project during the current work period.",
-      "supporting_evidence": ["The user reports starting more easily when the next paragraph is named."],
-      "disconfirming_or_missing_evidence": ["Energy and competing workload have not been compared."],
-      "alternatives": ["The task may be lower priority than the user wants to admit.", "The planned time may conflict with energy."],
+      "supporting_evidence_ids": ["evidence-1"],
+      "disconfirming_or_missing_evidence_ids": ["evidence-2"],
+      "alternative_hypothesis_ids": ["hyp-2"],
       "status": "active",
-      "updated_at": "2026-08-10T12:00:00Z"
+      "updated_at": "2026-08-10T12:00:00Z",
+      "review_at": "2026-08-17T12:00:00Z"
+    },
+    {
+      "id": "hyp-2",
+      "statement": "The planned time may conflict with the user's available energy.",
+      "confidence": "low",
+      "source": "ALTERNATIVE",
+      "context_boundary": "Only this writing project during the current work period.",
+      "supporting_evidence_ids": [],
+      "disconfirming_or_missing_evidence_ids": ["evidence-2"],
+      "alternative_hypothesis_ids": ["hyp-1"],
+      "status": "active",
+      "updated_at": "2026-08-10T12:00:00Z",
+      "review_at": "2026-08-17T12:00:00Z"
     }
   ],
   "experiments": [
@@ -54,6 +94,65 @@
       "review_at": "2026-08-17T12:00:00Z",
       "stop_condition": "Stop if it causes sleep loss or work-policy conflict.",
       "status": "active"
+    }
+  ],
+  "scales": [
+    {
+      "id": "scale-1",
+      "construct": "Confidence in completing the five-minute start",
+      "minimum": 0,
+      "maximum": 10,
+      "low_anchor": "I do not expect to start even with the instruction.",
+      "high_anchor": "I expect to complete the five-minute start at the planned time.",
+      "purpose": "Decide whether the experiment should be made smaller before trying it.",
+      "decision_link": "Choose the minimum viable starting ritual.",
+      "context_boundary": "Tomorrow morning on the selected writing project only.",
+      "created_at": "2026-08-10T12:00:00Z",
+      "review_at": "2026-08-17T12:00:00Z",
+      "status": "active"
+    }
+  ],
+  "check_ins": [
+    {
+      "id": "checkin-1",
+      "scale_id": "scale-1",
+      "value": 6,
+      "user_supplied": true,
+      "recorded_at": "2026-08-10T12:00:00Z",
+      "context": "Before the first planned morning.",
+      "decision_link": "If confidence is below 5, reduce the starting ritual before trying it."
+    }
+  ],
+  "decisions": [
+    {
+      "id": "decision-1",
+      "question": "Which starting ritual should be tested first?",
+      "options": [
+        {
+          "id": "option-five-minute",
+          "label": "Prepare and use a five-minute starting instruction.",
+          "benefit": "Directly tests whether first-step ambiguity matters.",
+          "cost": "Requires a short preparation the night before.",
+          "reversibility": "high"
+        },
+        {
+          "id": "option-schedule-only",
+          "label": "Schedule a start without preparing an instruction.",
+          "benefit": "Requires less preparation.",
+          "cost": "Does not isolate the ambiguity hypothesis.",
+          "reversibility": "high"
+        }
+      ],
+      "status": "chosen",
+      "recommended_option_id": "option-five-minute",
+      "selected_option_id": "option-five-minute",
+      "chosen_by": "USER",
+      "rationale": "The user prefers the more informative low-cost test.",
+      "evidence_ids": ["evidence-1", "evidence-2"],
+      "assumptions": ["A five-minute start is feasible without displacing sleep."],
+      "unknowns": ["Whether morning energy or workload is the stronger constraint."],
+      "created_at": "2026-08-10T12:00:00Z",
+      "review_at": "2026-08-17T12:00:00Z"
     }
   ],
   "learning": [],
