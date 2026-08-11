@@ -6,6 +6,9 @@ import re
 import sys
 from pathlib import Path
 
+import yaml
+from jsonschema import Draft202012Validator
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -46,8 +49,10 @@ def validate() -> list[str]:
         for field in ("id", "type", "citation", "url", "runtime_use", "limitation"):
             if not source.get(field):
                 errors.append(f"evidence source {index} lacks {field}")
-    if len(cases.get("cases", [])) < 30:
-        errors.append("at least 30 evaluation cases required")
+    if cases.get("schema_version") != "2.0":
+        errors.append("branchable evaluation schema version must equal 2.0")
+    if len(cases.get("cases", [])) < 8:
+        errors.append("at least eight branchable multi-turn cases required")
     if len(community.get("sources", [])) < 10:
         errors.append("at least 10 pinned community sources required")
     for index, source in enumerate(community.get("sources", [])):
@@ -79,11 +84,44 @@ def validate() -> list[str]:
         ROOT / "requirements/ci.in",
         ROOT / "requirements/ci.txt",
         ROOT / "scripts/lint_eval_manifest.py",
+        ROOT / "evals/run.py",
+        ROOT / "evals/schema.json",
+        ROOT / "evals/config.schema.json",
+        ROOT / "evals/results/RESULT_SCHEMA.json",
+        ROOT / "evals/configs/conformance.json",
+        ROOT / "evals/baselines/direct_assistant.yaml",
+        ROOT / "evals/baselines/structured_reflection.yaml",
+        ROOT / "safety/safety-state-machine.yaml",
+        ROOT / "safety/resource-resolver-interface.md",
+        ROOT / "skill/personal-growth-copilot/scripts/safety_runtime.py",
         ROOT / "scripts/run_deterministic_qualification.py",
     }
     for path in sorted(required_runtime):
         if not path.exists():
             errors.append(f"required runtime artifact missing: {path.relative_to(ROOT)}")
+    for schema_path in (
+        ROOT / "evals/schema.json",
+        ROOT / "evals/config.schema.json",
+        ROOT / "evals/results/RESULT_SCHEMA.json",
+    ):
+        try:
+            Draft202012Validator.check_schema(
+                json.loads(schema_path.read_text(encoding="utf-8"))
+            )
+        except Exception as exc:
+            errors.append(
+                f"invalid JSON Schema {schema_path.relative_to(ROOT)}: {type(exc).__name__}"
+            )
+    for baseline_name in ("direct_assistant", "structured_reflection"):
+        baseline = yaml.safe_load(
+            (ROOT / f"evals/baselines/{baseline_name}.yaml").read_text(encoding="utf-8")
+        )
+        if baseline.get("system_id") != baseline_name:
+            errors.append(f"baseline system_id mismatch: {baseline_name}")
+        if baseline.get("same_safety_policy_required") is not True:
+            errors.append(f"baseline may not weaken safety: {baseline_name}")
+        if baseline.get("memory_policy") != "DISABLED":
+            errors.append(f"baseline memory must be disabled: {baseline_name}")
     lock_text = (ROOT / "requirements/ci.txt").read_text(encoding="utf-8")
     input_requirements = {
         (match.group(1).lower().replace("_", "-"), match.group(2))
@@ -102,6 +140,8 @@ def validate() -> list[str]:
     workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
     if "--require-hashes" not in workflow:
         errors.append("CI dependency install must enforce requirements hashes")
+    if "multiturn-harness-conformance.json" not in workflow:
+        errors.append("CI must upload the multi-turn harness conformance artifact")
     if "ubuntu-latest" in workflow:
         errors.append("CI runner label must not float on ubuntu-latest")
     for action in ("actions/checkout@", "actions/setup-python@", "actions/upload-artifact@"):
