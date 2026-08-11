@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -60,6 +61,7 @@ def validate() -> list[str]:
         "behavior-change-experiments.md",
         "reflection-and-review.md",
         "memory-and-continuity.md",
+        "record-store-contract.md",
         "safety-and-scope.md",
         "bilingual-dialogue.md",
         "evidence-ledger.md",
@@ -71,6 +73,41 @@ def validate() -> list[str]:
     schema = ROOT / "skill/personal-growth-copilot/assets/growth-record.schema.json"
     if not schema.exists():
         errors.append("growth record schema missing")
+    required_runtime = {
+        ROOT / "skill/personal-growth-copilot/scripts/growth_record.py",
+        ROOT / "skill/personal-growth-copilot/scripts/record_store.py",
+        ROOT / "requirements/ci.in",
+        ROOT / "requirements/ci.txt",
+        ROOT / "scripts/lint_eval_manifest.py",
+        ROOT / "scripts/run_deterministic_qualification.py",
+    }
+    for path in sorted(required_runtime):
+        if not path.exists():
+            errors.append(f"required runtime artifact missing: {path.relative_to(ROOT)}")
+    lock_text = (ROOT / "requirements/ci.txt").read_text(encoding="utf-8")
+    input_requirements = {
+        (match.group(1).lower().replace("_", "-"), match.group(2))
+        for line in (ROOT / "requirements/ci.in").read_text(encoding="utf-8").splitlines()
+        if (match := re.match(r"^([A-Za-z0-9_.-]+)==([^\s]+)$", line))
+    }
+    locked_requirements = {
+        (match.group(1).lower().replace("_", "-"), match.group(2))
+        for line in lock_text.splitlines()
+        if (match := re.match(r"^([A-Za-z0-9_.-]+)==([^\\\s]+)", line))
+    }
+    if not input_requirements.issubset(locked_requirements):
+        errors.append("hash lock is missing a direct CI requirement")
+    if lock_text.count("--hash=sha256:") < 2 * len(locked_requirements):
+        errors.append("CI requirements are not fully hash-locked")
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    if "--require-hashes" not in workflow:
+        errors.append("CI dependency install must enforce requirements hashes")
+    if "ubuntu-latest" in workflow:
+        errors.append("CI runner label must not float on ubuntu-latest")
+    for action in ("actions/checkout@", "actions/setup-python@", "actions/upload-artifact@"):
+        lines = [line for line in workflow.splitlines() if action in line]
+        if not lines or any(f"{action}v" in line for line in lines):
+            errors.append(f"CI action is missing or not commit-pinned: {action}")
     return errors
 
 

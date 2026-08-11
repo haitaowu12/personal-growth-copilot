@@ -7,7 +7,13 @@
   "required": ["schema_version", "record_id", "updated_at", "memory_policy", "goals", "hypotheses", "experiments", "learning", "corrections"],
   "properties": {
     "schema_version": {"const": "1.0"},
-    "record_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "record_id": {
+      "type": "string",
+      "minLength": 35,
+      "maxLength": 35,
+      "pattern": "^gr_[0-9a-f]{32}$",
+      "description": "Opaque host-generated identifier; never a name, email, account ID, or other user content."
+    },
     "updated_at": {"type": "string", "format": "date-time"},
     "purpose": {"type": "string", "maxLength": 500},
     "memory_policy": {"enum": ["OFF", "SESSION_ONLY", "CONFIRM_EACH"]},
