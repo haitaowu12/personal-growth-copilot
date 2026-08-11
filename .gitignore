@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+dist/
+external-feedback/
+handoff-briefs/
+.DS_Store
+node_modules/
+.codex/
+.openai/
+output/playwright/
+test-results/
+playwright-report/

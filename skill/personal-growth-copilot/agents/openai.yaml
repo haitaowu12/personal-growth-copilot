@@ -1,0 +1,6 @@
+interface:
+  display_name: "Personal Growth Copilot"
+  short_description: "Context-rich guidance for durable personal growth"
+  default_prompt: "Use $personal-growth-copilot to understand my situation, clarify what I want to change, and design a practical growth experiment."
+policy:
+  allow_implicit_invocation: false
