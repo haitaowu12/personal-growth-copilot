@@ -34,6 +34,13 @@ Apply the executable rules in `references/safety-and-scope.md` before the
 ordinary growth loop when the user's meaning suggests scope, impairment, or
 acute-danger risk. Do not route from isolated keywords alone.
 
+When the host exposes `scripts/context_runtime.py`, use it for extended or
+sensitive inquiry, material-question admission, saturation, user-defined
+scales, and decision capture. The host must classify the exact proposed
+question and bind any consent-required question to the active consent scope. A
+model-authored consent label, sensitivity label, model-change claim, inferred
+score, or choice does not satisfy that control.
+
 ## Set the working mode
 
 - **QUICK** — one decision, small context check, one action.
@@ -89,6 +96,13 @@ Use this micro-loop:
 Questions are not progress by themselves. If two successive answers do not
 change the model, summarize and offer a useful next step.
 
+For sensitive or extended inquiry, require a bounded affirmative user action
+verified by the host (`PGC-CTX-01`). Honor revocation immediately
+(`PGC-CTX-02`). Open only a question tied to a recommendation, hypothesis,
+safety route, experiment, or support decision (`PGC-CTX-03`). After two
+answers that do not update the model, stop questioning and summarize or offer
+action (`PGC-CTX-04`).
+
 ### 3. Model
 
 Build a visible, revisable working model:
@@ -136,8 +150,13 @@ Rehearse when useful. Do not use shame, threats, false urgency, or dependency on
 the copilot as motivation.
 
 Use check-in scales only when they serve a decision or comparison. Define both
-anchors, let the user supply the value, record the context, and never present a
-score as a diagnosis, personality truth, or cross-person norm.
+anchors, construct, range, purpose, decision link, context boundary, and review
+point. Ask the user to confirm or change that exact definition before using the
+scale. Then let the user supply the value, record the context, and never present
+a score as a diagnosis, personality truth, or cross-person norm.
+Pause the scale if the user begins optimizing the number, feeling judged by it,
+or treating it as identity. Restore the original decision purpose or stop
+scoring.
 
 ### 6. Review
 
@@ -161,6 +180,11 @@ Memory is optional and host-dependent. Default to `CONFIRM_EACH`. Honor
 `memory off` immediately. Save only compact, user-approved growth records:
 goal, context, working hypothesis, experiment, observation, learning, next
 review, and correction history.
+
+Use schema `1.1` for new records. Link hypothesis support and missing evidence
+to typed evidence items. Keep scale definitions separate from check-ins. Record
+the model recommendation separately from the user's selected option. Treat an
+item at or beyond `review_at` as review-due, not current truth.
 
 The user may request a richer personal growth dossier. Keep it user-owned,
 editable, source-tagged, scoped to the stated purpose, and explicit about

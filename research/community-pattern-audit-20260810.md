@@ -23,6 +23,10 @@ Community convergence is a design signal, not scientific validation.
 | [dadler6/pilot-tests-mi-chatbot](https://github.com/dadler6/pilot-tests-mi-chatbot) | `a715a24e8e86d68555a90adae4dc5aaf5aa6aceb` | no root license found | Independent harm/quality/sensing test categories | Idea-only. Expand adversarial and sensing cases; do not reuse binary fixtures or unlicensed material. |
 | [occupyashanti/AI-life-coach](https://github.com/occupyashanti/AI-life-coach) | `3acacd695c2d8b9fc8d0b98a1cbf5d940fb78ec0` | no root license found | Basic goals, tracking, and conversational UI | No distinctive method adopted; basic patterns already supported by stronger primary evidence. |
 | [smilior/ai-life-coach](https://github.com/smilior/ai-life-coach) | `d4cec4a240933ddc677430b8b06020747529f991` | no root license found | Solution-oriented chat sessions and small steps | Idea-only. Small experiments retained; no donor wording, code, or therapy protocol used. |
+| [strands-agents/evals](https://github.com/strands-agents/evals) | `e82933c4453d2388d4e83ec8ae6496da3d4149e4` | Apache-2.0 | Interaction trajectories, shared-state multi-turn simulation, structured judges | Adapt the explicit trajectory and judge separation; do not import its implementation or let a model judge become the sole safety authority. |
+| [alibaba/skill-up](https://github.com/alibaba/skill-up) | `5ba8c3a3177d03956be8c98615db01db65d601c2` | Apache-2.0 | Declarative Agent Skill cases, custom engines, structured local/CI reports | Adapt the frozen engine seam and structured evidence posture; retain this project's stricter human and hard-gate rules. |
+| [letta-ai/letta-evals](https://github.com/letta-ai/letta-evals) | `a207c5604d4b68e4b23247465ded52aa3e2991f4` | Apache-2.0 | Stateful-agent evaluation and multiple model handles | Adapt stateful replay and matched provider identity; do not import donor fixtures or scoring code. |
+| [harness/harness-evals](https://github.com/harness/harness-evals) | `c263bbf976d27423cef8db76fd6c22744b477e3a` | Apache-2.0 | Reliability runs, runtime trace hydration, and safety metrics reported separately | Adopt the non-averaged safety posture and complete trace preservation; keep local schemas and acceptance rules authoritative. |
 
 ## Convergent patterns adopted
 
@@ -37,6 +41,8 @@ Community convergence is a design signal, not scientific validation.
    correction, action fit, safety, and dependence risks.
 8. Deterministic code for structure and persistence; model judgment for
    language and hypotheses, never for silent irreversible writes.
+9. Frozen provider adapters, stateful trajectory capture, structured human
+   review, and separate non-averaged hard safety outcomes.
 
 ## Patterns rejected
 

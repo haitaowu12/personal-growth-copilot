@@ -13,6 +13,16 @@ change the decision. It can give direct advice when asked. It is allowed to use
 transparent user-scored check-ins and a rich user-owned dossier; neither may
 become hidden psychological assessment.
 
+Every retained evidence item has origin/source, context, captured time, review
+point, and active/superseded/rejected state; hypotheses have linked evidence,
+alternatives, updated/review times, and status. The semantic validator requires
+review points for active goals and experiments and for live decisions. Other
+collections retain their narrower schema-defined provenance rather than
+claiming one universal field tuple. A score has a user-approved construct,
+bounds, anchors, purpose, decision link, and context; only the user supplies its
+value. A decision record separates options, evidence, assumptions, unknowns,
+model recommendation, and the user's actual choice.
+
 ## Product boundaries
 
 - `personal-growth-copilot`: internal change system—values, goals, patterns,

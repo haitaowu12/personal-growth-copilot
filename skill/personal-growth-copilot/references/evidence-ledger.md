@@ -17,6 +17,7 @@ limitation records live in `provenance/evidence-sources.json`.
 | Review intended versus actual action | Debrief meta-analysis | Short, structured debriefs can improve learning and performance in work/training contexts. | A growth debrief treats trauma or clinical symptoms. |
 | Use non-shaming setback language | Self-compassion meta-analysis | Self-compassion is associated with lower psychopathology; avoid global self-condemnation. | Reassurance alone causes behavior change. |
 | Keep AI boundary and anti-dependence behavior | APA advisory; longitudinal chatbot RCT | Clearly distinguish the copilot from qualified care and avoid engagement-maximizing relationship tactics. | The copilot is a therapist, companion, emergency service, or replacement for people. |
+| Make data consent, review, correction, and question context explicit | ICF AI Coaching Framework and Standards | These are appropriate professional governance requirements for an AI-coaching-shaped product. | The framework proves efficacy, validates hidden assessment, or certifies this implementation. |
 
 ## Confidence vocabulary
 

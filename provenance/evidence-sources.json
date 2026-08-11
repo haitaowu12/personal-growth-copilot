@@ -141,6 +141,14 @@
       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13256495/",
       "runtime_use": "Treat crisis handling as a dedicated safety path and keep behavioral crisis cases in the release suite.",
       "limitation": "Benchmark performance changes with model versions and does not turn a general LLM into an emergency service."
+    },
+    {
+      "id": "icf-2024-ai-coaching-standards",
+      "type": "official-professional-framework",
+      "citation": "International Coaching Federation. Artificial Intelligence Coaching Framework and Standards (2024).",
+      "url": "https://coachingfederation.org/app/uploads/2024/11/ICF-AI-Reports-Framework-Standards.pdf",
+      "runtime_use": "Require explicit data-processing consent, user review and correction, contextual explanations for questions, security/privacy controls, and access to qualified human guidance for complex issues.",
+      "limitation": "Professional framework rather than controlled efficacy evidence; several aspirational capabilities exceed what this skill claims or currently implements."
     }
   ]
 }

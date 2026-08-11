@@ -63,9 +63,14 @@ class GrowthRecordSchemaTests(unittest.TestCase):
         selectors: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
             "root": lambda record: record,
             "sourcedStatement": lambda record: record["preferences"][0],
+            "evidenceItem": lambda record: record["evidence"][0],
             "goal": lambda record: record["goals"][0],
             "hypothesis": lambda record: record["hypotheses"][0],
             "experiment": lambda record: record["experiments"][0],
+            "scale": lambda record: record["scales"][0],
+            "checkIn": lambda record: record["check_ins"][0],
+            "decision": lambda record: record["decisions"][0],
+            "decisionOption": lambda record: record["decisions"][0]["options"][0],
             "learning": lambda record: record["learning"][0],
             "correction": lambda record: record["corrections"][0],
         }
@@ -108,6 +113,8 @@ class GrowthRecordSchemaTests(unittest.TestCase):
                     mutations.append(("type", {}))
                 elif value_type == "boolean":
                     mutations.append(("type", "false"))
+                elif value_type == "number":
+                    mutations.append(("type", "not-a-number"))
                 if resolved.get("minLength", 0) > 0:
                     mutations.append(("minLength", ""))
                 if "maxLength" in resolved:
@@ -211,19 +218,36 @@ class GrowthRecordSchemaTests(unittest.TestCase):
     def test_hypothesis_constraints(self) -> None:
         mutations = [
             ("hypotheses-max", lambda x: x.__setitem__("hypotheses", _copies(x["hypotheses"][0], 41))),
-            ("hypothesis-required", lambda x: x["hypotheses"][0].pop("alternatives")),
+            ("hypothesis-required", lambda x: x["hypotheses"][0].pop("alternative_hypothesis_ids")),
             ("hypothesis-unknown", lambda x: x["hypotheses"][0].__setitem__("diagnosis", "none")),
             ("hypothesis-statement-max", lambda x: x["hypotheses"][0].__setitem__("statement", "x" * 1501)),
             ("hypothesis-confidence", lambda x: x["hypotheses"][0].__setitem__("confidence", 0.8)),
             ("hypothesis-source", lambda x: x["hypotheses"][0].__setitem__("source", "USER-REPORTED")),
             ("hypothesis-context-max", lambda x: x["hypotheses"][0].__setitem__("context_boundary", "x" * 1001)),
-            ("supporting-max-items", lambda x: x["hypotheses"][0].__setitem__("supporting_evidence", ["x"] * 21)),
-            ("supporting-item-max", lambda x: x["hypotheses"][0].__setitem__("supporting_evidence", ["x" * 501])),
-            ("disconfirming-max-items", lambda x: x["hypotheses"][0].__setitem__("disconfirming_or_missing_evidence", ["x"] * 21)),
-            ("alternatives-max-items", lambda x: x["hypotheses"][0].__setitem__("alternatives", ["x"] * 11)),
-            ("alternative-item-max", lambda x: x["hypotheses"][0].__setitem__("alternatives", ["x" * 501])),
+            ("supporting-max-items", lambda x: x["hypotheses"][0].__setitem__("supporting_evidence_ids", [f"e{i}" for i in range(21)])),
+            ("supporting-item-max", lambda x: x["hypotheses"][0].__setitem__("supporting_evidence_ids", ["x" * 129])),
+            ("disconfirming-max-items", lambda x: x["hypotheses"][0].__setitem__("disconfirming_or_missing_evidence_ids", [f"e{i}" for i in range(21)])),
+            ("alternatives-max-items", lambda x: x["hypotheses"][0].__setitem__("alternative_hypothesis_ids", [f"h{i}" for i in range(11)])),
+            ("alternative-item-max", lambda x: x["hypotheses"][0].__setitem__("alternative_hypothesis_ids", ["x" * 129])),
             ("hypothesis-status", lambda x: x["hypotheses"][0].__setitem__("status", "confirmed")),
             ("hypothesis-updated-format", lambda x: x["hypotheses"][0].__setitem__("updated_at", "today")),
+            ("hypothesis-review-format", lambda x: x["hypotheses"][0].__setitem__("review_at", "later")),
+        ]
+        for name, mutation in mutations:
+            self.assert_schema_rejects(name, mutation)
+
+    def test_evidence_scale_checkin_and_decision_constraints(self) -> None:
+        mutations = [
+            ("evidence-required", lambda x: x["evidence"][0].pop("origin_kind")),
+            ("evidence-source", lambda x: x["evidence"][0].__setitem__("source", "MODEL-INFERRED")),
+            ("evidence-date", lambda x: x["evidence"][0].__setitem__("captured_at", "today")),
+            ("scale-required", lambda x: x["scales"][0].pop("low_anchor")),
+            ("scale-status", lambda x: x["scales"][0].__setitem__("status", "diagnostic")),
+            ("checkin-user", lambda x: x["check_ins"][0].__setitem__("user_supplied", False)),
+            ("checkin-value-type", lambda x: x["check_ins"][0].__setitem__("value", "high")),
+            ("decision-options-min", lambda x: x["decisions"][0].__setitem__("options", [x["decisions"][0]["options"][0]])),
+            ("decision-chosen-by", lambda x: x["decisions"][0].__setitem__("chosen_by", "MODEL")),
+            ("decision-reversibility", lambda x: x["decisions"][0]["options"][0].__setitem__("reversibility", "irreversible")),
         ]
         for name, mutation in mutations:
             self.assert_schema_rejects(name, mutation)

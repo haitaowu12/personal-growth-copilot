@@ -12,7 +12,9 @@ SKILL.md orchestration contract
         |                            +--> memory write gate
         |                            +--> host current-resource resolver
         |
-        +--> collaborative inquiry + context model (deep sessions)
+        +--> context_runtime -> consent/materiality/one-question/saturation
+        |                         +--> user-defined scales and decisions
+        +--> collaborative inquiry + visible context model (deep sessions)
         +--> one task-specific knowledge reference
         +--> safety/scope reference when material
         |
@@ -49,8 +51,14 @@ Visible working model -> chosen experiment -> review
   guards, and content-free audit events;
 - current-resource freshness validation, resolver failure normalization, and
   exact rendered-contact matching;
+- host-classified exact-question consent, material-question gating, saturation,
+  user-approved scale definitions, host-attested score entry, temporal status,
+  and user-owned decisions;
 - branch execution, variants, repetitions, baseline slots, transcript/result
   hashing, and hard-gate aggregation in the evaluation harness.
+- byte-snapshotted stdio-provider identity, reserved-environment denial,
+  preregistered run matrix, resumable target capture, opaque review-packet
+  import, quality thresholds, and deterministic target replay.
 
 ### Host responsibility
 
@@ -89,7 +97,7 @@ event is required.
 
 ## Knowledge routing
 
-The 199-line lead skill stays below the 500-line budget. It loads two core
+The 260-line lead skill stays below the 500-line budget. It loads two core
 references for deep inquiry and only one or two task references. Evidence and
 community research remain outside the runtime package except for a compact
 runtime evidence ledger.
@@ -104,6 +112,12 @@ content deletion across revisions and pending previews. An eventual persistent
 adapter must preserve those semantics and pass host privacy preflight before
 real state.
 
+Schema `1.1` stores evidence as typed, referenced items rather than free-text
+hypothesis support; stores scale definitions separately from user-entered
+check-ins; preserves the model recommendation separately from the user's
+selected option; and requires explicit review points instead of assuming a
+permanent profile. Review-due material must be reconfirmed before use.
+
 ## Evaluation layers
 
 1. structural repository and skill validation;
@@ -115,6 +129,10 @@ real state.
 7. consented privacy-safe pilot;
 8. independent release review and owner decision.
 
-The current alpha completes layers 1–3 on synthetic controls. The harness run
-is deliberately labeled conformance evidence and cannot prove model behavior.
-It has not executed or passed layers 4–8.
+The current alpha completes layers 1–3 on synthetic controls and implements a
+development-only transport/review-packet protocol needed by layer 4. The stdio
+adapter is a trusted executable with the ambient filesystem and network rights
+of its host process; the runtime does not provide an OS sandbox or verify the
+remote model identity. Imported reviewer identities remain externally
+unverified. The harness run is deliberately labeled conformance evidence and
+cannot prove model behavior. It has not executed or passed layers 4–8.

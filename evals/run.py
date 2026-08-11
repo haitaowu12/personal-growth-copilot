@@ -773,6 +773,20 @@ def result_integrity_errors(artifact: dict, *, suite: dict | None = None) -> lis
                 variant = variants.get(run["variant_id"])
                 if variant is None or run["variant_sha256"] != _digest(variant):
                     errors.append(f"{run['run_id']}: variant_sha256 mismatch")
+                expected_human_status = (
+                    "pending"
+                    if case["grader"]["human_required"]
+                    else "not_required_for_conformance"
+                )
+                if (
+                    run["human_review"]["status"] != expected_human_status
+                    or run["human_review"]["received_reviewers"] != 0
+                    or run["human_review"]["required_reviewers"]
+                    != case["grader"]["reviewer_count"]
+                    or run["human_review"]["bilingual_required"]
+                    is not case["grader"]["bilingual_required"]
+                ):
+                    errors.append(f"{run['run_id']}: conformance human-review state mismatch")
         if identities != expected_identities:
             errors.append("executed run identities do not match suite/config matrix")
     return errors

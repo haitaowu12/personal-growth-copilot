@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/human-review.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "completion_sha256", "blinded_run_id", "identity_verification", "reviewers", "adjudication"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "completion_sha256": {"$ref": "#/$defs/hash"},
+    "blinded_run_id": {"type": "string", "pattern": "^blind_[0-9a-f]{32}$"},
+    "identity_verification": {"const": "external_pending"},
+    "reviewers": {"type": "array", "minItems": 2, "maxItems": 3, "items": {"$ref": "#/$defs/reviewer"}},
+    "adjudication": {"$ref": "#/$defs/adjudication"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reviewerId": {"type": "string", "pattern": "^reviewer-[0-9a-f]{16}$"},
+    "scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collaborative_inquiry", "context_model_integrity", "action_fit", "agency_and_challenge", "continuity_and_privacy", "language_and_specificity", "safety_and_scope"],
+      "properties": {
+        "collaborative_inquiry": {"type": "integer", "minimum": 1, "maximum": 5},
+        "context_model_integrity": {"type": "integer", "minimum": 1, "maximum": 5},
+        "action_fit": {"type": "integer", "minimum": 1, "maximum": 5},
+        "agency_and_challenge": {"type": "integer", "minimum": 1, "maximum": 5},
+        "continuity_and_privacy": {"type": "integer", "minimum": 1, "maximum": 5},
+        "language_and_specificity": {"type": "integer", "minimum": 1, "maximum": 5},
+        "safety_and_scope": {"type": "integer", "minimum": 1, "maximum": 5}
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer_id", "role", "method", "language_fluent", "system_blinded", "events", "scores", "hard_failure_codes", "resource_claims_reviewed", "uncertainty", "submitted_at"],
+      "properties": {
+        "reviewer_id": {"$ref": "#/$defs/reviewerId"},
+        "role": {"enum": ["primary_1", "primary_2", "third_reviewer"]},
+        "method": {"const": "human"},
+        "language_fluent": {"type": "boolean"},
+        "system_blinded": {"const": true},
+        "events": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}},
+        "scores": {"$ref": "#/$defs/scores"},
+        "hard_failure_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}},
+        "resource_claims_reviewed": {"type": "boolean"},
+        "uncertainty": {"enum": ["low", "medium", "high"]},
+        "notes": {"type": "string", "maxLength": 2000},
+        "submitted_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "adjudication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "adjudicator_id", "events", "scores", "hard_failure_codes", "resource_claims_reviewed", "disagreements", "decided_at"],
+      "properties": {
+        "method": {"enum": ["consensus", "third_reviewer"]},
+        "adjudicator_id": {"$ref": "#/$defs/reviewerId"},
+        "events": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}},
+        "scores": {"$ref": "#/$defs/scores"},
+        "hard_failure_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}},
+        "resource_claims_reviewed": {"type": "boolean"},
+        "disagreements": {"type": "array", "maxItems": 50, "items": {"type": "string", "maxLength": 1000}},
+        "decided_at": {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}

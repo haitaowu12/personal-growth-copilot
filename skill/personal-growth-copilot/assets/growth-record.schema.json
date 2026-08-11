@@ -4,9 +4,9 @@
   "title": "Personal Growth Copilot portable growth record",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "record_id", "updated_at", "memory_policy", "goals", "hypotheses", "experiments", "learning", "corrections"],
+  "required": ["schema_version", "record_id", "updated_at", "memory_policy", "evidence", "goals", "hypotheses", "experiments", "scales", "check_ins", "decisions", "learning", "corrections"],
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"const": "1.1"},
     "record_id": {
       "type": "string",
       "minLength": 35,
@@ -27,6 +27,11 @@
       "maxItems": 30,
       "items": {"$ref": "#/$defs/sourcedStatement"}
     },
+    "evidence": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {"$ref": "#/$defs/evidenceItem"}
+    },
     "goals": {
       "type": "array",
       "maxItems": 20,
@@ -41,6 +46,21 @@
       "type": "array",
       "maxItems": 40,
       "items": {"$ref": "#/$defs/experiment"}
+    },
+    "scales": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {"$ref": "#/$defs/scale"}
+    },
+    "check_ins": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {"$ref": "#/$defs/checkIn"}
+    },
+    "decisions": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/decision"}
     },
     "learning": {
       "type": "array",
@@ -60,14 +80,33 @@
     "sourcedStatement": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "statement", "source", "context", "confirmed_at"],
+      "required": ["id", "statement", "source", "context", "confirmed_at", "review_at"],
       "properties": {
         "id": {"type": "string", "minLength": 1, "maxLength": 128},
         "statement": {"type": "string", "minLength": 1, "maxLength": 1000},
         "source": {"$ref": "#/$defs/source"},
         "context": {"type": "string", "maxLength": 500},
         "confirmed_at": {"type": "string", "format": "date-time"},
+        "review_at": {"type": "string", "format": "date-time"},
         "superseded": {"type": "boolean", "default": false}
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "source", "origin_kind", "captured_at", "review_at", "context", "status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "source": {"$ref": "#/$defs/source"},
+        "origin_kind": {"enum": ["USER_STATEMENT", "CHAT_OBSERVATION", "EXPERIMENT_OBSERVATION", "EXTERNAL_SOURCE", "CORRECTION"]},
+        "origin_ref": {"type": "string", "maxLength": 256},
+        "source_citation_id": {"type": "string", "maxLength": 128},
+        "captured_at": {"type": "string", "format": "date-time"},
+        "last_confirmed_at": {"type": "string", "format": "date-time"},
+        "review_at": {"type": "string", "format": "date-time"},
+        "context": {"type": "string", "maxLength": 1000},
+        "status": {"enum": ["active", "superseded", "rejected"]}
       }
     },
     "goal": {
@@ -88,18 +127,19 @@
     "hypothesis": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "statement", "confidence", "source", "supporting_evidence", "alternatives", "status"],
+      "required": ["id", "statement", "confidence", "source", "supporting_evidence_ids", "disconfirming_or_missing_evidence_ids", "alternative_hypothesis_ids", "status", "updated_at", "review_at"],
       "properties": {
         "id": {"type": "string", "minLength": 1, "maxLength": 128},
         "statement": {"type": "string", "minLength": 1, "maxLength": 1500},
         "confidence": {"enum": ["low", "medium", "high"]},
         "source": {"enum": ["HYPOTHESIS", "ALTERNATIVE"]},
         "context_boundary": {"type": "string", "maxLength": 1000},
-        "supporting_evidence": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 500}},
-        "disconfirming_or_missing_evidence": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 500}},
-        "alternatives": {"type": "array", "maxItems": 10, "items": {"type": "string", "maxLength": 500}},
+        "supporting_evidence_ids": {"type": "array", "maxItems": 20, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+        "disconfirming_or_missing_evidence_ids": {"type": "array", "maxItems": 20, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+        "alternative_hypothesis_ids": {"type": "array", "maxItems": 10, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
         "status": {"enum": ["active", "superseded", "rejected"]},
-        "updated_at": {"type": "string", "format": "date-time"}
+        "updated_at": {"type": "string", "format": "date-time"},
+        "review_at": {"type": "string", "format": "date-time"}
       }
     },
     "experiment": {
@@ -118,6 +158,72 @@
         "review_at": {"type": "string", "format": "date-time"},
         "stop_condition": {"type": "string", "maxLength": 1000},
         "status": {"enum": ["proposed", "active", "completed", "paused", "stopped"]}
+      }
+    },
+    "scale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "construct", "minimum", "maximum", "low_anchor", "high_anchor", "purpose", "decision_link", "context_boundary", "created_at", "review_at", "status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "construct": {"type": "string", "minLength": 1, "maxLength": 300},
+        "minimum": {"type": "number"},
+        "maximum": {"type": "number"},
+        "low_anchor": {"type": "string", "minLength": 1, "maxLength": 500},
+        "high_anchor": {"type": "string", "minLength": 1, "maxLength": 500},
+        "purpose": {"type": "string", "minLength": 1, "maxLength": 500},
+        "decision_link": {"type": "string", "minLength": 1, "maxLength": 500},
+        "context_boundary": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "created_at": {"type": "string", "format": "date-time"},
+        "review_at": {"type": "string", "format": "date-time"},
+        "status": {"enum": ["active", "paused", "retired"]}
+      }
+    },
+    "checkIn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "scale_id", "value", "user_supplied", "recorded_at", "context", "decision_link"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "scale_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "value": {"type": "number"},
+        "user_supplied": {"const": true},
+        "recorded_at": {"type": "string", "format": "date-time"},
+        "context": {"type": "string", "maxLength": 1000},
+        "decision_link": {"type": "string", "minLength": 1, "maxLength": 500}
+      }
+    },
+    "decisionOption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "benefit", "cost", "reversibility"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "label": {"type": "string", "minLength": 1, "maxLength": 500},
+        "benefit": {"type": "string", "maxLength": 1000},
+        "cost": {"type": "string", "maxLength": 1000},
+        "reversibility": {"enum": ["high", "medium", "low"]}
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "question", "options", "status", "created_at", "evidence_ids", "assumptions", "unknowns"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "question": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "options": {"type": "array", "minItems": 2, "maxItems": 5, "items": {"$ref": "#/$defs/decisionOption"}},
+        "status": {"enum": ["open", "chosen", "deferred", "superseded", "closed"]},
+        "recommended_option_id": {"type": "string", "maxLength": 128},
+        "selected_option_id": {"type": "string", "maxLength": 128},
+        "chosen_by": {"const": "USER"},
+        "rationale": {"type": "string", "maxLength": 1500},
+        "evidence_ids": {"type": "array", "maxItems": 30, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+        "assumptions": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 500}},
+        "unknowns": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 500}},
+        "created_at": {"type": "string", "format": "date-time"},
+        "review_at": {"type": "string", "format": "date-time"},
+        "supersedes_decision_id": {"type": "string", "maxLength": 128}
       }
     },
     "learning": {

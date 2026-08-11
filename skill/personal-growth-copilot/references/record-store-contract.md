@@ -60,3 +60,9 @@ Before implementing or enabling a persistent adapter, record and review:
 - the user-facing disclosure and proof returned by each operation.
 
 Fail closed if any required host capability or deletion guarantee is unknown.
+
+New records use schema `1.1`. Evidence, scales, check-ins, and decisions are
+first-class collections with referential and temporal validation. A
+review-due item may remain for history but must not silently drive current
+advice. Schema migration is itself a previewed, separately consented write; do
+not rewrite an existing record merely because a newer schema exists.

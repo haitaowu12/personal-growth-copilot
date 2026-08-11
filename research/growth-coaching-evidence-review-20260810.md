@@ -35,6 +35,11 @@ diagnose, treat, or replace a qualified professional.
 8. **Keep clinical scope out.** AI wellness guidance and current LLM safety
    studies support explicit boundaries, dedicated crisis cases, minimal data,
    and qualified-human routing.
+9. **Make consent and correction interactive controls.** The ICF AI coaching
+   framework calls for explicit data-processing consent, client review and
+   modification, understandable question context, and security/privacy
+   controls. This supports the host-attested consent and correctable-record
+   architecture, but it is professional guidance rather than efficacy proof.
 
 ## Thin or mixed evidence
 
@@ -54,6 +59,10 @@ diagnose, treat, or replace a qualified professional.
   useful within person and context. Diagnostic or normative scores require
   validated instruments, authorized use, appropriate administration, and
   qualified interpretation outside this product's scope.
+- **AI-coaching standards:** current professional frameworks contain useful
+  governance requirements and aspirational capabilities. They are not evidence
+  that an LLM understands context, measures growth validly, or produces durable
+  benefit.
 
 ## Release implications
 
