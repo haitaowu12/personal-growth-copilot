@@ -35,9 +35,11 @@ Visible working model -> chosen experiment -> review
 
 - skill and release validation;
 - behavioral-case contract validation;
-- portable record structure;
-- prohibited-field and referential-integrity checks;
+- canonical Draft 2020-12 record validation with format enforcement;
+- prohibited-field, correction-target, and referential-integrity checks;
 - no-overwrite record initialization;
+- host-neutral preview, single-delta consent, atomic commit, revision,
+  correction, revocation, export, and deletion conformance;
 - CI and provenance checks.
 
 ### Host responsibility
@@ -58,10 +60,13 @@ runtime evidence ledger.
 
 ## Continuity model
 
-The portable JSON record is deliberately not a database implementation. It
-defines a host-neutral, inspectable contract. An eventual SQLite adapter must
-preserve the same provenance, confirmation, no-clobber, correction, export, and
-deletion semantics and must pass host privacy preflight before real state.
+The portable JSON record is deliberately not a database implementation.
+`scripts/record_store.py` supplies a thread-safe, non-persistent in-memory
+conformance target for exact previews, verified host attestations, store-owned
+time, opaque revisions, atomic validation, correction, export, and verified
+content deletion across revisions and pending previews. An eventual persistent
+adapter must preserve those semantics and pass host privacy preflight before
+real state.
 
 ## Evaluation layers
 
