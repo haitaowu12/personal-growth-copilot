@@ -1,13 +1,13 @@
 {
   "schema_version": "1.0",
-  "release": "0.3.0-alpha.0",
+  "release": "0.3.0-alpha.1",
   "status": "blocked",
   "production_claim_allowed": false,
   "activation": "explicit-only-unregistered",
   "required_gates": {
-    "structural_validation": "pending",
-    "source_provenance": "pending",
-    "community_pattern_audit": "pending",
+    "structural_validation": "pass-local",
+    "source_provenance": "pass-local",
+    "community_pattern_audit": "pass-local",
     "behavioral_comparison": "pending",
     "independent_untouched_holdouts": "pending",
     "bilingual_human_review": "pending",

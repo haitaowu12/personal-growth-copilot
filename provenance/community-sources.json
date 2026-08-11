@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "review_date": "2026-08-10",
+  "reuse_policy": "No donor code, prompt blocks, questionnaires, formulas, or prose copied. Architecture and failure-mode ideas were independently re-expressed; unlicensed and noncommercial sources were idea-only.",
+  "sources": [
+    {"repository": "https://github.com/luhayden-blip/ai-life-coach", "commit": "aa4d983d0ec8deead816c1bfa604bcd84195378c", "license": "MIT", "role": "one-question dialogue and session-mode pattern"},
+    {"repository": "https://github.com/AAAlenwow/lovemyself-skill", "commit": "c719e5e79852708f3e72833aad60c5b9cf31d2d8", "license": "MIT", "role": "traceable observations and correction pattern"},
+    {"repository": "https://github.com/huyhungai/life-rpg-obsidian", "commit": "46c5902e3f774b590449f486537edbaf2199fc98", "license": "MIT", "role": "life-domain and longitudinal review pattern"},
+    {"repository": "https://github.com/TravorShelby/daily-progress", "commit": "99c1b20b534ca4253d5ee41e93c7eece228aedb2", "license": "CC BY-NC 4.0", "role": "idea-only deterministic tool seams and event visibility"},
+    {"repository": "https://github.com/sukoji/persode", "commit": "8fe78979f54cb9dba2f131196b8f425f0271fc47", "license": "MIT", "role": "honest mechanism evaluation and negative-result pattern"},
+    {"repository": "https://github.com/shaoyang01/work-journal-agent", "commit": "08cb45d6e4f24522056057995ff57123c8846e54", "license": "MIT", "role": "typed event and local persistence pattern"},
+    {"repository": "https://github.com/cryptoriot666/echojournal", "commit": "05ed346ae9d18ead355066e673b7b4d622d9474f", "license": "MIT", "role": "compact reflection and continuity pattern"},
+    {"repository": "https://github.com/doublew6/riji-agent", "commit": "0397d81b107dcb0701e20a1e54ebcfe2e164cb69", "license": "MIT", "role": "data-egress, source-id, and private-content pattern"},
+    {"repository": "https://github.com/beckspark/chiron", "commit": "a3cf82467e8a4c2dd75ba21e21c26f2c9dab2e52", "license": "none found", "role": "idea-only MI flow and multi-turn evaluation pattern"},
+    {"repository": "https://github.com/dadler6/pilot-tests-mi-chatbot", "commit": "a715a24e8e86d68555a90adae4dc5aaf5aa6aceb", "license": "none found", "role": "idea-only harm and quality test categories"},
+    {"repository": "https://github.com/occupyashanti/AI-life-coach", "commit": "3acacd695c2d8b9fc8d0b98a1cbf5d940fb78ec0", "license": "none found", "role": "idea-only basic goal tracking comparison"},
+    {"repository": "https://github.com/smilior/ai-life-coach", "commit": "d4cec4a240933ddc677430b8b06020747529f991", "license": "none found", "role": "idea-only small-step coaching comparison"}
+  ]
+}
