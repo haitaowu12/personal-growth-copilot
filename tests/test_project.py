@@ -39,6 +39,18 @@ class ProjectTests(unittest.TestCase):
             release["required_gates"]["executable_safety_state_machine"],
             "pass-local-conformance",
         )
+        self.assertEqual(
+            release["required_gates"]["context_scoring_decision_controls"],
+            "pass-local-conformance",
+        )
+        self.assertEqual(
+            release["required_gates"]["frozen_target_provider_protocol"],
+            "pass-local-conformance",
+        )
+        self.assertEqual(
+            release["required_gates"]["human_review_import_protocol"],
+            "pass-local-conformance",
+        )
         self.assertEqual(release["required_gates"]["behavioral_comparison"], "pending")
 
     def test_holdout_manifest_cannot_be_mistaken_for_evidence(self) -> None:
@@ -100,6 +112,18 @@ class ProjectTests(unittest.TestCase):
         example["experiments"][0]["hypothesis_id"] = "missing"
         errors = records.validate_record(example)
         self.assertTrue(any("unknown hypothesis" in error for error in errors))
+
+    def test_context_and_target_runtime_are_present_but_not_qualification(self) -> None:
+        self.assertTrue(
+            (ROOT / "skill/personal-growth-copilot/scripts/context_runtime.py").is_file()
+        )
+        self.assertTrue((ROOT / "evals/target_session.py").is_file())
+        self.assertTrue((ROOT / "docs/TARGET_EXECUTION.md").is_file())
+        release = json.loads(
+            (ROOT / "release/qualification.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(release["required_gates"]["behavioral_comparison"], "pending")
+        self.assertFalse(release["production_claim_allowed"])
 
     def test_manual_invocation_and_release_block_are_enforced(self) -> None:
         metadata = (
