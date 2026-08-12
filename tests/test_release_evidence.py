@@ -239,6 +239,56 @@ class ReleaseEvidenceTests(unittest.TestCase):
         self.write_json(index_path, index)
         return index_path, policy_path, artifact_paths, artifacts, index, policy
 
+    def invalidate_gate(
+        self,
+        directory: Path,
+        gate: str,
+        artifact_path: Path,
+        index: dict,
+        reason: str,
+    ) -> None:
+        artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+        artifact["status"] = "INVALIDATED"
+        artifact["hard_failures"] = [reason]
+        artifact["artifact_sha256"] = release_evidence.object_hash(
+            artifact, "artifact_sha256"
+        )
+        self.write_json(artifact_path, artifact)
+        receipt_path = directory / index["gates"][gate]["receipt_path"]
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt["payload"]["artifact_sha256"] = artifact["artifact_sha256"]
+        receipt["payload"]["outcome"] = "INVALIDATED"
+        payload_path = directory / f"{gate}.invalidation.payload.json"
+        payload_path.write_bytes(release_evidence.canonical_bytes(receipt["payload"]))
+        signature_path = directory / f"{gate}.invalidation.signature.bin"
+        subprocess.run(
+            [
+                "openssl",
+                "pkeyutl",
+                "-sign",
+                "-inkey",
+                str(directory / f"{gate}.private.pem"),
+                "-rawin",
+                "-in",
+                str(payload_path),
+                "-out",
+                str(signature_path),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        receipt["signature_base64"] = base64.b64encode(
+            signature_path.read_bytes()
+        ).decode()
+        receipt_bytes = self.write_json(receipt_path, receipt)
+        index["gates"][gate].update(
+            {
+                "status": "INVALIDATED",
+                "artifact_sha256": artifact["artifact_sha256"],
+                "receipt_sha256": hashlib.sha256(receipt_bytes).hexdigest(),
+            }
+        )
+
     def test_default_policy_is_unconfigured_and_release_is_blocked(self):
         result = release_evidence.verify(
             ROOT / "release/evidence-index.json",
@@ -323,50 +373,42 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 directory
             )
             gate = "behavioral_qualification"
-            artifact_path = artifact_paths[gate]
-            artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
-            artifact["status"] = "INVALIDATED"
-            artifact["hard_failures"] = ["attempt inventory was disclosed early"]
-            artifact["artifact_sha256"] = release_evidence.object_hash(
-                artifact, "artifact_sha256"
+            self.invalidate_gate(
+                directory,
+                gate,
+                artifact_paths[gate],
+                index,
+                "attempt inventory was disclosed early",
             )
-            self.write_json(artifact_path, artifact)
-            receipt_path = directory / index["gates"][gate]["receipt_path"]
-            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-            receipt["payload"]["artifact_sha256"] = artifact["artifact_sha256"]
-            receipt["payload"]["outcome"] = "INVALIDATED"
-            payload_path = directory / "invalidation.payload.json"
-            payload_path.write_bytes(
-                release_evidence.canonical_bytes(receipt["payload"])
+            index["index_sha256"] = release_evidence.object_hash(
+                index, "index_sha256"
             )
-            signature_path = directory / "invalidation.signature.bin"
-            subprocess.run(
-                [
-                    "openssl",
-                    "pkeyutl",
-                    "-sign",
-                    "-inkey",
-                    str(directory / f"{gate}.private.pem"),
-                    "-rawin",
-                    "-in",
-                    str(payload_path),
-                    "-out",
-                    str(signature_path),
-                ],
-                check=True,
-                capture_output=True,
+            self.write_json(index_path, index)
+            result = release_evidence.verify(
+                index_path,
+                policy_path,
+                "a" * 40,
+                policy["policy_sha256"],
             )
-            receipt["signature_base64"] = base64.b64encode(
-                signature_path.read_bytes()
-            ).decode()
-            receipt_bytes = self.write_json(receipt_path, receipt)
-            index["gates"][gate].update(
-                {
-                    "status": "INVALIDATED",
-                    "artifact_sha256": artifact["artifact_sha256"],
-                    "receipt_sha256": hashlib.sha256(receipt_bytes).hexdigest(),
-                }
+            self.assertEqual(result["verification_status"], "pass")
+            self.assertEqual(result["release_status"], "BLOCKED")
+            self.assertFalse(result["qualification_update_allowed"])
+
+    def test_signed_owner_decline_blocks_instead_of_remaining_eligible(self):
+        with tempfile.TemporaryDirectory() as directory_name:
+            directory = Path(directory_name)
+            index_path, policy_path, artifact_paths, _, index, policy = self.signed_packet(
+                directory, included_gates=set(release_evidence.GATES)
             )
+            gate = "owner_promotion"
+            self.invalidate_gate(
+                directory,
+                gate,
+                artifact_paths[gate],
+                index,
+                "owner declined promotion",
+            )
+            index["overall_status"] = "BLOCKED"
             index["index_sha256"] = release_evidence.object_hash(
                 index, "index_sha256"
             )
