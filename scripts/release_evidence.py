@@ -8,6 +8,7 @@ import base64
 import binascii
 import hashlib
 import json
+import math
 import os
 import stat
 import subprocess
@@ -162,11 +163,18 @@ def json_object(data: bytes, label: str) -> dict[str, Any]:
     def reject_constant(_value: str) -> None:
         raise ReleaseEvidenceError(f"{label} contains a non-finite number")
 
+    def finite_float(value: str) -> float:
+        parsed = float(value)
+        if not math.isfinite(parsed):
+            raise ReleaseEvidenceError(f"{label} contains a non-finite number")
+        return parsed
+
     try:
         value = json.loads(
             data.decode("utf-8"),
             object_pairs_hook=unique_object,
             parse_constant=reject_constant,
+            parse_float=finite_float,
         )
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise ReleaseEvidenceError(f"{label} is not UTF-8 JSON") from exc
@@ -302,18 +310,29 @@ def verify_signature(payload: dict[str, Any], signature: str, public_key: bytes)
         raise ReleaseEvidenceError("receipt signature verification failed")
 
 
-def validate_public_key(public_key: bytes) -> None:
+def validate_public_key(public_key: bytes) -> str:
     with tempfile.TemporaryDirectory(prefix="pgc-release-key-") as directory_name:
         key_path = Path(directory_name) / "public.pem"
         key_path.write_bytes(public_key)
-        result = subprocess.run(
+        description = subprocess.run(
             ["openssl", "pkey", "-pubin", "-in", str(key_path), "-text", "-noout"],
             capture_output=True,
             check=False,
             timeout=30,
         )
-    if result.returncode != 0 or b"ED25519" not in (result.stdout + result.stderr).upper():
+        canonical = subprocess.run(
+            ["openssl", "pkey", "-pubin", "-in", str(key_path), "-pubout", "-outform", "DER"],
+            capture_output=True,
+            check=False,
+            timeout=30,
+        )
+    if (
+        description.returncode != 0
+        or canonical.returncode != 0
+        or b"ED25519" not in (description.stdout + description.stderr).upper()
+    ):
         raise ReleaseEvidenceError("trusted public key is not a valid Ed25519 public key")
+    return hashlib.sha256(canonical.stdout).hexdigest()
 
 
 def source_identity(repository: Path) -> str:
@@ -349,6 +368,7 @@ def verify(
     policy_path: Path,
     expected_commit: str,
     expected_policy_sha256: str,
+    expected_index_sha256: str,
 ) -> dict[str, Any]:
     index_root = index_path.resolve().parent
     policy_root = policy_path.resolve().parent
@@ -367,6 +387,13 @@ def verify(
     verification_time = datetime.now(timezone.utc)
     if object_hash(index, "index_sha256") != index["index_sha256"]:
         errors.append("evidence index self-hash mismatch")
+    if (
+        not isinstance(expected_index_sha256, str)
+        or len(expected_index_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in expected_index_sha256)
+        or index["index_sha256"] != expected_index_sha256
+    ):
+        errors.append("evidence index does not match the out-of-band current-state anchor")
     if object_hash(policy, "policy_sha256") != policy["policy_sha256"]:
         errors.append("trust policy self-hash mismatch")
     if (
@@ -391,10 +418,14 @@ def verify(
     public_key_hashes = [item["public_key_sha256"] for item in policy["authorities"]]
     if len(public_key_hashes) != len(set(public_key_hashes)):
         errors.append("trust policy authority public keys must be unique")
+    public_key_paths = [item["public_key_path"] for item in policy["authorities"]]
+    if len(public_key_paths) != len(set(public_key_paths)):
+        errors.append("trust policy authority public-key paths must be unique")
     roles = [item["role"] for item in policy["authorities"]]
     if set(roles) != set(GATE_BY_ROLE) or len(roles) != len(set(roles)):
         errors.append("configured trust policy requires exactly one authority for every gate role")
     trusted_keys: dict[str, bytes] = {}
+    canonical_key_identities: list[str] = []
     for authority in policy["authorities"]:
         expected_gate = GATE_BY_ROLE[authority["role"]]
         if authority["allowed_gates"] != [expected_gate]:
@@ -406,10 +437,12 @@ def verify(
             public_key = read_once(public_key_path, maximum=65_536)
             if hashlib.sha256(public_key).hexdigest() != authority["public_key_sha256"]:
                 raise ReleaseEvidenceError("trusted public key hash mismatch")
-            validate_public_key(public_key)
+            canonical_key_identities.append(validate_public_key(public_key))
             trusted_keys[authority["key_id"]] = public_key
         except (OSError, subprocess.SubprocessError, ReleaseEvidenceError) as exc:
             errors.append(f"trust policy authority {authority['key_id']}: {exc}")
+    if len(canonical_key_identities) != len(set(canonical_key_identities)):
+        errors.append("trust policy authorities must use distinct Ed25519 key material")
     frozen_at: datetime | None = None
     if policy["status"] == "CONFIGURED":
         try:
@@ -420,6 +453,9 @@ def verify(
             errors.append(f"trust policy: {exc}")
     gate_status: dict[str, str] = {}
     artifact_hashes: dict[str, str] = {}
+    verified_artifacts: dict[str, dict[str, Any]] = {}
+    artifact_times: dict[str, datetime] = {}
+    receipt_times: dict[str, datetime] = {}
     receipt_nonces: set[str] = set()
     for gate in GATES:
         reference = index["gates"][gate]
@@ -489,8 +525,37 @@ def verify(
                 raise ReleaseEvidenceError("receipt authority key did not pass trust-policy validation")
             verify_signature(payload, receipt["signature_base64"], public_key)
             artifact_hashes[gate] = artifact["artifact_sha256"]
+            verified_artifacts[gate] = artifact
+            artifact_times[gate] = artifact_time
+            receipt_times[gate] = receipt_time
         except (OSError, subprocess.SubprocessError, ReleaseEvidenceError) as exc:
             errors.append(f"{gate}: {exc}")
+    review_gate = "independent_release_review"
+    review_prerequisites = GATES[:7]
+    if gate_status.get(review_gate) == "PASS" and review_gate in verified_artifacts:
+        if not all(gate in artifact_hashes for gate in review_prerequisites):
+            errors.append("independent release review lacks verified prerequisite gates")
+        else:
+            expected_refs = {artifact_hashes[gate] for gate in review_prerequisites}
+            if set(verified_artifacts[review_gate]["evidence_refs"]) != expected_refs:
+                errors.append("independent release review does not reference every prior gate")
+            if artifact_times[review_gate] < max(
+                receipt_times[gate] for gate in review_prerequisites
+            ):
+                errors.append("independent release review predates prerequisite receipts")
+    owner_gate = "owner_promotion"
+    owner_prerequisites = GATES[:-1]
+    if gate_status.get(owner_gate) == "PASS" and owner_gate in verified_artifacts:
+        if not all(gate in artifact_hashes for gate in owner_prerequisites):
+            errors.append("owner promotion lacks verified prerequisite gates")
+        else:
+            expected_refs = {artifact_hashes[gate] for gate in owner_prerequisites}
+            if set(verified_artifacts[owner_gate]["evidence_refs"]) != expected_refs:
+                errors.append("owner promotion does not reference every prerequisite artifact")
+            if artifact_times[owner_gate] < max(
+                receipt_times[gate] for gate in owner_prerequisites
+            ):
+                errors.append("owner promotion predates prerequisite receipts")
     pass_gates = {gate for gate, status in gate_status.items() if status == "PASS" and gate in artifact_hashes}
     prerequisites = set(GATES[:-1])
     derived = "BLOCKED"
@@ -501,13 +566,6 @@ def verify(
         derived = "ELIGIBLE"
         if gate_status["owner_promotion"] == "PASS" and "owner_promotion" in artifact_hashes:
             derived = "PROMOTED"
-    if derived in {"ELIGIBLE", "PROMOTED"}:
-        if derived == "PROMOTED":
-            promotion_path = safe_path(index_root, index["gates"]["owner_promotion"]["artifact_path"])
-            promotion = json_object(read_once(promotion_path), "owner promotion artifact")
-            expected_refs = {artifact_hashes[gate] for gate in GATES[:-1]}
-            if set(promotion["evidence_refs"]) != expected_refs:
-                errors.append("owner promotion does not reference every prerequisite artifact")
     if index["overall_status"] != derived:
         errors.append(f"declared overall status {index['overall_status']} differs from derived {derived}")
     if errors:
@@ -527,24 +585,30 @@ def main() -> int:
     parser.add_argument("--index", type=Path, required=True)
     parser.add_argument("--policy", type=Path, required=True)
     parser.add_argument(
-        "--repository",
-        type=Path,
-        default=ROOT,
-        help="clean checkout of the exact candidate commit (default: this repository)",
-    )
-    parser.add_argument(
         "--expected-policy-sha256",
         required=True,
         help="policy hash received from the owner over an independent channel",
     )
+    parser.add_argument(
+        "--expected-index-sha256",
+        required=True,
+        help="current evidence-index hash received from the owner over an independent channel",
+    )
     args = parser.parse_args()
     try:
+        expected_commit = source_identity(ROOT)
         result = verify(
             args.index,
             args.policy,
-            source_identity(args.repository),
+            expected_commit,
             args.expected_policy_sha256,
+            args.expected_index_sha256,
         )
+        if source_identity(ROOT) != expected_commit:
+            result["verification_status"] = "fail"
+            result["release_status"] = "BLOCKED"
+            result["qualification_update_allowed"] = False
+            result["errors"].append("candidate source changed during verification")
     except (OSError, subprocess.SubprocessError, ReleaseEvidenceError) as exc:
         result = {
             "verification_status": "fail",

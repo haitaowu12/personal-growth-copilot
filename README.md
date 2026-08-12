@@ -56,8 +56,9 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   dedicated restricted host and credentials;
 - a role-scoped Ed25519 receipt verifier for behavioral, reviewer, attempt,
   holdout, privacy, bilingual, pilot, independent-review, and owner-promotion
-  evidence, bound to an owner-distributed out-of-band policy hash. Its committed
-  trust policy is deliberately unconfigured and cannot promote the release.
+  evidence, bound to owner-distributed out-of-band policy and current-index
+  hashes. Its committed trust policy is deliberately unconfigured and cannot
+  promote the release.
 
 The copilot may feel conversationally similar to a thoughtful coach. It must
 not claim to be a therapist, simulate a clinical relationship, diagnose, mine
