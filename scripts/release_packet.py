@@ -497,6 +497,187 @@ def load_qualification_plan(packet_root: Path) -> dict[str, Any]:
     return plan
 
 
+def load_target_preregistration(
+    config_path: Path, candidate: str
+) -> dict[str, Any]:
+    """Load and validate the exact full-suite target preregistration."""
+    suite = load_json(ROOT / "evals/cases.json", "canonical target suite")
+    config_bytes = release_evidence.read_once(config_path)
+    config = release_evidence.json_object(config_bytes, "target config")
+    if config_bytes != release_evidence.canonical_bytes(config):
+        raise release_evidence.ReleaseEvidenceError(
+            "target config must use canonical JSON bytes"
+        )
+    if config.get("source_commit") != candidate:
+        raise release_evidence.ReleaseEvidenceError(
+            "target config differs from the clean candidate checkout"
+        )
+    if errors := target_session.validate_target_config(config, suite):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid target config: " + "; ".join(errors)
+        )
+    campaign._require_full_suite_scope(suite, config)
+    return config
+
+
+def load_holdout_preregistration(
+    seal_path: Path, candidate: str
+) -> tuple[dict[str, Any], str]:
+    """Load a holdout seal and replay every path, hash, and key binding."""
+    seal = load_json(seal_path, "holdout seal")
+    if errors := release_evidence.schema_errors(seal, "holdout_seal"):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid holdout seal: " + "; ".join(errors)
+        )
+    if seal["seal_sha256"] != release_evidence.object_hash(seal, "seal_sha256"):
+        raise release_evidence.ReleaseEvidenceError("holdout seal self-hash mismatch")
+    if seal["candidate_commit"] != candidate:
+        raise release_evidence.ReleaseEvidenceError(
+            "holdout seal differs from the clean candidate checkout"
+        )
+    for prefix in ("ciphertext", "case_schema"):
+        evidence_path = release_evidence.safe_path(
+            seal_path.resolve().parent, seal[f"{prefix}_path"]
+        )
+        evidence = release_evidence.read_once(evidence_path)
+        if hashlib.sha256(evidence).hexdigest() != seal[f"{prefix}_sha256"]:
+            raise release_evidence.ReleaseEvidenceError(
+                f"holdout {prefix} hash mismatch"
+            )
+    witness_key = release_evidence.load_bound_public_key(
+        seal_path.resolve().parent,
+        seal["witness_public_key_path"],
+        seal["witness_public_key_sha256"],
+        "holdout witness",
+    )
+    return seal, release_evidence.validate_public_key(witness_key)
+
+
+def load_authority_preregistration(
+    packet_root: Path, authorities_path: Path
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Load the complete role roster and bind distinct public-key material."""
+    authority_document = load_json(authorities_path, "release authority roster")
+    if set(authority_document) != {"authorities"} or not isinstance(
+        authority_document["authorities"], list
+    ):
+        raise release_evidence.ReleaseEvidenceError(
+            "authority roster must contain only an authorities array"
+        )
+    authorities: list[dict[str, Any]] = []
+    key_identities: list[str] = []
+    for item in authority_document["authorities"]:
+        if not isinstance(item, dict) or set(item) != {
+            "key_id",
+            "role",
+            "public_key_path",
+        }:
+            raise release_evidence.ReleaseEvidenceError(
+                "each authority requires only key_id, role, and public_key_path"
+            )
+        role = item["role"]
+        if role not in release_evidence.GATE_BY_ROLE:
+            raise release_evidence.ReleaseEvidenceError("authority role is invalid")
+        public_key_path = release_evidence.safe_path(
+            packet_root, item["public_key_path"]
+        )
+        public_key = release_evidence.read_once(public_key_path, maximum=65_536)
+        key_identities.append(release_evidence.validate_public_key(public_key))
+        authorities.append(
+            {
+                "key_id": item["key_id"],
+                "role": role,
+                "public_key_path": _relative_packet_path(
+                    packet_root, public_key_path
+                ),
+                "public_key_sha256": hashlib.sha256(public_key).hexdigest(),
+                "allowed_gates": [release_evidence.GATE_BY_ROLE[role]],
+            }
+        )
+    roles = [item["role"] for item in authorities]
+    key_ids = [item["key_id"] for item in authorities]
+    key_paths = [item["public_key_path"] for item in authorities]
+    if set(roles) != set(release_evidence.GATE_BY_ROLE) or len(roles) != len(
+        set(roles)
+    ):
+        raise release_evidence.ReleaseEvidenceError(
+            "authority roster requires exactly one authority for every release role"
+        )
+    if len(key_ids) != len(set(key_ids)) or len(key_paths) != len(set(key_paths)):
+        raise release_evidence.ReleaseEvidenceError(
+            "authority key ids and public-key paths must be unique"
+        )
+    if len(key_identities) != len(set(key_identities)):
+        raise release_evidence.ReleaseEvidenceError(
+            "release authorities must use distinct Ed25519 key material"
+        )
+    return authorities, key_identities
+
+
+def load_privacy_host_preregistration(
+    identity_path: Path,
+) -> tuple[bytes, dict[str, Any], str]:
+    """Load the named-host identity and bind its audit witness key."""
+    identity_bytes = release_evidence.read_once(identity_path)
+    identity = release_evidence.json_object(identity_bytes, "privacy host identity")
+    if errors := release_evidence.schema_errors(identity, "privacy_host"):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid privacy host identity: " + "; ".join(errors)
+        )
+    witness_key = release_evidence.load_bound_public_key(
+        identity_path.resolve().parent,
+        identity["audit_public_key_path"],
+        identity["audit_public_key_sha256"],
+        "privacy audit",
+    )
+    return identity_bytes, identity, release_evidence.validate_public_key(witness_key)
+
+
+def load_pilot_preregistration(
+    protocol_path: Path, candidate: str
+) -> tuple[bytes, dict[str, Any], str]:
+    """Load the preregistered pilot plan and bind its witness key."""
+    protocol_bytes = release_evidence.read_once(protocol_path)
+    protocol = release_evidence.json_object(protocol_bytes, "pilot protocol")
+    if errors := release_evidence.schema_errors(protocol, "pilot_protocol"):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid pilot protocol: " + "; ".join(errors)
+        )
+    if protocol["candidate_commit"] != candidate:
+        raise release_evidence.ReleaseEvidenceError(
+            "pilot protocol differs from the clean candidate checkout"
+        )
+    witness_key = release_evidence.load_bound_public_key(
+        protocol_path.resolve().parent,
+        protocol["witness_public_key_path"],
+        protocol["witness_public_key_sha256"],
+        "pilot witness",
+    )
+    return protocol_bytes, protocol, release_evidence.validate_public_key(witness_key)
+
+
+def validate_qualification_preregistration_input(
+    *, input_id: str, packet_root: Path, path: Path, candidate: str
+) -> None:
+    """Validate one declared input without weakening the final combined freeze."""
+    validators: dict[str, Callable[[], object]] = {
+        "target_config": lambda: load_target_preregistration(path, candidate),
+        "holdout_seal": lambda: load_holdout_preregistration(path, candidate),
+        "privacy_host_identity": lambda: load_privacy_host_preregistration(path),
+        "pilot_protocol": lambda: load_pilot_preregistration(path, candidate),
+        "authority_roster": lambda: load_authority_preregistration(
+            packet_root, path
+        ),
+    }
+    try:
+        validator = validators[input_id]
+    except KeyError as exc:
+        raise release_evidence.ReleaseEvidenceError(
+            "unknown qualification preregistration input"
+        ) from exc
+    validator()
+
+
 def _derived_index_status(gates: dict[str, dict[str, Any]]) -> str:
     statuses = {gate: value["status"] for gate, value in gates.items()}
     if any(value in {"FAIL", "INVALIDATED"} for value in statuses.values()):
@@ -807,137 +988,23 @@ def prepare_trust_policy(
             raise release_evidence.ReleaseEvidenceError(
                 f"{input_id} differs from the qualification plan"
             )
-    suite = load_json(ROOT / "evals/cases.json", "canonical target suite")
-    config_bytes = release_evidence.read_once(config_path)
-    config = release_evidence.json_object(config_bytes, "target config")
-    if config_bytes != release_evidence.canonical_bytes(config):
-        raise release_evidence.ReleaseEvidenceError(
-            "target config must use canonical JSON bytes"
-        )
-    if config.get("source_commit") != candidate:
-        raise release_evidence.ReleaseEvidenceError(
-            "target config differs from the clean candidate checkout"
-        )
-    if errors := target_session.validate_target_config(config, suite):
-        raise release_evidence.ReleaseEvidenceError(
-            "invalid target config: " + "; ".join(errors)
-        )
-    campaign._require_full_suite_scope(suite, config)
-    seal = load_json(holdout_seal_path, "holdout seal")
-    if errors := release_evidence.schema_errors(seal, "holdout_seal"):
-        raise release_evidence.ReleaseEvidenceError(
-            "invalid holdout seal: " + "; ".join(errors)
-        )
-    if seal["seal_sha256"] != release_evidence.object_hash(seal, "seal_sha256"):
-        raise release_evidence.ReleaseEvidenceError("holdout seal self-hash mismatch")
-    if seal["candidate_commit"] != candidate:
-        raise release_evidence.ReleaseEvidenceError(
-            "holdout seal differs from the clean candidate checkout"
-        )
-    for prefix in ("ciphertext", "case_schema"):
-        evidence_path = release_evidence.safe_path(
-            holdout_seal_path.resolve().parent, seal[f"{prefix}_path"]
-        )
-        evidence = release_evidence.read_once(evidence_path)
-        if hashlib.sha256(evidence).hexdigest() != seal[f"{prefix}_sha256"]:
-            raise release_evidence.ReleaseEvidenceError(
-                f"holdout {prefix} hash mismatch"
-            )
-    holdout_witness_key = release_evidence.load_bound_public_key(
-        holdout_seal_path.resolve().parent,
-        seal["witness_public_key_path"],
-        seal["witness_public_key_sha256"],
-        "holdout witness",
+    config = load_target_preregistration(config_path, candidate)
+    seal, holdout_witness_identity = load_holdout_preregistration(
+        holdout_seal_path, candidate
     )
-    authority_document = load_json(authorities_path, "release authority roster")
-    if set(authority_document) != {"authorities"} or not isinstance(
-        authority_document["authorities"], list
-    ):
-        raise release_evidence.ReleaseEvidenceError(
-            "authority roster must contain only an authorities array"
-        )
-    authorities: list[dict[str, Any]] = []
-    key_identities: list[str] = []
-    for item in authority_document["authorities"]:
-        if not isinstance(item, dict) or set(item) != {
-            "key_id",
-            "role",
-            "public_key_path",
-        }:
-            raise release_evidence.ReleaseEvidenceError(
-                "each authority requires only key_id, role, and public_key_path"
-            )
-        role = item["role"]
-        if role not in release_evidence.GATE_BY_ROLE:
-            raise release_evidence.ReleaseEvidenceError("authority role is invalid")
-        public_key_path = release_evidence.safe_path(
-            packet_root, item["public_key_path"]
-        )
-        public_key = release_evidence.read_once(public_key_path, maximum=65_536)
-        key_identities.append(release_evidence.validate_public_key(public_key))
-        authorities.append(
-            {
-                "key_id": item["key_id"],
-                "role": role,
-                "public_key_path": _relative_packet_path(packet_root, public_key_path),
-                "public_key_sha256": hashlib.sha256(public_key).hexdigest(),
-                "allowed_gates": [release_evidence.GATE_BY_ROLE[role]],
-            }
-        )
-    roles = [item["role"] for item in authorities]
-    key_ids = [item["key_id"] for item in authorities]
-    key_paths = [item["public_key_path"] for item in authorities]
-    if set(roles) != set(release_evidence.GATE_BY_ROLE) or len(roles) != len(
-        set(roles)
-    ):
-        raise release_evidence.ReleaseEvidenceError(
-            "authority roster requires exactly one authority for every release role"
-        )
-    if len(key_ids) != len(set(key_ids)) or len(key_paths) != len(set(key_paths)):
-        raise release_evidence.ReleaseEvidenceError(
-            "authority key ids and public-key paths must be unique"
-        )
-    if len(key_identities) != len(set(key_identities)):
-        raise release_evidence.ReleaseEvidenceError(
-            "release authorities must use distinct Ed25519 key material"
-        )
-    host_identity = release_evidence.read_once(privacy_host_identity_path)
-    host_identity_record = release_evidence.json_object(
-        host_identity, "privacy host identity"
+    authorities, key_identities = load_authority_preregistration(
+        packet_root, authorities_path
     )
-    if errors := release_evidence.schema_errors(host_identity_record, "privacy_host"):
-        raise release_evidence.ReleaseEvidenceError(
-            "invalid privacy host identity: " + "; ".join(errors)
-        )
-    privacy_witness_key = release_evidence.load_bound_public_key(
-        privacy_host_identity_path.resolve().parent,
-        host_identity_record["audit_public_key_path"],
-        host_identity_record["audit_public_key_sha256"],
-        "privacy audit",
+    host_identity, host_identity_record, privacy_witness_identity = (
+        load_privacy_host_preregistration(privacy_host_identity_path)
     )
-    pilot_protocol = release_evidence.read_once(pilot_protocol_path)
-    pilot_protocol_record = release_evidence.json_object(
-        pilot_protocol, "pilot protocol"
-    )
-    if errors := release_evidence.schema_errors(
-        pilot_protocol_record, "pilot_protocol"
-    ):
-        raise release_evidence.ReleaseEvidenceError(
-            "invalid pilot protocol: " + "; ".join(errors)
-        )
-    if pilot_protocol_record["candidate_commit"] != candidate:
-        raise release_evidence.ReleaseEvidenceError(
-            "pilot protocol differs from the clean candidate checkout"
-        )
-    pilot_witness_key = release_evidence.load_bound_public_key(
-        pilot_protocol_path.resolve().parent,
-        pilot_protocol_record["witness_public_key_path"],
-        pilot_protocol_record["witness_public_key_sha256"],
-        "pilot witness",
+    pilot_protocol, pilot_protocol_record, pilot_witness_identity = (
+        load_pilot_preregistration(pilot_protocol_path, candidate)
     )
     witness_key_identities = [
-        release_evidence.validate_public_key(key)
-        for key in (holdout_witness_key, privacy_witness_key, pilot_witness_key)
+        holdout_witness_identity,
+        privacy_witness_identity,
+        pilot_witness_identity,
     ]
     if len(witness_key_identities) != len(set(witness_key_identities)) or set(
         witness_key_identities

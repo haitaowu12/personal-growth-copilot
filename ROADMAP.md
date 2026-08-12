@@ -1,6 +1,6 @@
 # Roadmap
 
-## Completed through 0.4.0-alpha.8
+## Completed through 0.4.0-alpha.9
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
@@ -48,7 +48,8 @@
   and rejection of signed assertion-only promotion packets.
 - create-only private qualification-packet initialization with restrictive
   permissions, no generated authority material or fake evidence, candidate
-  binding, PEM private-key detection, and trust-policy input preflight.
+  binding, PEM private-key detection, per-input incremental validation, and
+  all-or-nothing trust-policy preflight.
 - fail-closed read-only named-host privacy discovery with hashed command
   observations, exact private-output boundaries, incomplete sync-inventory
   handling, and a hard prohibition on persistence authorization.
