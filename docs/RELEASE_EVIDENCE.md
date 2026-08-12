@@ -34,11 +34,11 @@ the independent holdout author before this freeze and conform to
 ```text
 python scripts/release_packet.py build-trust-policy \
   --packet-root /private/release-packet \
-  --config /private/release-packet/target-config.json \
+  --config /private/release-packet/target/target-config.json \
   --holdout-seal /private/release-packet/holdout/holdout-seal.json \
   --privacy-host-identity /private/release-packet/privacy/host-identity.json \
   --pilot-protocol /private/release-packet/pilot/protocol.json \
-  --authorities /private/release-packet/authority-roster.json \
+  --authorities /private/release-packet/authorities/authority-roster.json \
   --attempt-campaign-id campaign-2026-08-12-001 \
   --output /private/release-packet/trust-policy.json
 ```
