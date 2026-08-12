@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -102,6 +103,15 @@ class ReleaseEvidenceTests(unittest.TestCase):
             },
         }[gate]
 
+    def verify_with_source_fixtures(self, *args):
+        def replay(gate, _source, **_kwargs):
+            return self.assertions_for(gate), []
+
+        with mock.patch.object(
+            release_evidence, "verify_external_source", side_effect=replay
+        ):
+            return release_evidence.verify(*args)
+
     def signed_packet(self, directory: Path, included_gates=None):
         commit = "a" * 40
         included_gates = set(included_gates or {"behavioral_qualification"})
@@ -145,6 +155,10 @@ class ReleaseEvidenceTests(unittest.TestCase):
             "candidate_commit": commit,
             "frozen_at": "2026-01-01T00:00:00Z",
             "attempt_campaign_id": "campaign-release-0001",
+            "target_config_sha256": "1" * 64,
+            "holdout_seal_sha256": "2" * 64,
+            "privacy_host_identity_sha256": "3" * 64,
+            "pilot_protocol_sha256": "4" * 64,
             "authorities": authorities,
         }
         policy["policy_sha256"] = release_evidence.digest(policy)
@@ -164,6 +178,8 @@ class ReleaseEvidenceTests(unittest.TestCase):
             if gate not in included_gates:
                 continue
             evidence_refs = [hashlib.sha256(gate.encode()).hexdigest()]
+            if gate in {"behavioral_qualification", "attempt_inventory"}:
+                evidence_refs.append(policy["target_config_sha256"])
             if gate == "independent_release_review":
                 evidence_refs = [
                     artifacts[prior]["artifact_sha256"]
@@ -186,6 +202,20 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 "assertions": self.assertions_for(gate),
                 "evidence_refs": evidence_refs,
             }
+            if gate in release_evidence.SOURCE_REPLAY_GATES:
+                source = {
+                    (
+                        "ended_at" if gate == "pilot" else "completed_at"
+                    ): f"2026-01-01T00:{executed_minute:02d}:00Z"
+                }
+                source_path = directory / f"{gate}.source.json"
+                source_bytes = self.write_json(source_path, source)
+                source_sha256 = hashlib.sha256(source_bytes).hexdigest()
+                artifact["source_manifest"] = {
+                    "path": source_path.name,
+                    "sha256": source_sha256,
+                }
+                artifact["evidence_refs"] = [source_sha256]
             artifact["artifact_sha256"] = release_evidence.digest(artifact)
             artifact_path = directory / f"{gate}.json"
             self.write_json(artifact_path, artifact)
@@ -355,8 +385,8 @@ class ReleaseEvidenceTests(unittest.TestCase):
             ROOT / "release/evidence-index.json",
             ROOT / "release/trust-policy.json",
             "0" * 40,
-            "ce1c088d6dc3017ea6fceee212153b3d908f8c11a986fed5426ff7274c24d4c7",
-            "61af4dc78e5ddd1411eeee9801360fd6e1cb640996ed9a0fb1fb04a6cc2bbf73",
+            "4d9789cf8bcce405f3655082d7323352f0b1068cddef731dd5ab663f44a9048e",
+            "956af6bd3605ee4d0d540575b82b78a1dcc6522472dc129a98ef42c464013bf4",
         )
         self.assertEqual(result["release_status"], "BLOCKED")
         self.assertFalse(result["qualification_update_allowed"])
@@ -376,7 +406,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 Path(directory_name)
             )
             policy = json.loads(policy_path.read_text(encoding="utf-8"))
-            result = release_evidence.verify(
+            result = self.verify_with_source_fixtures(
                 index_path,
                 policy_path,
                 "a" * 40,
@@ -407,7 +437,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
             )
             self.write_json(index_path, index)
             policy = json.loads(policy_path.read_text(encoding="utf-8"))
-            result = release_evidence.verify(
+            result = self.verify_with_source_fixtures(
                 index_path,
                 policy_path,
                 "a" * 40,
@@ -430,7 +460,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 Path(directory_name), included_gates=set(release_evidence.GATES)
             )
             policy = json.loads(policy_path.read_text(encoding="utf-8"))
-            result = release_evidence.verify(
+            result = self.verify_with_source_fixtures(
                 index_path,
                 policy_path,
                 "a" * 40,
@@ -441,6 +471,29 @@ class ReleaseEvidenceTests(unittest.TestCase):
             self.assertEqual(result["release_status"], "PROMOTED")
             self.assertEqual(result["verified_gate_count"], 9)
             self.assertTrue(result["qualification_update_allowed"])
+
+    def test_signed_booleans_and_unreplayed_source_hashes_cannot_promote(self):
+        with tempfile.TemporaryDirectory() as directory_name:
+            index_path, policy_path, _, _, index, policy = self.signed_packet(
+                Path(directory_name), included_gates=set(release_evidence.GATES)
+            )
+            result = release_evidence.verify(
+                index_path,
+                policy_path,
+                "a" * 40,
+                policy["policy_sha256"],
+                index["index_sha256"],
+            )
+            self.assertEqual(result["verification_status"], "fail")
+            self.assertEqual(result["release_status"], "BLOCKED")
+            self.assertFalse(result["qualification_update_allowed"])
+            self.assertTrue(
+                any(
+                    gate in error
+                    for gate in release_evidence.SOURCE_REPLAY_GATES
+                    for error in result["errors"]
+                )
+            )
 
     def test_signed_invalidation_is_valid_evidence_but_blocks_release(self):
         with tempfile.TemporaryDirectory() as directory_name:
@@ -460,7 +513,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 index, "index_sha256"
             )
             self.write_json(index_path, index)
-            result = release_evidence.verify(
+            result = self.verify_with_source_fixtures(
                 index_path,
                 policy_path,
                 "a" * 40,
@@ -490,7 +543,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 index, "index_sha256"
             )
             self.write_json(index_path, index)
-            result = release_evidence.verify(
+            result = self.verify_with_source_fixtures(
                 index_path,
                 policy_path,
                 "a" * 40,
@@ -519,7 +572,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 index, "index_sha256"
             )
             self.write_json(index_path, index)
-            result = release_evidence.verify(
+            result = self.verify_with_source_fixtures(
                 index_path,
                 policy_path,
                 "a" * 40,

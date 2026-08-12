@@ -77,6 +77,7 @@ def build_gate_artifact(
     evidence_refs: list[str],
     hard_failures: list[str],
     executed_at: datetime,
+    source_manifest: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     if gate not in release_evidence.GATES:
         raise release_evidence.ReleaseEvidenceError("unknown release gate")
@@ -120,6 +121,8 @@ def build_gate_artifact(
         "assertions": deepcopy(assertions),
         "evidence_refs": normalized_refs,
     }
+    if source_manifest is not None:
+        artifact["source_manifest"] = deepcopy(source_manifest)
     artifact["artifact_sha256"] = release_evidence.digest(artifact)
     if errors := release_evidence.schema_errors(artifact, "artifact"):
         raise release_evidence.ReleaseEvidenceError(
@@ -163,6 +166,7 @@ def _artifact_from_verified_attempt(
         require_hash(
             verification.get("result_manifest_sha256"), "result-manifest hash"
         ),
+        require_hash(verification.get("config_sha256"), "target-config hash"),
         require_hash(verification.get("witness_head_sha256"), "witness head hash"),
     ]
     return build_gate_artifact(
@@ -557,6 +561,10 @@ def command_external(args: argparse.Namespace) -> int:
     candidate = _source_commit()
     assertions = load_json(args.assertions, "gate assertions")
     evidence_refs = list(args.evidence_ref)
+    if args.status == "PASS" and args.gate in release_evidence.SOURCE_REPLAY_GATES:
+        raise release_evidence.ReleaseEvidenceError(
+            "passing external evidence requires build-source-artifact and raw sources"
+        )
     if args.gate in {"independent_release_review", "owner_promotion"}:
         if not all(
             (
@@ -603,6 +611,184 @@ def command_external(args: argparse.Namespace) -> int:
     )
     write_private_new(args.output, artifact)
     print(json.dumps({"status": "pass", "artifact_sha256": artifact["artifact_sha256"]}, indent=2))
+    return 0
+
+
+def command_source(args: argparse.Namespace) -> int:
+    candidate = _source_commit()
+    policy = load_policy(
+        args.policy,
+        expected_policy_sha256=args.expected_policy_sha256,
+        candidate_commit=candidate,
+    )
+    source_bytes = release_evidence.read_once(args.source)
+    source = release_evidence.json_object(source_bytes, "external gate source")
+    assertions, errors = release_evidence.verify_external_source(
+        args.gate,
+        source,
+        candidate_commit=candidate,
+        frozen_at=release_evidence.parse_time(policy["frozen_at"]),
+        source_root=args.source.resolve().parent,
+        policy_bindings=policy,
+    )
+    if errors:
+        raise release_evidence.ReleaseEvidenceError(
+            "external source verification failed: " + "; ".join(errors)
+        )
+    source_sha256 = hashlib.sha256(source_bytes).hexdigest()
+    root = args.packet_root.resolve(strict=True)
+    source_path = _relative_packet_path(root, args.source)
+    executed_at = now()
+    completed_field = "ended_at" if args.gate == "pilot" else "completed_at"
+    if release_evidence.parse_time(source[completed_field]) > executed_at:
+        raise release_evidence.ReleaseEvidenceError(
+            "external source completion may not follow its gate artifact"
+        )
+    artifact = build_gate_artifact(
+        gate=args.gate,
+        candidate_commit=candidate,
+        status="PASS",
+        assertions=assertions,
+        evidence_refs=[source_sha256],
+        hard_failures=[],
+        executed_at=executed_at,
+        source_manifest={"path": source_path, "sha256": source_sha256},
+    )
+    write_private_new(args.output, artifact)
+    print(
+        json.dumps(
+            {"status": "pass", "artifact_sha256": artifact["artifact_sha256"]},
+            indent=2,
+        )
+    )
+    return 0
+
+
+def command_policy(args: argparse.Namespace) -> int:
+    candidate = _source_commit()
+    packet_root = args.packet_root.resolve(strict=True)
+    if args.output.parent.resolve() != packet_root:
+        raise release_evidence.ReleaseEvidenceError(
+            "trust policy output must be directly inside the packet directory"
+        )
+    suite = load_json(ROOT / "evals/cases.json", "canonical target suite")
+    config_bytes = release_evidence.read_once(args.config)
+    config = release_evidence.json_object(config_bytes, "target config")
+    if config_bytes != release_evidence.canonical_bytes(config):
+        raise release_evidence.ReleaseEvidenceError(
+            "target config must use canonical JSON bytes"
+        )
+    if config.get("source_commit") != candidate:
+        raise release_evidence.ReleaseEvidenceError(
+            "target config differs from the clean candidate checkout"
+        )
+    if errors := target_session.validate_target_config(config, suite):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid target config: " + "; ".join(errors)
+        )
+    seal = load_json(args.holdout_seal, "holdout seal")
+    if errors := release_evidence.schema_errors(seal, "holdout_seal"):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid holdout seal: " + "; ".join(errors)
+        )
+    if seal["seal_sha256"] != release_evidence.object_hash(seal, "seal_sha256"):
+        raise release_evidence.ReleaseEvidenceError("holdout seal self-hash mismatch")
+    if seal["candidate_commit"] != candidate:
+        raise release_evidence.ReleaseEvidenceError(
+            "holdout seal differs from the clean candidate checkout"
+        )
+    for prefix in ("ciphertext", "case_schema"):
+        evidence_path = release_evidence.safe_path(
+            args.holdout_seal.resolve().parent, seal[f"{prefix}_path"]
+        )
+        evidence = release_evidence.read_once(evidence_path)
+        if hashlib.sha256(evidence).hexdigest() != seal[f"{prefix}_sha256"]:
+            raise release_evidence.ReleaseEvidenceError(
+                f"holdout {prefix} hash mismatch"
+            )
+    authority_document = load_json(args.authorities, "release authority roster")
+    if set(authority_document) != {"authorities"} or not isinstance(
+        authority_document["authorities"], list
+    ):
+        raise release_evidence.ReleaseEvidenceError(
+            "authority roster must contain only an authorities array"
+        )
+    authorities: list[dict[str, Any]] = []
+    key_identities: list[str] = []
+    for item in authority_document["authorities"]:
+        if not isinstance(item, dict) or set(item) != {
+            "key_id",
+            "role",
+            "public_key_path",
+        }:
+            raise release_evidence.ReleaseEvidenceError(
+                "each authority requires only key_id, role, and public_key_path"
+            )
+        role = item["role"]
+        if role not in release_evidence.GATE_BY_ROLE:
+            raise release_evidence.ReleaseEvidenceError("authority role is invalid")
+        public_key_path = release_evidence.safe_path(
+            packet_root, item["public_key_path"]
+        )
+        public_key = release_evidence.read_once(public_key_path, maximum=65_536)
+        key_identities.append(release_evidence.validate_public_key(public_key))
+        authorities.append(
+            {
+                "key_id": item["key_id"],
+                "role": role,
+                "public_key_path": _relative_packet_path(packet_root, public_key_path),
+                "public_key_sha256": hashlib.sha256(public_key).hexdigest(),
+                "allowed_gates": [release_evidence.GATE_BY_ROLE[role]],
+            }
+        )
+    roles = [item["role"] for item in authorities]
+    key_ids = [item["key_id"] for item in authorities]
+    key_paths = [item["public_key_path"] for item in authorities]
+    if set(roles) != set(release_evidence.GATE_BY_ROLE) or len(roles) != len(
+        set(roles)
+    ):
+        raise release_evidence.ReleaseEvidenceError(
+            "authority roster requires exactly one authority for every release role"
+        )
+    if len(key_ids) != len(set(key_ids)) or len(key_paths) != len(set(key_paths)):
+        raise release_evidence.ReleaseEvidenceError(
+            "authority key ids and public-key paths must be unique"
+        )
+    if len(key_identities) != len(set(key_identities)):
+        raise release_evidence.ReleaseEvidenceError(
+            "release authorities must use distinct Ed25519 key material"
+        )
+    host_identity = release_evidence.read_once(args.privacy_host_identity)
+    pilot_protocol = release_evidence.read_once(args.pilot_protocol)
+    frozen = now()
+    if release_evidence.parse_time(seal["sealed_at"]) > frozen:
+        raise release_evidence.ReleaseEvidenceError(
+            "holdout seal may not follow the policy freeze"
+        )
+    policy = {
+        "schema_version": "1.0",
+        "status": "CONFIGURED",
+        "candidate_commit": candidate,
+        "frozen_at": timestamp(frozen),
+        "attempt_campaign_id": args.attempt_campaign_id,
+        "target_config_sha256": target_session._digest(config),
+        "holdout_seal_sha256": seal["seal_sha256"],
+        "privacy_host_identity_sha256": hashlib.sha256(host_identity).hexdigest(),
+        "pilot_protocol_sha256": hashlib.sha256(pilot_protocol).hexdigest(),
+        "authorities": authorities,
+    }
+    policy["policy_sha256"] = release_evidence.digest(policy)
+    if errors := release_evidence.schema_errors(policy, "policy"):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid configured trust policy: " + "; ".join(errors)
+        )
+    write_private_new(args.output, policy)
+    print(
+        json.dumps(
+            {"status": "pass", "policy_sha256": policy["policy_sha256"]},
+            indent=2,
+        )
+    )
     return 0
 
 
@@ -681,6 +867,28 @@ def parser() -> argparse.ArgumentParser:
     behavioral.add_argument("--aggregate", type=Path, required=True)
     behavioral.add_argument("--output", type=Path, required=True)
 
+    policy = commands.add_parser("build-trust-policy")
+    policy.add_argument("--packet-root", type=Path, required=True)
+    policy.add_argument("--config", type=Path, required=True)
+    policy.add_argument("--holdout-seal", type=Path, required=True)
+    policy.add_argument("--privacy-host-identity", type=Path, required=True)
+    policy.add_argument("--pilot-protocol", type=Path, required=True)
+    policy.add_argument("--authorities", type=Path, required=True)
+    policy.add_argument("--attempt-campaign-id", required=True)
+    policy.add_argument("--output", type=Path, required=True)
+
+    source = commands.add_parser("build-source-artifact")
+    source.add_argument(
+        "--gate",
+        required=True,
+        choices=sorted(release_evidence.SOURCE_REPLAY_GATES),
+    )
+    source.add_argument("--source", type=Path, required=True)
+    source.add_argument("--packet-root", type=Path, required=True)
+    source.add_argument("--policy", type=Path, required=True)
+    source.add_argument("--expected-policy-sha256", required=True)
+    source.add_argument("--output", type=Path, required=True)
+
     external = commands.add_parser("build-external-artifact")
     external.add_argument(
         "--gate",
@@ -727,6 +935,8 @@ def main() -> int:
         return {
             "build-attempt-artifact": command_attempt,
             "build-behavioral-artifact": command_behavioral,
+            "build-trust-policy": command_policy,
+            "build-source-artifact": command_source,
             "build-external-artifact": command_external,
             "build-receipt-payload": command_payload,
             "assemble-receipt": command_receipt,

@@ -36,6 +36,11 @@ pilot gates pass.
   `external_pending` state and hash-shaped roster references do not prove the
   reviewers' real-world identities or independence and therefore cannot
   complete a human-review release gate.
+- Release reviewer evidence must additionally use the replayable reviewer
+  source pack: the final verifier reloads the exact target config, result
+  manifest, and every result, derives the reviewer set and usage counts, binds
+  retained identity/independence/calibration files to the frozen roster, and
+  rejects calibration performed after qualification labels were submitted.
 - Human hard failures remain hard failures. Scores cannot average them away.
 - Dimension/overall score floors and weighted-kappa agreement are calculated;
   a low-scoring or low-agreement run has development quality status `fail` even

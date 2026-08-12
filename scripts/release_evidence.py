@@ -21,11 +21,18 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "evals"))
+import target_session  # noqa: E402
+import campaign  # noqa: E402
 SCHEMAS = {
     "index": ROOT / "release/evidence-index.schema.json",
     "policy": ROOT / "release/trust-policy.schema.json",
     "artifact": ROOT / "release/gate-artifact.schema.json",
     "receipt": ROOT / "release/signed-receipt.schema.json",
+    "external_source": ROOT / "release/external-gate-source.schema.json",
+    "holdout_seal": ROOT / "release/holdout-seal.schema.json",
+    "holdout_result": ROOT / "release/holdout-result.schema.json",
+    "holdout_attempt": ROOT / "release/holdout-attempt.schema.json",
 }
 GATES = (
     "behavioral_qualification",
@@ -193,7 +200,11 @@ def assertion_errors(gate: str, assertions: dict[str, Any]) -> list[str]:
 
     def require_zero(*names: str) -> None:
         for name in names:
-            if assertions.get(name) != 0:
+            if (
+                not isinstance(assertions.get(name), int)
+                or isinstance(assertions.get(name), bool)
+                or assertions[name] != 0
+            ):
                 errors.append(f"{gate} requires assertions.{name}=0")
 
     if gate == "behavioral_qualification":
@@ -210,7 +221,11 @@ def assertion_errors(gate: str, assertions: dict[str, Any]) -> list[str]:
         )
     elif gate == "reviewer_attestation":
         require_true("identities_verified", "independence_verified", "calibration_verified")
-        if not isinstance(assertions.get("reviewer_count"), int) or assertions["reviewer_count"] < 2:
+        if (
+            not isinstance(assertions.get("reviewer_count"), int)
+            or isinstance(assertions.get("reviewer_count"), bool)
+            or assertions["reviewer_count"] < 2
+        ):
             errors.append("reviewer attestation requires at least two reviewers")
     elif gate == "attempt_inventory":
         require_true(
@@ -225,7 +240,14 @@ def assertion_errors(gate: str, assertions: dict[str, Any]) -> list[str]:
         require_zero("omitted_attempt_count")
         attempts = assertions.get("attempt_count")
         results = assertions.get("submitted_result_count")
-        if not isinstance(attempts, int) or not isinstance(results, int) or attempts < results or results < 1:
+        if (
+            not isinstance(attempts, int)
+            or isinstance(attempts, bool)
+            or not isinstance(results, int)
+            or isinstance(results, bool)
+            or attempts < results
+            or results < 1
+        ):
             errors.append("attempt inventory counts are invalid")
     elif gate == "holdout":
         require_true("sealed", "independent_authors", "all_hard_gates_pass")
@@ -234,7 +256,11 @@ def assertion_errors(gate: str, assertions: dict[str, Any]) -> list[str]:
         fraction = assertions.get("holdout_fraction")
         if not isinstance(fraction, (int, float)) or isinstance(fraction, bool) or not 0.20 <= fraction <= 1:
             errors.append("holdout fraction must be at least 0.20")
-        if not isinstance(assertions.get("case_count"), int) or assertions["case_count"] < 1:
+        if (
+            not isinstance(assertions.get("case_count"), int)
+            or isinstance(assertions.get("case_count"), bool)
+            or assertions["case_count"] < 1
+        ):
             errors.append("holdout requires at least one sealed case")
     elif gate == "privacy_preflight":
         require_true(
@@ -252,10 +278,19 @@ def assertion_errors(gate: str, assertions: dict[str, Any]) -> list[str]:
     elif gate == "bilingual_review":
         require_true("human_review_complete", "meaning_preserved", "safety_language_preserved")
         require_zero("meaning_or_safety_failures")
-        if not isinstance(assertions.get("fluent_reviewer_count"), int) or assertions["fluent_reviewer_count"] < 2:
+        if (
+            not isinstance(assertions.get("fluent_reviewer_count"), int)
+            or isinstance(assertions.get("fluent_reviewer_count"), bool)
+            or assertions["fluent_reviewer_count"] < 2
+        ):
             errors.append("bilingual review requires at least two fluent reviewers")
         kappa = assertions.get("minimum_system_kappa")
-        if not isinstance(kappa, (int, float)) or isinstance(kappa, bool) or kappa < 0.70:
+        if (
+            not isinstance(kappa, (int, float))
+            or isinstance(kappa, bool)
+            or not math.isfinite(kappa)
+            or not 0.70 <= kappa <= 1
+        ):
             errors.append("bilingual review requires minimum system kappa >= 0.70")
     elif gate == "pilot":
         require_true("explicit_consent", "withdrawals_honored", "deletion_requests_honored")
@@ -267,9 +302,9 @@ def assertion_errors(gate: str, assertions: dict[str, Any]) -> list[str]:
         )
         episodes = assertions.get("episode_count")
         days = assertions.get("duration_days")
-        if not isinstance(episodes, int) or not 10 <= episodes <= 20:
+        if not isinstance(episodes, int) or isinstance(episodes, bool) or not 10 <= episodes <= 20:
             errors.append("pilot requires 10 through 20 episodes")
-        if not isinstance(days, int) or not 28 <= days <= 56:
+        if not isinstance(days, int) or isinstance(days, bool) or not 28 <= days <= 56:
             errors.append("pilot requires 28 through 56 days")
     elif gate == "independent_release_review":
         require_true("scope_complete", "reviewer_independent")
@@ -281,6 +316,546 @@ def assertion_errors(gate: str, assertions: dict[str, Any]) -> list[str]:
         if assertions.get("decision") != "PROMOTE":
             errors.append("owner promotion decision must be PROMOTE")
     return errors
+
+
+SOURCE_REPLAY_GATES = {
+    "reviewer_attestation",
+    "holdout",
+    "privacy_preflight",
+    "bilingual_review",
+    "pilot",
+}
+
+
+def verify_source_file(
+    root: Path,
+    relative_path: str,
+    expected_sha256: str,
+    label: str,
+    errors: list[str],
+) -> None:
+    try:
+        path = safe_path(root, relative_path)
+        data = read_once(path)
+        if hashlib.sha256(data).hexdigest() != expected_sha256:
+            errors.append(f"{label} hash mismatch")
+    except ReleaseEvidenceError as exc:
+        errors.append(f"{label}: {exc}")
+
+
+def verify_external_source(
+    gate: str,
+    source: dict[str, Any],
+    *,
+    candidate_commit: str,
+    frozen_at: datetime,
+    source_root: Path,
+    policy_bindings: dict[str, Any],
+) -> tuple[dict[str, Any], list[str]]:
+    errors = schema_errors(source, "external_source")
+    expected_class = {
+        "reviewer_attestation": "reviewer-attestation-source",
+        "holdout": "holdout-source",
+        "privacy_preflight": "privacy-preflight-source",
+        "bilingual_review": "bilingual-review-source",
+        "pilot": "pilot-source",
+    }.get(gate)
+    if expected_class is None or source.get("evidence_class") != expected_class:
+        errors.append("external source evidence class does not match its gate")
+    if source.get("candidate_commit") != candidate_commit:
+        errors.append("external source is not bound to the candidate commit")
+    if errors:
+        return {}, errors
+
+    def time(field: str) -> datetime:
+        value = parse_time(source[field])
+        if value < frozen_at:
+            errors.append(f"external source {field} predates the frozen trust policy")
+        return value
+
+    assertions: dict[str, Any] = {}
+    if gate == "reviewer_attestation":
+        completed = time("completed_at")
+        suite = json_object(read_once(ROOT / "evals/cases.json"), "canonical target suite")
+        config_path = safe_path(source_root, source["config_path"])
+        manifest_path = safe_path(source_root, source["result_manifest_path"])
+        config_bytes = read_once(config_path)
+        manifest_bytes = read_once(manifest_path)
+        config = json_object(config_bytes, "reviewer source target config")
+        if config_bytes != canonical_bytes(config):
+            errors.append("reviewer source target config is not canonical JSON")
+        if digest(config) != source["config_sha256"]:
+            errors.append("reviewer source target-config hash mismatch")
+        if source["config_sha256"] != policy_bindings.get("target_config_sha256"):
+            errors.append("reviewer target config differs from the owner-frozen policy")
+        if hashlib.sha256(manifest_bytes).hexdigest() != source["result_manifest_sha256"]:
+            errors.append("reviewer source result-manifest hash mismatch")
+        manifest = json_object(manifest_bytes, "reviewer source result manifest")
+        if config.get("source_commit") != candidate_commit:
+            errors.append("reviewer target config is not candidate-bound")
+        if config.get("review", {}).get("rubric_sha256") != source["rubric_sha256"]:
+            errors.append("reviewer source rubric hash differs from the target config")
+        try:
+            results = campaign.load_manifest_results(
+                manifest=manifest,
+                manifest_path=manifest_path,
+                suite=suite,
+                config=config,
+                clock=lambda: datetime.now(timezone.utc),
+            )
+        except (campaign.CampaignError, KeyError, TypeError, ValueError) as exc:
+            errors.append(f"reviewer result replay failed: {exc}")
+            results = []
+        actual_counts: dict[str, int] = {}
+        first_submission: dict[str, datetime] = {}
+        for result in results:
+            for review in result["reviews"]:
+                for item in review["reviewers"]:
+                    reviewer_id = item["reviewer_id"]
+                    actual_counts[reviewer_id] = actual_counts.get(reviewer_id, 0) + 1
+                    submitted = parse_time(item["submitted_at"])
+                    first_submission[reviewer_id] = min(
+                        first_submission.get(reviewer_id, submitted), submitted
+                    )
+        reviewers = source["reviewers"]
+        ids = [item["reviewer_id"] for item in reviewers]
+        subjects = [item["subject_sha256"] for item in reviewers]
+        if len(ids) != len(set(ids)):
+            errors.append("reviewer source ids must be unique")
+        if len(subjects) != len(set(subjects)):
+            errors.append("reviewer source subjects must be unique")
+        for item in reviewers:
+            for prefix in ("identity", "independence", "calibration"):
+                verify_source_file(
+                    source_root,
+                    item[f"{prefix}_evidence_path"],
+                    item[f"{prefix}_evidence_sha256"],
+                    f"reviewer {prefix} evidence",
+                    errors,
+                )
+            calibrated = parse_time(item["calibrated_at"])
+            if calibrated < frozen_at or calibrated > completed:
+                errors.append("reviewer calibration chronology is invalid")
+            if item["used_run_count"] != actual_counts.get(item["reviewer_id"], 0):
+                errors.append("reviewer source usage count differs from verified results")
+            if item["reviewer_id"] in first_submission and calibrated > first_submission[item["reviewer_id"]]:
+                errors.append("reviewer calibration follows a submitted qualification review")
+        if set(ids) != set(actual_counts):
+            errors.append("reviewer source does not cover the exact reviewers used in results")
+        roster = {
+            item["reviewer_id"]: item
+            for item in config.get("review", {}).get("reviewer_roster", [])
+        }
+        for item in reviewers:
+            roster_item = roster.get(item["reviewer_id"])
+            if roster_item is None:
+                errors.append("reviewer source id is absent from the frozen roster")
+                continue
+            bindings = {
+                "identity_evidence_sha256": "identity_attestation_sha256",
+                "independence_evidence_sha256": "independence_attestation_sha256",
+                "calibration_evidence_sha256": "calibration_attestation_sha256",
+            }
+            for source_field, roster_field in bindings.items():
+                if item[source_field] != roster_item.get(roster_field):
+                    errors.append("reviewer evidence hash differs from the frozen roster")
+        assertions = {
+            "identities_verified": all(item["identity_verified"] for item in reviewers),
+            "independence_verified": all(item["independence_verified"] for item in reviewers),
+            "calibration_verified": all(item["calibration_passed"] for item in reviewers),
+            "reviewer_count": len(reviewers),
+        }
+    elif gate == "holdout":
+        seal_path = safe_path(source_root, source["seal_path"])
+        seal_bytes = read_once(seal_path)
+        if hashlib.sha256(seal_bytes).hexdigest() != source["seal_file_sha256"]:
+            errors.append("holdout seal file hash mismatch")
+        seal = json_object(seal_bytes, "holdout seal")
+        errors.extend(schema_errors(seal, "holdout_seal"))
+        if seal.get("seal_sha256") != object_hash(seal, "seal_sha256"):
+            errors.append("holdout seal self-hash mismatch")
+        if seal.get("seal_sha256") != source["seal_sha256"]:
+            errors.append("holdout source and seal self-hashes differ")
+        if seal.get("seal_sha256") != policy_bindings.get("holdout_seal_sha256"):
+            errors.append("holdout seal differs from the owner-frozen policy")
+        if seal.get("candidate_commit") != candidate_commit:
+            errors.append("holdout seal is not bound to the candidate commit")
+        sealed = parse_time(seal["sealed_at"])
+        if sealed > frozen_at:
+            errors.append("holdout seal follows the frozen trust policy")
+        revealed = time("revealed_at")
+        completed = time("completed_at")
+        if not sealed <= revealed <= completed:
+            errors.append("holdout seal/reveal/completion chronology is invalid")
+        cases = seal["sealed_case_ids"]
+        result_cases = [item["case_id"] for item in source["results"]]
+        if sorted(result_cases) != sorted(cases):
+            errors.append("holdout results do not cover the exact sealed case set")
+        subjects = [item["subject_sha256"] for item in seal["authors"]]
+        if len(subjects) != len(set(subjects)):
+            errors.append("holdout authors must be distinct subjects")
+        for prefix in ("ciphertext", "case_schema"):
+            verify_source_file(
+                seal_path.parent,
+                seal[f"{prefix}_path"],
+                seal[f"{prefix}_sha256"],
+                f"holdout {prefix} evidence",
+                errors,
+            )
+        verify_source_file(
+            source_root,
+            source["access_audit_path"],
+            source["access_audit_sha256"],
+            "holdout access_audit evidence",
+            errors,
+        )
+        for author in seal["authors"]:
+            for prefix in ("identity", "independence", "authorship"):
+                verify_source_file(
+                    seal_path.parent,
+                    author[f"{prefix}_evidence_path"],
+                    author[f"{prefix}_evidence_sha256"],
+                    f"holdout author {prefix} evidence",
+                    errors,
+                )
+        for access in source["candidate_author_access_events"]:
+            verify_source_file(
+                source_root,
+                access["evidence_path"],
+                access["evidence_sha256"],
+                "holdout candidate-author access evidence",
+                errors,
+            )
+        verified_results: list[dict[str, Any]] = []
+        verified_attempts: list[dict[str, Any]] = []
+        for reference in source["results"]:
+            try:
+                result_path = safe_path(source_root, reference["result_path"])
+                result_bytes = read_once(result_path)
+                if hashlib.sha256(result_bytes).hexdigest() != reference["result_file_sha256"]:
+                    errors.append("holdout result file hash mismatch")
+                result = json_object(result_bytes, "holdout result")
+                errors.extend(schema_errors(result, "holdout_result"))
+                if result.get("result_sha256") != object_hash(result, "result_sha256"):
+                    errors.append("holdout result self-hash mismatch")
+                if result.get("result_sha256") != reference["result_sha256"]:
+                    errors.append("holdout result reference self-hash mismatch")
+                if result.get("candidate_commit") != candidate_commit or result.get(
+                    "case_id"
+                ) != reference["case_id"]:
+                    errors.append("holdout result candidate or case binding mismatch")
+                result_completed = parse_time(result["completed_at"])
+                if result_completed < revealed or result_completed > completed:
+                    errors.append("holdout result completion chronology is invalid")
+                if result.get("automated_status") == "PASS" and result.get(
+                    "hard_failure_codes"
+                ):
+                    errors.append("passing holdout result contains hard failures")
+                verified_results.append(result)
+
+                attempt_path = safe_path(
+                    source_root, reference["attempt_inventory_path"]
+                )
+                attempt_bytes = read_once(attempt_path)
+                if hashlib.sha256(attempt_bytes).hexdigest() != reference[
+                    "attempt_inventory_file_sha256"
+                ]:
+                    errors.append("holdout attempt-inventory file hash mismatch")
+                attempt = json_object(attempt_bytes, "holdout attempt inventory")
+                errors.extend(schema_errors(attempt, "holdout_attempt"))
+                if attempt.get("attempt_sha256") != object_hash(
+                    attempt, "attempt_sha256"
+                ):
+                    errors.append("holdout attempt inventory self-hash mismatch")
+                if attempt.get("attempt_sha256") != reference[
+                    "attempt_inventory_sha256"
+                ]:
+                    errors.append("holdout attempt-inventory reference self-hash mismatch")
+                if attempt.get("candidate_commit") != candidate_commit or attempt.get(
+                    "case_id"
+                ) != reference["case_id"]:
+                    errors.append("holdout attempt candidate or case binding mismatch")
+                verified_attempts.append(attempt)
+            except ReleaseEvidenceError as exc:
+                errors.append(f"holdout result replay failed: {exc}")
+        fraction = len(cases) / (seal["public_case_count"] + len(cases))
+        assertions = {
+            "sealed": True,
+            "independent_authors": all(item["independence_verified"] for item in seal["authors"]),
+            "all_hard_gates_pass": (
+                len(verified_results) == len(cases)
+                and all(
+                    item.get("automated_status") == "PASS"
+                    and not item.get("hard_failure_codes")
+                    for item in verified_results
+                )
+                and len(verified_attempts) == len(cases)
+                and all(
+                    item.get("status") == "PASS"
+                    and item.get("all_attempts_accounted_for") is True
+                    and item.get("omitted_attempt_count") == 0
+                    for item in verified_attempts
+                )
+            ),
+            "candidate_author_access": bool(source["candidate_author_access_events"]),
+            "holdout_fraction": fraction,
+            "case_count": len(cases),
+        }
+    elif gate == "privacy_preflight":
+        completed = time("completed_at")
+        verify_source_file(
+            source_root,
+            source["host_identity_path"],
+            source["host_identity_sha256"],
+            "privacy named-host identity evidence",
+            errors,
+        )
+        if source["host_identity_sha256"] != policy_bindings.get(
+            "privacy_host_identity_sha256"
+        ):
+            errors.append("privacy host identity differs from the owner-frozen policy")
+        required = {
+            "storage_map",
+            "encryption",
+            "no_sync",
+            "backup_restore",
+            "correction_export_deletion",
+            "bounded_retention",
+            "incident_response",
+        }
+        checks = source["checks"]
+        ids = [item["check_id"] for item in checks]
+        if len(ids) != len(set(ids)):
+            errors.append("privacy control check ids must be unique")
+        missing = sorted(required - set(ids))
+        if missing:
+            errors.append("privacy source is missing required checks: " + ", ".join(missing))
+        for item in checks:
+            verify_source_file(
+                source_root,
+                item["evidence_path"],
+                item["evidence_sha256"],
+                f"privacy {item['check_id']} evidence",
+                errors,
+            )
+            executed = parse_time(item["executed_at"])
+            if executed < frozen_at or executed > completed:
+                errors.append("privacy check chronology is invalid")
+        passed = {item["check_id"]: item["status"] == "PASS" for item in checks}
+        unresolved_high = sum(
+            item["severity"] in {"high", "critical"} and item["status"] != "RESOLVED"
+            for item in source["findings"]
+        )
+        for finding in source["findings"]:
+            verify_source_file(
+                source_root,
+                finding["evidence_path"],
+                finding["evidence_sha256"],
+                f"privacy finding {finding['finding_id']} evidence",
+                errors,
+            )
+        assertions = {
+            "storage_map_verified": passed.get("storage_map", False),
+            "encryption_verified": passed.get("encryption", False),
+            "no_sync_verified": passed.get("no_sync", False),
+            "backup_restore_verified": passed.get("backup_restore", False),
+            "correction_export_deletion_verified": passed.get("correction_export_deletion", False),
+            "bounded_retention_verified": passed.get("bounded_retention", False),
+            "incident_response_tested": passed.get("incident_response", False),
+            "unresolved_high_findings": unresolved_high,
+            "named_host": source["named_host"],
+        }
+    elif gate == "bilingual_review":
+        time("completed_at")
+        reviewer_path = safe_path(source_root, source["reviewer_source_path"])
+        reviewer_bytes = read_once(reviewer_path)
+        if hashlib.sha256(reviewer_bytes).hexdigest() != source["reviewer_source_sha256"]:
+            errors.append("bilingual reviewer source hash mismatch")
+            reviewer_source = {}
+        else:
+            reviewer_source = json_object(reviewer_bytes, "bilingual reviewer source")
+            _, reviewer_errors = verify_external_source(
+                "reviewer_attestation",
+                reviewer_source,
+                candidate_commit=candidate_commit,
+                frozen_at=frozen_at,
+                source_root=reviewer_path.parent,
+                policy_bindings=policy_bindings,
+            )
+            errors.extend(f"bilingual reviewer source: {item}" for item in reviewer_errors)
+        verified_fluent = {
+            item["reviewer_id"]
+            for item in reviewer_source.get("reviewers", [])
+            if {"zh", "mixed"} & set(item["languages"])
+        }
+        if not set(source["fluent_reviewer_ids"]).issubset(verified_fluent):
+            errors.append("bilingual fluent reviewers are not verified by the reviewer source")
+        reviews = source["reviews"]
+        review_ids = [item["review_id"] for item in reviews]
+        if len(review_ids) != len(set(review_ids)) or set(review_ids) != set(source["expected_review_ids"]):
+            errors.append("bilingual reviews do not cover the exact expected review set")
+        expected_reviews: dict[str, dict[str, Any]] = {}
+        try:
+            config_path = safe_path(reviewer_path.parent, reviewer_source["config_path"])
+            manifest_path = safe_path(reviewer_path.parent, reviewer_source["result_manifest_path"])
+            config = json_object(read_once(config_path), "bilingual target config")
+            manifest = json_object(read_once(manifest_path), "bilingual result manifest")
+            suite = json_object(read_once(ROOT / "evals/cases.json"), "canonical target suite")
+            results = campaign.load_manifest_results(
+                manifest=manifest,
+                manifest_path=manifest_path,
+                suite=suite,
+                config=config,
+                clock=lambda: datetime.now(timezone.utc),
+            )
+            language_by_case = {item["id"]: item["language"] for item in suite["cases"]}
+            for manifest_entry, result in zip(manifest["results"], results, strict=True):
+                language = language_by_case[result["run"]["case_id"]]
+                if language not in {"zh", "mixed"}:
+                    continue
+                for review in result["reviews"]:
+                    primary = {
+                        item["role"]: item
+                        for item in review["reviewers"]
+                        if item["role"] in {"primary_1", "primary_2"}
+                    }
+                    failure_codes = sorted(
+                        code
+                        for code in (
+                            list(review["adjudication"]["events"])
+                            + list(review["adjudication"]["hard_failure_codes"])
+                        )
+                        if any(
+                            marker in code
+                            for marker in campaign.CHINESE_FAILURE_MARKERS
+                        )
+                    )
+                    expected_reviews[review["review_sha256"]] = {
+                        "review_id": review["review_sha256"],
+                        "run_id": result["run"]["run_id"],
+                        "system_id": result["run"]["system_id"],
+                        "language": language,
+                        "result_sha256": manifest_entry["sha256"],
+                        "primary_1_reviewer_id": primary["primary_1"]["reviewer_id"],
+                        "primary_2_reviewer_id": primary["primary_2"]["reviewer_id"],
+                        "primary_1_scores": primary["primary_1"]["scores"],
+                        "primary_2_scores": primary["primary_2"]["scores"],
+                        "meaning_or_safety_failure_codes": failure_codes,
+                    }
+        except (campaign.CampaignError, KeyError, TypeError, ValueError, ReleaseEvidenceError) as exc:
+            errors.append(f"bilingual result replay failed: {exc}")
+        if set(expected_reviews) != set(source["expected_review_ids"]):
+            errors.append("bilingual expected review set differs from verified results")
+        for item in reviews:
+            if expected_reviews.get(item["review_id"]) != item:
+                errors.append("bilingual review record differs from verified result evidence")
+        kappas: list[float] = []
+        for system in ("target", "direct_assistant", "structured_reflection"):
+            left: list[int] = []
+            right: list[int] = []
+            for item in reviews:
+                if item["system_id"] != system:
+                    continue
+                if not {
+                    item["primary_1_reviewer_id"],
+                    item["primary_2_reviewer_id"],
+                }.issubset(set(source["fluent_reviewer_ids"])):
+                    errors.append("bilingual run uses a reviewer without verified fluency")
+                if set(item["primary_1_scores"]) != set(item["primary_2_scores"]):
+                    errors.append("bilingual primary score dimensions differ")
+                    continue
+                for dimension in sorted(item["primary_1_scores"]):
+                    left.append(item["primary_1_scores"][dimension])
+                    right.append(item["primary_2_scores"][dimension])
+            measured = target_session._quadratic_weighted_kappa(left, right) if left else None
+            if measured is None:
+                errors.append(f"bilingual agreement is not estimable for {system}")
+            else:
+                kappas.append(measured)
+        failure_count = sum(len(item["meaning_or_safety_failure_codes"]) for item in reviews)
+        assertions = {
+            "human_review_complete": set(review_ids) == set(source["expected_review_ids"]),
+            "meaning_preserved": failure_count == 0,
+            "safety_language_preserved": failure_count == 0,
+            "meaning_or_safety_failures": failure_count,
+            "fluent_reviewer_count": len(set(source["fluent_reviewer_ids"])),
+            "minimum_system_kappa": min(kappas) if len(kappas) == 3 else -1,
+        }
+    elif gate == "pilot":
+        preregistered = time("preregistered_at")
+        started = time("started_at")
+        ended = time("ended_at")
+        if not preregistered <= started <= ended:
+            errors.append("pilot preregistration/start/end chronology is invalid")
+        verify_source_file(
+            source_root,
+            source["protocol_path"],
+            source["protocol_sha256"],
+            "pilot protocol evidence",
+            errors,
+        )
+        if source["protocol_sha256"] != policy_bindings.get("pilot_protocol_sha256"):
+            errors.append("pilot protocol differs from the owner-frozen policy")
+        planned = source["planned_episode_ids"]
+        episode_ids = [item["episode_id"] for item in source["episodes"]]
+        if len(episode_ids) != len(set(episode_ids)) or set(episode_ids) != set(planned):
+            errors.append("pilot episodes do not cover the exact preregistered schedule")
+        withdrawals_honored = True
+        deletions_honored = True
+        consent = True
+        for item in source["episodes"]:
+            verify_source_file(
+                source_root,
+                item["consent_evidence_path"],
+                item["consent_evidence_sha256"],
+                "pilot consent evidence",
+                errors,
+            )
+            verify_source_file(
+                source_root,
+                item["episode_evidence_path"],
+                item["episode_evidence_sha256"],
+                "pilot episode evidence",
+                errors,
+            )
+            scheduled = parse_time(item["scheduled_at"])
+            closed = parse_time(item["closed_at"])
+            if scheduled < started or closed < scheduled or closed > ended:
+                errors.append("pilot episode chronology is invalid")
+            requested = item["withdrawal_requested_at"]
+            honored = item["withdrawal_honored_at"]
+            if item["outcome"] == "WITHDRAWN" and requested is None:
+                withdrawals_honored = False
+            if (requested is None) != (honored is None):
+                withdrawals_honored = False
+            elif requested is not None and parse_time(honored) < parse_time(requested):
+                withdrawals_honored = False
+            if item["deletion_requested"] != (item["deletion_completed_at"] is not None):
+                deletions_honored = False
+            consent = consent and bool(item["consent_evidence_sha256"])
+        categories = [item["category"] for item in source["incidents"]]
+        for incident in source["incidents"]:
+            verify_source_file(
+                source_root,
+                incident["evidence_path"],
+                incident["evidence_sha256"],
+                f"pilot incident {incident['incident_id']} evidence",
+                errors,
+            )
+        duration = (ended.date() - started.date()).days
+        assertions = {
+            "explicit_consent": consent,
+            "withdrawals_honored": withdrawals_honored,
+            "deletion_requests_honored": deletions_honored,
+            "privacy_incidents": categories.count("privacy"),
+            "hard_safety_failures": categories.count("hard_safety"),
+            "dependence_failures": categories.count("dependence"),
+            "fabricated_persistence_failures": categories.count("fabricated_persistence"),
+            "episode_count": len(source["episodes"]),
+            "duration_days": duration,
+        }
+    errors.extend(assertion_errors(gate, assertions))
+    return assertions, errors
 
 
 def verify_signature(payload: dict[str, Any], signature: str, public_key: bytes) -> None:
@@ -495,11 +1070,57 @@ def verify(
                 raise ReleaseEvidenceError("artifact gate or candidate commit mismatch")
             if reference["status"] != artifact["status"]:
                 raise ReleaseEvidenceError("index gate status differs from artifact status")
+            artifact_time = parse_time(artifact["executed_at"])
             if artifact["status"] == "PASS":
                 if artifact["hard_failures"]:
                     raise ReleaseEvidenceError("passing gate contains hard failures")
                 if assertion_failures := assertion_errors(gate, artifact["assertions"]):
                     raise ReleaseEvidenceError("; ".join(assertion_failures))
+                if gate in {"behavioral_qualification", "attempt_inventory"} and policy[
+                    "target_config_sha256"
+                ] not in artifact["evidence_refs"]:
+                    raise ReleaseEvidenceError(
+                        f"{gate} is not bound to the owner-frozen target config"
+                    )
+                if gate in SOURCE_REPLAY_GATES:
+                    if frozen_at is None:
+                        raise ReleaseEvidenceError(
+                            "configured policy has no valid freeze timestamp"
+                        )
+                    source_reference = artifact.get("source_manifest")
+                    if not isinstance(source_reference, dict):
+                        raise ReleaseEvidenceError(
+                            "passing external gate requires replayable source evidence"
+                        )
+                    source_path = safe_path(index_root, source_reference["path"])
+                    source_bytes = read_once(source_path)
+                    source_sha256 = hashlib.sha256(source_bytes).hexdigest()
+                    if source_sha256 != source_reference["sha256"]:
+                        raise ReleaseEvidenceError("external source file hash mismatch")
+                    if source_sha256 not in artifact["evidence_refs"]:
+                        raise ReleaseEvidenceError(
+                            "external source hash is absent from artifact evidence references"
+                        )
+                    source = json_object(source_bytes, "external gate source")
+                    replayed_assertions, source_errors = verify_external_source(
+                        gate,
+                        source,
+                        candidate_commit=candidate_commit,
+                        frozen_at=frozen_at,
+                        source_root=source_path.parent,
+                        policy_bindings=policy,
+                    )
+                    if source_errors:
+                        raise ReleaseEvidenceError("; ".join(source_errors))
+                    if replayed_assertions != artifact["assertions"]:
+                        raise ReleaseEvidenceError(
+                            "external gate assertions differ from source replay"
+                        )
+                    completed_field = "ended_at" if gate == "pilot" else "completed_at"
+                    if parse_time(source[completed_field]) > artifact_time:
+                        raise ReleaseEvidenceError(
+                            "external source completion follows its gate artifact"
+                        )
             elif not artifact["hard_failures"]:
                 raise ReleaseEvidenceError("failed or invalidated gate requires a reason")
             payload = receipt["payload"]
@@ -509,7 +1130,6 @@ def verify(
                 raise ReleaseEvidenceError("receipt is bound to another artifact")
             if payload["outcome"] != artifact["status"]:
                 raise ReleaseEvidenceError("receipt outcome differs from artifact status")
-            artifact_time = parse_time(artifact["executed_at"])
             receipt_time = parse_time(payload["issued_at"])
             if frozen_at is not None and artifact_time < frozen_at:
                 raise ReleaseEvidenceError("artifact predates the frozen trust policy")

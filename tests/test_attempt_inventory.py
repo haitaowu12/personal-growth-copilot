@@ -103,6 +103,10 @@ class AttemptInventoryTests(unittest.TestCase):
             "candidate_commit": cls.cfg["source_commit"],
             "frozen_at": "2026-08-12T12:00:00Z",
             "attempt_campaign_id": CAMPAIGN_ID,
+            "target_config_sha256": target_session._digest(cls.cfg),
+            "holdout_seal_sha256": "2" * 64,
+            "privacy_host_identity_sha256": "3" * 64,
+            "pilot_protocol_sha256": "4" * 64,
             "authorities": authorities,
         }
         policy["policy_sha256"] = attempt_inventory.digest(policy)
@@ -327,6 +331,31 @@ class AttemptInventoryTests(unittest.TestCase):
         self.assertFalse(result["qualification_ready"])
         self.assertTrue(
             any("owner-anchored attempt epoch" in error for error in result["errors"])
+        )
+
+    def test_target_config_cannot_be_substituted_after_policy_freeze(self):
+        policy = dict(self.policy)
+        policy["target_config_sha256"] = "0" * 64
+        policy["policy_sha256"] = attempt_inventory.object_hash(
+            policy, "policy_sha256"
+        )
+        policy_path = self.directory / "policy-other-config.json"
+        policy_path.write_bytes(attempt_inventory.canonical_bytes(policy))
+        with patch.object(campaign, "_require_full_suite_scope", return_value=None):
+            result = attempt_inventory.verify_inventory(
+                index_path=self.index_path,
+                config=self.cfg,
+                suite=SUITE,
+                result_manifest_path=self.manifest_path,
+                policy_path=policy_path,
+                expected_policy_sha256=policy["policy_sha256"],
+                expected_head_sha256=self.index["entries"][-1]["event_sha256"],
+                expected_event_count=len(self.index["entries"]),
+                clock=FakeClock(),
+            )
+        self.assertFalse(result["qualification_ready"])
+        self.assertTrue(
+            any("owner-frozen release policy" in error for error in result["errors"])
         )
 
     def test_attempt_chain_must_follow_the_owner_anchored_policy_freeze(self):
