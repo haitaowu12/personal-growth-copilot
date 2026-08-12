@@ -912,5 +912,37 @@ class ExternalGateSourceTests(unittest.TestCase):
             self.assertEqual(policy["pilot_protocol_sha256"], pilot["protocol_sha256"])
             self.assertEqual(len(policy["authorities"]), 9)
 
+            host_record = json.loads(host_path.read_text(encoding="utf-8"))
+            aliased_protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+            aliased_protocol["witness_public_key_path"] = host_record[
+                "audit_public_key_path"
+            ]
+            aliased_protocol["witness_public_key_sha256"] = host_record[
+                "audit_public_key_sha256"
+            ]
+            aliased_protocol_path = directory / "aliased-pilot-protocol.json"
+            write_json(aliased_protocol_path, aliased_protocol)
+            aliased_args = SimpleNamespace(
+                **{**vars(args), "pilot_protocol": aliased_protocol_path, "output": directory / "aliased-policy.json"}
+            )
+            with (
+                mock.patch.object(release_packet, "_source_commit", return_value=CANDIDATE),
+                mock.patch.object(
+                    release_packet.target_session, "validate_target_config", return_value=[]
+                ),
+                mock.patch.object(
+                    release_packet.campaign, "_require_full_suite_scope", return_value=None
+                ),
+                mock.patch.object(
+                    release_packet,
+                    "now",
+                    return_value=datetime(2026, 8, 13, tzinfo=timezone.utc),
+                ),
+            ):
+                with self.assertRaisesRegex(
+                    release_evidence.ReleaseEvidenceError, "distinct key material"
+                ):
+                    release_packet.command_policy(aliased_args)
+
 if __name__ == "__main__":
     unittest.main()

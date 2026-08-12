@@ -707,7 +707,7 @@ def command_policy(args: argparse.Namespace) -> int:
             raise release_evidence.ReleaseEvidenceError(
                 f"holdout {prefix} hash mismatch"
             )
-    release_evidence.load_bound_public_key(
+    holdout_witness_key = release_evidence.load_bound_public_key(
         args.holdout_seal.resolve().parent,
         seal["witness_public_key_path"],
         seal["witness_public_key_sha256"],
@@ -773,7 +773,7 @@ def command_policy(args: argparse.Namespace) -> int:
         raise release_evidence.ReleaseEvidenceError(
             "invalid privacy host identity: " + "; ".join(errors)
         )
-    release_evidence.load_bound_public_key(
+    privacy_witness_key = release_evidence.load_bound_public_key(
         args.privacy_host_identity.resolve().parent,
         host_identity_record["audit_public_key_path"],
         host_identity_record["audit_public_key_sha256"],
@@ -793,12 +793,22 @@ def command_policy(args: argparse.Namespace) -> int:
         raise release_evidence.ReleaseEvidenceError(
             "pilot protocol differs from the clean candidate checkout"
         )
-    release_evidence.load_bound_public_key(
+    pilot_witness_key = release_evidence.load_bound_public_key(
         args.pilot_protocol.resolve().parent,
         pilot_protocol_record["witness_public_key_path"],
         pilot_protocol_record["witness_public_key_sha256"],
         "pilot witness",
     )
+    witness_key_identities = [
+        release_evidence.validate_public_key(key)
+        for key in (holdout_witness_key, privacy_witness_key, pilot_witness_key)
+    ]
+    if len(witness_key_identities) != len(set(witness_key_identities)) or set(
+        witness_key_identities
+    ) & set(key_identities):
+        raise release_evidence.ReleaseEvidenceError(
+            "holdout, privacy, pilot, and release authorities require distinct key material"
+        )
     frozen = now()
     if release_evidence.parse_time(seal["sealed_at"]) > frozen:
         raise release_evidence.ReleaseEvidenceError(
