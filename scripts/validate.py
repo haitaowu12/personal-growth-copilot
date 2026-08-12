@@ -163,6 +163,10 @@ def validate() -> list[str]:
         ROOT / "evals/results/RESULT_SCHEMA.json",
         ROOT / "evals/target_session.py",
         ROOT / "evals/campaign.py",
+        ROOT / "evals/attempt_inventory.py",
+        ROOT / "evals/attempt-event.schema.json",
+        ROOT / "evals/attempt-witness-receipt.schema.json",
+        ROOT / "evals/attempt-inventory-index.schema.json",
         ROOT / "evals/target-config.schema.json",
         ROOT / "evals/human-review.schema.json",
         ROOT / "evals/review-request.schema.json",
@@ -180,6 +184,7 @@ def validate() -> list[str]:
         ROOT / "scripts/build_target_config.py",
         ROOT / "scripts/target_session_cli.py",
         ROOT / "scripts/campaign_cli.py",
+        ROOT / "scripts/attempt_inventory_cli.py",
         ROOT / "providers/codex_cli_adapter.py",
         ROOT / "providers/codex-output.schema.json",
         ROOT / "providers/README.md",
@@ -192,6 +197,7 @@ def validate() -> list[str]:
         ROOT / "release/trust-policy.json",
         ROOT / "release/evidence-index.json",
         ROOT / "scripts/release_evidence.py",
+        ROOT / "scripts/release_packet.py",
     }
     for path in sorted(required_runtime):
         if not path.exists():
@@ -207,6 +213,9 @@ def validate() -> list[str]:
         ROOT / "evals/result-manifest.schema.json",
         ROOT / "evals/results/TARGET_RUN_SCHEMA.json",
         ROOT / "evals/results/CAMPAIGN_RESULT_SCHEMA.json",
+        ROOT / "evals/attempt-event.schema.json",
+        ROOT / "evals/attempt-witness-receipt.schema.json",
+        ROOT / "evals/attempt-inventory-index.schema.json",
         ROOT / "providers/codex-output.schema.json",
         ROOT / "release/gate-artifact.schema.json",
         ROOT / "release/signed-receipt.schema.json",
