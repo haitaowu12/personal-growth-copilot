@@ -284,6 +284,30 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             self.assertFalse((moved / "report.json").exists())
             self.assertFalse((exposed / "report.json").exists())
 
+    def test_reserved_output_rejects_placeholder_replacement(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            output_parent = self.root(parent, "output")
+            output = output_parent / "report.json"
+            reserved = host_privacy_discovery.reserve_private_output(
+                output,
+                runner=runner(),
+                system="Darwin",
+                home_root=parent,
+            )
+            output.unlink()
+            output.write_text("replacement", encoding="utf-8")
+            try:
+                with self.assertRaisesRegex(
+                    host_privacy_discovery.HostDiscoveryError,
+                    "output file changed after reservation",
+                ):
+                    reserved.write(self.discover(storage))
+            finally:
+                reserved.close()
+            self.assertEqual(output.read_text(encoding="utf-8"), "replacement")
+
     def test_discovery_output_boundary_rejects_broad_or_repository_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             parent = Path(directory_name).resolve()
