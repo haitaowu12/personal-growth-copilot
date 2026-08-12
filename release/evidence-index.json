@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "candidate_commit": null,
+  "trust_policy_sha256": "248b39af6fe41f4c81ff7dd44aa8d5d15ef09a27ebb137c6a21b1c5f075f179c",
+  "overall_status": "BLOCKED",
+  "gates": {
+    "behavioral_qualification": {"status": "PENDING", "artifact_path": null, "artifact_sha256": null, "receipt_path": null, "receipt_sha256": null},
+    "reviewer_attestation": {"status": "PENDING", "artifact_path": null, "artifact_sha256": null, "receipt_path": null, "receipt_sha256": null},
+    "attempt_inventory": {"status": "PENDING", "artifact_path": null, "artifact_sha256": null, "receipt_path": null, "receipt_sha256": null},
+    "holdout": {"status": "PENDING", "artifact_path": null, "artifact_sha256": null, "receipt_path": null, "receipt_sha256": null},
+    "privacy_preflight": {"status": "PENDING", "artifact_path": null, "artifact_sha256": null, "receipt_path": null, "receipt_sha256": null},
+    "bilingual_review": {"status": "PENDING", "artifact_path": null, "artifact_sha256": null, "receipt_path": null, "receipt_sha256": null},
+    "pilot": {"status": "PENDING", "artifact_path": null, "artifact_sha256": null, "receipt_path": null, "receipt_sha256": null},
+    "independent_release_review": {"status": "PENDING", "artifact_path": null, "artifact_sha256": null, "receipt_path": null, "receipt_sha256": null},
+    "owner_promotion": {"status": "PENDING", "artifact_path": null, "artifact_sha256": null, "receipt_path": null, "receipt_sha256": null}
+  },
+  "index_sha256": "1d75013df930ea2b73c0400439a4a4fe7abb2262a16bfa1f766b92f13f3f8742"
+}
