@@ -365,6 +365,13 @@ def check(
 
 
 def path_within(path: Path, parent: Path) -> bool:
+    candidates = (path, *path.parents)
+    for candidate in candidates:
+        try:
+            if os.path.samefile(candidate, parent):
+                return True
+        except OSError:
+            continue
     return path == parent or parent in path.parents
 
 

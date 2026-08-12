@@ -626,6 +626,39 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                     declared_sync_roots=[sync_root],
                 )
 
+    def test_case_alias_cannot_bypass_sync_or_output_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            sync_root = self.root(parent, "SyncRoot")
+            alias = parent / "syncroot"
+            if not alias.exists() or not os.path.samefile(alias, sync_root):
+                self.skipTest("filesystem is case sensitive")
+            storage = self.root(sync_root, "Storage")
+            storage_alias = alias / "storage"
+            report = self.discover(
+                storage_alias,
+                sync_roots=[sync_root],
+                sync_inventory_complete=True,
+            )
+            no_sync = self.checks(report)["no_sync"]
+            self.assertEqual(no_sync["status"], "FAIL")
+            self.assertIn(
+                "STORAGE_ROOT_INSIDE_DECLARED_SYNC_ROOT",
+                no_sync["reason_codes"],
+            )
+            output_parent = self.root(sync_root, "Output")
+            with self.assertRaisesRegex(
+                host_privacy_discovery.HostDiscoveryError,
+                "overlaps a declared sync root",
+            ):
+                host_privacy_discovery.reserve_private_output(
+                    alias / "output" / "report.json",
+                    runner=runner(),
+                    system="Darwin",
+                    home_root=parent,
+                    declared_sync_roots=[sync_root],
+                )
+
     def test_missing_storage_root_produces_not_ready_report(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             storage = Path(directory_name).resolve() / "missing"
