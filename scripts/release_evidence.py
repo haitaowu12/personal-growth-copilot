@@ -37,6 +37,7 @@ SCHEMAS = {
     "privacy_host": ROOT / "release/privacy-host-identity.schema.json",
     "pilot_protocol": ROOT / "release/pilot-protocol.schema.json",
     "reviewer_identity": ROOT / "release/reviewer-identity-attestation.schema.json",
+    "qualification_plan": ROOT / "release/qualification-packet-plan.schema.json",
 }
 GATES = (
     "behavioral_qualification",

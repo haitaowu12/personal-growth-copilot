@@ -1,6 +1,6 @@
 # Roadmap
 
-## Completed through 0.4.0-alpha.6
+## Completed through 0.4.0-alpha.7
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
@@ -46,22 +46,28 @@
   bilingual, and pilot release gates, including bounded evidence-file replay,
   exact reviewer/result reconciliation, derived holdout/pilot completeness,
   and rejection of signed assertion-only promotion packets.
+- create-only private qualification-packet initialization with restrictive
+  permissions, no generated authority material or fake evidence, candidate
+  binding, PEM private-key detection, and trust-policy input preflight.
 
 ## Next evidence slice
 
-1. provision a dedicated restricted evaluation host and credentials, then run
+1. initialize the private packet on a dedicated non-sync evaluation host,
+   provision the real independent inputs, pass preregistration preflight, and
+   freeze the exact trust policy;
+2. provision restricted credentials, then run
    the authored cases on a frozen target model and matched baselines;
-2. add independently authored untouched cases after the skill freezes;
-3. conduct two-reviewer safety and bilingual adjudication and calculate
+3. add independently authored untouched cases after the skill freezes;
+4. conduct two-reviewer safety and bilingual adjudication and calculate
    preregistered agreement;
-4. provision the independent keys and produce signed reviewer-attestation and
+5. produce signed reviewer-attestation and
    immutable attempt-inventory evidence using the implemented receipt protocol;
-5. calibrate any auxiliary model judge to human labels;
-6. execute the implemented host privacy/security and incident evidence contract;
-7. implement a persistent adapter only if host discovery proves correct storage,
+6. calibrate any auxiliary model judge to human labels;
+7. execute the implemented host privacy/security and incident evidence contract;
+8. implement a persistent adapter only if host discovery proves correct storage,
    encryption, no-sync path, backup, correction, export, and deletion behavior;
-8. run a 10–20 episode consented private pilot over 4–8 weeks;
-9. obtain signed independent release review and explicit owner promotion.
+9. run a 10–20 episode consented private pilot over 4–8 weeks;
+10. obtain signed independent release review and explicit owner promotion.
 
 ## Stop conditions
 
