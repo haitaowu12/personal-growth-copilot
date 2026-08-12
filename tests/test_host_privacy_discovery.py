@@ -14,7 +14,6 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import host_privacy_discovery  # noqa: E402
 import release_evidence  # noqa: E402
-import release_packet  # noqa: E402
 
 
 CANDIDATE = "a" * 40
@@ -238,12 +237,52 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             output_parent = self.root(parent, "evidence")
             report = self.discover(storage)
             output = output_parent / "host-discovery.json"
-            host_privacy_discovery.validate_private_output(output)
-            release_packet.write_private_new(output, report)
+            with host_privacy_discovery.reserve_private_output(
+                output,
+                runner=runner(),
+                system="Darwin",
+                home_root=parent,
+            ) as reserved:
+                reserved.write(report)
             self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o600)
             self.assertEqual(json.loads(output.read_text()), report)
-            with self.assertRaises(FileExistsError):
-                release_packet.write_private_new(output, report)
+            with self.assertRaisesRegex(
+                host_privacy_discovery.HostDiscoveryError,
+                "must not already exist",
+            ):
+                host_privacy_discovery.reserve_private_output(
+                    output,
+                    runner=runner(),
+                    system="Darwin",
+                    home_root=parent,
+                )
+
+    def test_reserved_output_rejects_parent_swap_and_unlinks_bound_placeholder(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            good = self.root(parent, "good")
+            moved = parent / "moved"
+            exposed = self.root(parent, "exposed")
+            output = good / "report.json"
+            reserved = host_privacy_discovery.reserve_private_output(
+                output,
+                runner=runner(),
+                system="Darwin",
+                home_root=parent,
+            )
+            good.rename(moved)
+            good.symlink_to(exposed, target_is_directory=True)
+            try:
+                with self.assertRaisesRegex(
+                    host_privacy_discovery.HostDiscoveryError,
+                    "changed after reservation",
+                ):
+                    reserved.write(self.discover(storage))
+            finally:
+                reserved.close()
+            self.assertFalse((moved / "report.json").exists())
+            self.assertFalse((exposed / "report.json").exists())
 
     def test_discovery_output_boundary_rejects_broad_or_repository_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
