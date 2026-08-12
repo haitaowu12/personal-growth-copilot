@@ -8,6 +8,7 @@ import base64
 import hashlib
 import json
 import os
+import stat
 import subprocess
 import sys
 import tempfile
@@ -24,6 +25,19 @@ import campaign  # noqa: E402
 import attempt_inventory  # noqa: E402
 import release_evidence  # noqa: E402
 import target_session  # noqa: E402
+
+
+QUALIFICATION_PLAN_NAME = "qualification-plan.json"
+PRIVATE_KEY_MARKERS = (
+    b"-----BEGIN PRIVATE KEY-----",
+    b"-----BEGIN ENCRYPTED PRIVATE KEY-----",
+    b"-----BEGIN OPENSSH PRIVATE KEY-----",
+    b"-----BEGIN RSA PRIVATE KEY-----",
+    b"-----BEGIN EC PRIVATE KEY-----",
+    b"-----BEGIN DSA PRIVATE KEY-----",
+)
+MAX_PACKET_FILES = 10_000
+MAX_PACKET_FILE_BYTES = 10_485_760
 
 
 def now() -> datetime:
@@ -393,6 +407,96 @@ def _relative_packet_path(root: Path, path: Path) -> str:
         ) from exc
 
 
+def validate_qualification_packet_hygiene(packet_root: Path) -> Path:
+    """Enforce the private packet boundary used by preflight and policy freeze."""
+    if packet_root.is_symlink():
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification packet root may not be a symlink"
+        )
+    try:
+        root = packet_root.resolve(strict=True)
+    except OSError as exc:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification packet root is unavailable"
+        ) from exc
+    repository = ROOT.resolve(strict=True)
+    if root == repository or repository in root.parents:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification packets must remain outside the source repository"
+        )
+
+    def require_private_mode(path: Path, *, directory: bool) -> None:
+        metadata = path.lstat()
+        if stat.S_ISLNK(metadata.st_mode):
+            raise release_evidence.ReleaseEvidenceError(
+                "qualification packet may not contain symlinks"
+            )
+        expected_type = stat.S_ISDIR if directory else stat.S_ISREG
+        if not expected_type(metadata.st_mode):
+            raise release_evidence.ReleaseEvidenceError(
+                "qualification packet may contain only regular files and directories"
+            )
+        expected_mode = 0o700 if directory else 0o600
+        if stat.S_IMODE(metadata.st_mode) != expected_mode:
+            raise release_evidence.ReleaseEvidenceError(
+                f"qualification packet {'directories' if directory else 'files'} "
+                f"must use mode {expected_mode:04o}"
+            )
+
+    require_private_mode(root, directory=True)
+    count = 0
+
+    def walk_error(error: OSError) -> None:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification packet subtree is unreadable"
+        ) from error
+
+    for directory_name, directory_names, file_names in os.walk(
+        root, topdown=True, followlinks=False, onerror=walk_error
+    ):
+        directory = Path(directory_name)
+        for name in directory_names:
+            count += 1
+            require_private_mode(directory / name, directory=True)
+        for name in file_names:
+            count += 1
+            path = directory / name
+            require_private_mode(path, directory=False)
+            data = release_evidence.read_once(path, maximum=MAX_PACKET_FILE_BYTES)
+            if any(marker in data for marker in PRIVATE_KEY_MARKERS):
+                raise release_evidence.ReleaseEvidenceError(
+                    "qualification packet contains PEM private-key material"
+                )
+        if count > MAX_PACKET_FILES:
+            raise release_evidence.ReleaseEvidenceError(
+                "qualification packet exceeds the preflight file-count limit"
+            )
+    return root
+
+
+def load_qualification_plan(packet_root: Path) -> dict[str, Any]:
+    root = packet_root.resolve(strict=True)
+    plan_bytes = release_evidence.read_once(root / QUALIFICATION_PLAN_NAME)
+    plan = release_evidence.json_object(plan_bytes, "qualification packet plan")
+    if plan_bytes != release_evidence.canonical_bytes(plan):
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification packet plan must use canonical JSON bytes"
+        )
+    if errors := release_evidence.schema_errors(plan, "qualification_plan"):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid qualification packet plan: " + "; ".join(errors)
+        )
+    if plan["plan_sha256"] != release_evidence.object_hash(plan, "plan_sha256"):
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification packet plan self-hash mismatch"
+        )
+    if len(set(plan["paths"].values())) != len(plan["paths"]):
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification packet plan paths must be unique"
+        )
+    return plan
+
+
 def _derived_index_status(gates: dict[str, dict[str, Any]]) -> str:
     statuses = {gate: value["status"] for gate, value in gates.items()}
     if any(value in {"FAIL", "INVALIDATED"} for value in statuses.values()):
@@ -677,15 +781,32 @@ def prepare_trust_policy(
     frozen: datetime,
 ) -> dict[str, Any]:
     """Validate the preregistration inputs and derive a configured policy."""
-    packet_root = packet_root.resolve(strict=True)
-    for path in (
-        config_path,
-        holdout_seal_path,
-        privacy_host_identity_path,
-        pilot_protocol_path,
-        authorities_path,
-    ):
-        _relative_packet_path(packet_root, path)
+    packet_root = validate_qualification_packet_hygiene(packet_root)
+    plan = load_qualification_plan(packet_root)
+    if plan["candidate_commit"] != candidate:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification plan differs from the clean candidate checkout"
+        )
+    if plan["attempt_campaign_id"] != attempt_campaign_id:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification plan attempt campaign differs from the policy request"
+        )
+    if release_evidence.parse_time(plan["initialized_at"]) > frozen:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification plan initialization may not follow the policy freeze"
+        )
+    requested_paths = {
+        "target_config": config_path,
+        "holdout_seal": holdout_seal_path,
+        "privacy_host_identity": privacy_host_identity_path,
+        "pilot_protocol": pilot_protocol_path,
+        "authority_roster": authorities_path,
+    }
+    for input_id, path in requested_paths.items():
+        if _relative_packet_path(packet_root, path) != plan["paths"][input_id]:
+            raise release_evidence.ReleaseEvidenceError(
+                f"{input_id} differs from the qualification plan"
+            )
     suite = load_json(ROOT / "evals/cases.json", "canonical target suite")
     config_bytes = release_evidence.read_once(config_path)
     config = release_evidence.json_object(config_bytes, "target config")
@@ -842,6 +963,7 @@ def prepare_trust_policy(
         "candidate_commit": candidate,
         "frozen_at": timestamp(frozen),
         "attempt_campaign_id": attempt_campaign_id,
+        "qualification_plan_sha256": plan["plan_sha256"],
         "target_config_sha256": target_session._digest(config),
         "holdout_seal_sha256": seal["seal_sha256"],
         "privacy_host_identity_sha256": hashlib.sha256(host_identity).hexdigest(),
@@ -858,10 +980,10 @@ def prepare_trust_policy(
 
 def command_policy(args: argparse.Namespace) -> int:
     candidate = _source_commit()
-    packet_root = args.packet_root.resolve(strict=True)
-    if args.output.parent.resolve() != packet_root:
+    packet_root = validate_qualification_packet_hygiene(args.packet_root)
+    if args.output.resolve(strict=False) != packet_root / "trust-policy.json":
         raise release_evidence.ReleaseEvidenceError(
-            "trust policy output must be directly inside the packet directory"
+            "trust policy output must equal the packet plan destination"
         )
     policy = prepare_trust_policy(
         packet_root=packet_root,

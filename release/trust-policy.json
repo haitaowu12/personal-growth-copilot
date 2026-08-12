@@ -4,10 +4,11 @@
   "candidate_commit": null,
   "frozen_at": null,
   "attempt_campaign_id": null,
+  "qualification_plan_sha256": null,
   "target_config_sha256": null,
   "holdout_seal_sha256": null,
   "privacy_host_identity_sha256": null,
   "pilot_protocol_sha256": null,
   "authorities": [],
-  "policy_sha256": "4d9789cf8bcce405f3655082d7323352f0b1068cddef731dd5ab663f44a9048e"
+  "policy_sha256": "4c846626f5116c4c9a0edce8a8018731876602d238161fc43fdd35aee0dc58c0"
 }

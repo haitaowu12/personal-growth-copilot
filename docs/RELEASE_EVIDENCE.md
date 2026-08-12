@@ -43,7 +43,10 @@ python scripts/release_packet.py build-trust-policy \
   --output /private/release-packet/trust-policy.json
 ```
 
-The authority roster contains only `authorities`; each entry supplies a unique
+The resulting policy also binds the exact self-hashed qualification plan, so
+the candidate, campaign epoch, preregistration input paths, and fixed policy
+destination cannot be changed after freeze. The authority roster contains only
+`authorities`; each entry supplies a unique
 `key_id`, one release role, and a packet-relative Ed25519 public-key path. The
 builder reads, canonicalizes, and hashes the exact config, seal, host identity,
 pilot protocol, and nine distinct public keys before emitting a create-only
@@ -86,6 +89,11 @@ schemas/hashes/times, noncanonical target config, incomplete run scope, and
 aliased witness or authority key material. `READY_TO_FREEZE` is only permission
 to execute the create-only trust-policy builder; it is not gate evidence or a
 release claim.
+
+The policy builder independently repeats the packet-permission, symlink,
+private-key-marker, plan, path, candidate, campaign, and preregistration input
+checks at the authoritative freeze boundary. Skipping the convenience preflight
+therefore cannot bypass those controls.
 
 ## Required gates
 

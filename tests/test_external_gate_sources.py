@@ -6,6 +6,7 @@ import contextlib
 import hashlib
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -872,7 +873,30 @@ class ExternalGateSourceTests(unittest.TestCase):
                 )
             roster_path = directory / "authorities.json"
             write_json(roster_path, {"authorities": authorities})
+            for private_key in directory.glob("*.private.pem"):
+                private_key.unlink()
             output = directory / "trust-policy.json"
+            plan = {
+                "schema_version": "1.0",
+                "evidence_class": "qualification-packet-plan",
+                "status": "DRAFT",
+                "candidate_commit": CANDIDATE,
+                "initialized_at": "2026-08-12T00:00:00Z",
+                "attempt_campaign_id": "campaign-release-0001",
+                "paths": {
+                    "target_config": config_path.name,
+                    "holdout_seal": seal_path.name,
+                    "privacy_host_identity": host_path.name,
+                    "pilot_protocol": protocol_path.name,
+                    "authority_roster": roster_path.name,
+                    "trust_policy": output.name,
+                },
+            }
+            plan["plan_sha256"] = release_evidence.digest(plan)
+            plan_path = directory / release_packet.QUALIFICATION_PLAN_NAME
+            write_json(plan_path, plan)
+            for path in directory.rglob("*"):
+                os.chmod(path, 0o700 if path.is_dir() else 0o600)
             args = SimpleNamespace(
                 packet_root=directory,
                 config=config_path,
@@ -903,6 +927,9 @@ class ExternalGateSourceTests(unittest.TestCase):
             self.assertEqual(full_scope.call_args.args[1], config)
             policy = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(release_evidence.schema_errors(policy, "policy"), [])
+            self.assertEqual(
+                policy["qualification_plan_sha256"], plan["plan_sha256"]
+            )
             self.assertEqual(policy["target_config_sha256"], config_sha256)
             self.assertEqual(policy["holdout_seal_sha256"], holdout["seal_sha256"])
             self.assertEqual(
@@ -911,6 +938,27 @@ class ExternalGateSourceTests(unittest.TestCase):
             )
             self.assertEqual(policy["pilot_protocol_sha256"], pilot["protocol_sha256"])
             self.assertEqual(len(policy["authorities"]), 9)
+
+            leaked_private_key = directory / "leaked.private.pem"
+            leaked_private_key.write_text(
+                "-----BEGIN PRIVATE KEY-----\nnot-a-real-key\n-----END PRIVATE KEY-----\n"
+            )
+            os.chmod(leaked_private_key, 0o600)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError, "private-key material"
+            ):
+                release_packet.prepare_trust_policy(
+                    packet_root=directory,
+                    config_path=config_path,
+                    holdout_seal_path=seal_path,
+                    privacy_host_identity_path=host_path,
+                    pilot_protocol_path=protocol_path,
+                    authorities_path=roster_path,
+                    attempt_campaign_id="campaign-release-0001",
+                    candidate=CANDIDATE,
+                    frozen=datetime(2026, 8, 13, tzinfo=timezone.utc),
+                )
+            leaked_private_key.unlink()
 
             host_record = json.loads(host_path.read_text(encoding="utf-8"))
             aliased_protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
@@ -922,11 +970,15 @@ class ExternalGateSourceTests(unittest.TestCase):
             ]
             aliased_protocol_path = directory / "aliased-pilot-protocol.json"
             write_json(aliased_protocol_path, aliased_protocol)
-            aliased_args = SimpleNamespace(
-                **{**vars(args), "pilot_protocol": aliased_protocol_path, "output": directory / "aliased-policy.json"}
+            os.chmod(aliased_protocol_path, 0o600)
+            aliased_plan = copy.deepcopy(plan)
+            aliased_plan["paths"]["pilot_protocol"] = aliased_protocol_path.name
+            aliased_plan["plan_sha256"] = release_evidence.object_hash(
+                aliased_plan, "plan_sha256"
             )
+            plan_path.write_bytes(release_evidence.canonical_bytes(aliased_plan))
+            os.chmod(plan_path, 0o600)
             with (
-                mock.patch.object(release_packet, "_source_commit", return_value=CANDIDATE),
                 mock.patch.object(
                     release_packet.target_session, "validate_target_config", return_value=[]
                 ),
@@ -942,7 +994,17 @@ class ExternalGateSourceTests(unittest.TestCase):
                 with self.assertRaisesRegex(
                     release_evidence.ReleaseEvidenceError, "distinct key material"
                 ):
-                    release_packet.command_policy(aliased_args)
+                    release_packet.prepare_trust_policy(
+                        packet_root=directory,
+                        config_path=config_path,
+                        holdout_seal_path=seal_path,
+                        privacy_host_identity_path=host_path,
+                        pilot_protocol_path=aliased_protocol_path,
+                        authorities_path=roster_path,
+                        attempt_campaign_id="campaign-release-0001",
+                        candidate=CANDIDATE,
+                        frozen=datetime(2026, 8, 13, tzinfo=timezone.utc),
+                    )
 
 if __name__ == "__main__":
     unittest.main()

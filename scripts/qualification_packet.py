@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import stat
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,7 +18,7 @@ import release_evidence  # noqa: E402
 import release_packet  # noqa: E402
 
 
-PLAN_NAME = "qualification-plan.json"
+PLAN_NAME = release_packet.QUALIFICATION_PLAN_NAME
 PACKET_DIRECTORIES = (
     "attempts",
     "authorities",
@@ -46,18 +45,6 @@ INPUT_LABELS = {
     "pilot_protocol": "preregistered pilot schedule and witness key",
     "authority_roster": "nine independently controlled release authority public keys",
 }
-PRIVATE_KEY_MARKERS = (
-    b"-----BEGIN PRIVATE KEY-----",
-    b"-----BEGIN ENCRYPTED PRIVATE KEY-----",
-    b"-----BEGIN OPENSSH PRIVATE KEY-----",
-    b"-----BEGIN RSA PRIVATE KEY-----",
-    b"-----BEGIN EC PRIVATE KEY-----",
-    b"-----BEGIN DSA PRIVATE KEY-----",
-)
-MAX_PACKET_FILES = 10_000
-MAX_PREFLIGHT_FILE_BYTES = 10_485_760
-
-
 def now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -89,50 +76,6 @@ def _existing_packet_root(path: Path) -> Path:
     return resolved
 
 
-def _require_private_mode(path: Path, *, directory: bool) -> None:
-    metadata = path.lstat()
-    if stat.S_ISLNK(metadata.st_mode):
-        raise release_evidence.ReleaseEvidenceError(
-            "qualification packet may not contain symlinks"
-        )
-    expected_type = stat.S_ISDIR if directory else stat.S_ISREG
-    if not expected_type(metadata.st_mode):
-        raise release_evidence.ReleaseEvidenceError(
-            "qualification packet may contain only regular files and directories"
-        )
-    if stat.S_IMODE(metadata.st_mode) & 0o077:
-        raise release_evidence.ReleaseEvidenceError(
-            "qualification packet paths may not grant group or other access"
-        )
-
-
-def _scan_packet(root: Path) -> None:
-    count = 0
-    _require_private_mode(root, directory=True)
-    for directory_name, directory_names, file_names in os.walk(
-        root, topdown=True, followlinks=False
-    ):
-        directory = Path(directory_name)
-        for name in directory_names:
-            count += 1
-            _require_private_mode(directory / name, directory=True)
-        for name in file_names:
-            count += 1
-            path = directory / name
-            _require_private_mode(path, directory=False)
-            data = release_evidence.read_once(
-                path, maximum=MAX_PREFLIGHT_FILE_BYTES
-            )
-            if any(marker in data for marker in PRIVATE_KEY_MARKERS):
-                raise release_evidence.ReleaseEvidenceError(
-                    "qualification packet contains PEM private-key material"
-                )
-        if count > MAX_PACKET_FILES:
-            raise release_evidence.ReleaseEvidenceError(
-                "qualification packet exceeds the preflight file-count limit"
-            )
-
-
 def _declared_path(root: Path, value: str) -> Path:
     relative = Path(value)
     if relative.is_absolute() or not relative.parts or ".." in relative.parts:
@@ -150,25 +93,7 @@ def _declared_path(root: Path, value: str) -> Path:
 
 
 def _load_plan(root: Path) -> dict[str, Any]:
-    plan_path = root / PLAN_NAME
-    plan_bytes = release_evidence.read_once(plan_path)
-    plan = release_evidence.json_object(plan_bytes, "qualification packet plan")
-    if plan_bytes != release_evidence.canonical_bytes(plan):
-        raise release_evidence.ReleaseEvidenceError(
-            "qualification packet plan must use canonical JSON bytes"
-        )
-    if errors := release_evidence.schema_errors(plan, "qualification_plan"):
-        raise release_evidence.ReleaseEvidenceError(
-            "invalid qualification packet plan: " + "; ".join(errors)
-        )
-    if plan["plan_sha256"] != release_evidence.object_hash(plan, "plan_sha256"):
-        raise release_evidence.ReleaseEvidenceError(
-            "qualification packet plan self-hash mismatch"
-        )
-    if len(set(plan["paths"].values())) != len(plan["paths"]):
-        raise release_evidence.ReleaseEvidenceError(
-            "qualification packet plan paths must be unique"
-        )
+    plan = release_packet.load_qualification_plan(root)
     for value in plan["paths"].values():
         _declared_path(root, value)
     return plan
@@ -232,7 +157,7 @@ def preflight_packet(
     errors: list[str] = []
     missing_inputs: list[str] = []
     try:
-        _scan_packet(root)
+        release_packet.validate_qualification_packet_hygiene(root)
     except release_evidence.ReleaseEvidenceError as exc:
         errors.append(str(exc))
     plan = _load_plan(root)
@@ -277,6 +202,7 @@ def preflight_packet(
             errors.append(f"trust-policy input validation failed: {exc}")
         else:
             bindings = {
+                "qualification_plan_sha256": policy["qualification_plan_sha256"],
                 "target_config_sha256": policy["target_config_sha256"],
                 "holdout_seal_sha256": policy["holdout_seal_sha256"],
                 "privacy_host_identity_sha256": policy[

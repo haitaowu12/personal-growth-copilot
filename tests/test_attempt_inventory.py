@@ -103,6 +103,7 @@ class AttemptInventoryTests(unittest.TestCase):
             "candidate_commit": cls.cfg["source_commit"],
             "frozen_at": "2026-08-12T12:00:00Z",
             "attempt_campaign_id": CAMPAIGN_ID,
+            "qualification_plan_sha256": "0" * 64,
             "target_config_sha256": target_session._digest(cls.cfg),
             "holdout_seal_sha256": "2" * 64,
             "privacy_host_identity_sha256": "3" * 64,
