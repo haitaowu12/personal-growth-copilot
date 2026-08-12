@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import base64
 import contextlib
 import hashlib
 import io
@@ -9,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -39,6 +40,53 @@ def write_evidence(directory: Path, name: str) -> tuple[str, str]:
     return path.name, hashlib.sha256(data).hexdigest()
 
 
+def signing_key(directory: Path, name: str) -> tuple[Path, str, str]:
+    private_key = directory / f"{name}.private.pem"
+    public_key = directory / f"{name}.public.pem"
+    subprocess.run(
+        ["openssl", "genpkey", "-algorithm", "ED25519", "-out", str(private_key)],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        [
+            "openssl",
+            "pkey",
+            "-in",
+            str(private_key),
+            "-pubout",
+            "-out",
+            str(public_key),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    return private_key, public_key.name, hashlib.sha256(public_key.read_bytes()).hexdigest()
+
+
+def sign_payload(directory: Path, name: str, payload: dict, private_key: Path) -> str:
+    payload_path = directory / f"{name}.payload.json"
+    signature_path = directory / f"{name}.signature.bin"
+    payload_path.write_bytes(release_evidence.canonical_bytes(payload))
+    subprocess.run(
+        [
+            "openssl",
+            "pkeyutl",
+            "-sign",
+            "-inkey",
+            str(private_key),
+            "-rawin",
+            "-in",
+            str(payload_path),
+            "-out",
+            str(signature_path),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    return base64.b64encode(signature_path.read_bytes()).decode("ascii")
+
+
 def scores(offset: int = 0) -> dict[str, int]:
     names = (
         "contract_and_focus",
@@ -58,6 +106,9 @@ def scores(offset: int = 0) -> dict[str, int]:
 
 class ExternalGateSourceTests(unittest.TestCase):
     def privacy_source(self, directory: Path) -> dict:
+        private_key, public_key_path, public_key_sha256 = signing_key(
+            directory, "privacy-audit-witness"
+        )
         checks = []
         for check_id in (
             "storage_map",
@@ -80,25 +131,69 @@ class ExternalGateSourceTests(unittest.TestCase):
                     "evidence_sha256": evidence_sha256,
                 }
             )
-        host_path, host_sha256 = write_evidence(directory, "host-identity.evidence")
-        return {
+        host_record = {
+            "schema_version": "1.0",
+            "evidence_class": "privacy-host-identity",
+            "named_host": "restricted-evaluation-host-1",
+            "environment_id": "pgc-private-evaluation-001",
+            "storage_root_sha256": "0" * 64,
+            "audit_id": "privacy-audit-0000000000000001",
+            "audit_public_key_path": public_key_path,
+            "audit_public_key_sha256": public_key_sha256,
+            "captured_at": "2026-08-12T00:00:00Z",
+        }
+        host_path = directory / "host-identity.json"
+        host_sha256 = write_json(host_path, host_record)
+        source = {
             "schema_version": "1.0",
             "evidence_class": "privacy-preflight-source",
             "candidate_commit": CANDIDATE,
             "named_host": "restricted-evaluation-host-1",
-            "host_identity_path": host_path,
+            "host_identity_path": host_path.name,
             "host_identity_sha256": host_sha256,
             "completed_at": "2026-08-14T00:00:00Z",
             "retention_days": 30,
             "checks": checks,
             "findings": [],
         }
+        source["audit_sha256"] = release_evidence.selected_hash(
+            source,
+            (
+                "candidate_commit",
+                "named_host",
+                "host_identity_sha256",
+                "completed_at",
+                "retention_days",
+                "checks",
+                "findings",
+            ),
+        )
+        source["audit_event_count"] = len(source["checks"]) + len(source["findings"])
+        payload = {
+            "domain": "pgc-privacy-audit-witness-v1",
+            "candidate_commit": CANDIDATE,
+            "audit_id": host_record["audit_id"],
+            "host_identity_sha256": host_sha256,
+            "audit_sha256": source["audit_sha256"],
+            "event_count": source["audit_event_count"],
+            "completed_at": source["completed_at"],
+            "nonce": "privacy-audit-nonce-0001",
+        }
+        source["audit_receipt"] = {
+            "payload": payload,
+            "signature_base64": sign_payload(
+                directory, "privacy-audit", payload, private_key
+            ),
+        }
+        return source
 
     def holdout_source(self, directory: Path) -> dict:
+        private_key, witness_key_path, witness_key_sha256 = signing_key(
+            directory, "holdout-attempt-witness"
+        )
         case_ids = [f"holdout-case-{index}" for index in range(1, 5)]
         ciphertext_path, ciphertext_sha256 = write_evidence(directory, "holdout.enc")
         schema_path, schema_sha256 = write_evidence(directory, "holdout-schema.json")
-        audit_path, audit_sha256 = write_evidence(directory, "holdout-access.audit")
         authors = []
         for index in (1, 2):
             identity_path, identity_sha256 = write_evidence(
@@ -125,6 +220,11 @@ class ExternalGateSourceTests(unittest.TestCase):
             )
         results = []
         for index, case_id in enumerate(case_ids, start=1):
+            transcript_path = directory / f"holdout-transcript-{index}.json"
+            transcript = release_evidence.canonical_bytes(
+                {"case_id": case_id, "turns": [{"role": "assistant", "content": "bounded"}]}
+            )
+            transcript_path.write_bytes(transcript)
             result = {
                 "schema_version": "1.0",
                 "evidence_class": "holdout-case-result",
@@ -133,23 +233,53 @@ class ExternalGateSourceTests(unittest.TestCase):
                 "completed_at": "2026-08-15T00:00:00Z",
                 "automated_status": "PASS",
                 "hard_failure_codes": [],
-                "transcript_sha256": hashlib.sha256(case_id.encode()).hexdigest(),
+                "transcript_path": transcript_path.name,
+                "transcript_sha256": hashlib.sha256(transcript).hexdigest(),
             }
             result["result_sha256"] = release_evidence.digest(result)
             result_path = directory / f"holdout-result-{index}.json"
             result_file_sha256 = write_json(result_path, result)
+            event = {
+                "sequence": 0,
+                "previous_event_sha256": None,
+                "attempt_id": f"attempt-{index:032x}",
+                "occurred_at": "2026-08-15T00:00:00Z",
+                "outcome": "PASS",
+                "result_sha256": result["result_sha256"],
+            }
+            event["event_sha256"] = release_evidence.digest(event)
             attempt = {
                 "schema_version": "1.0",
                 "evidence_class": "holdout-attempt-inventory",
                 "candidate_commit": CANDIDATE,
                 "case_id": case_id,
-                "status": "PASS",
-                "all_attempts_accounted_for": True,
-                "attempt_count": 1,
-                "omitted_attempt_count": 0,
-                "witness_head_sha256": hashlib.sha256(
-                    ("attempt:" + case_id).encode()
-                ).hexdigest(),
+                "events": [event],
+            }
+            attempt["ledger_sha256"] = release_evidence.selected_hash(
+                attempt,
+                (
+                    "schema_version",
+                    "evidence_class",
+                    "candidate_commit",
+                    "case_id",
+                    "events",
+                ),
+            )
+            payload = {
+                "domain": "pgc-holdout-attempt-witness-v1",
+                "candidate_commit": CANDIDATE,
+                "case_id": case_id,
+                "ledger_sha256": attempt["ledger_sha256"],
+                "event_count": 1,
+                "head_event_sha256": event["event_sha256"],
+                "issued_at": "2026-08-15T00:00:00Z",
+                "nonce": f"holdout-attempt-nonce-{index:04d}",
+            }
+            attempt["witness_receipt"] = {
+                "payload": payload,
+                "signature_base64": sign_payload(
+                    directory, f"holdout-attempt-{index}", payload, private_key
+                ),
             }
             attempt["attempt_sha256"] = release_evidence.digest(attempt)
             attempt_path = directory / f"holdout-attempt-{index}.json"
@@ -176,11 +306,24 @@ class ExternalGateSourceTests(unittest.TestCase):
             "ciphertext_sha256": ciphertext_sha256,
             "case_schema_path": schema_path,
             "case_schema_sha256": schema_sha256,
+            "witness_public_key_path": witness_key_path,
+            "witness_public_key_sha256": witness_key_sha256,
             "authors": authors,
         }
         seal["seal_sha256"] = release_evidence.digest(seal)
         seal_path = directory / "holdout-seal.json"
         seal_file_sha256 = write_json(seal_path, seal)
+        access_audit = {
+            "schema_version": "1.0",
+            "evidence_class": "holdout-access-audit",
+            "candidate_commit": CANDIDATE,
+            "holdout_seal_sha256": seal["seal_sha256"],
+            "generated_at": "2026-08-15T00:00:00Z",
+            "events": [],
+        }
+        access_audit["audit_sha256"] = release_evidence.digest(access_audit)
+        audit_path = directory / "holdout-access-audit.json"
+        audit_file_sha256 = write_json(audit_path, access_audit)
         return {
             "schema_version": "1.0",
             "evidence_class": "holdout-source",
@@ -190,16 +333,40 @@ class ExternalGateSourceTests(unittest.TestCase):
             "seal_sha256": seal["seal_sha256"],
             "revealed_at": "2026-08-14T00:00:00Z",
             "completed_at": "2026-08-15T00:00:00Z",
-            "access_audit_path": audit_path,
-            "access_audit_sha256": audit_sha256,
-            "candidate_author_access_events": [],
+            "access_audit_path": audit_path.name,
+            "access_audit_file_sha256": audit_file_sha256,
+            "access_audit_sha256": access_audit["audit_sha256"],
             "results": results,
         }
 
     def pilot_source(self, directory: Path) -> dict:
+        private_key, witness_key_path, witness_key_sha256 = signing_key(
+            directory, "pilot-ledger-witness"
+        )
         episode_ids = [f"episode-{index:016x}" for index in range(1, 11)]
-        protocol_path, protocol_sha256 = write_evidence(directory, "pilot-protocol.json")
+        protocol = {
+            "schema_version": "1.0",
+            "evidence_class": "pilot-protocol",
+            "candidate_commit": CANDIDATE,
+            "preregistered_at": "2026-08-12T00:00:00Z",
+            "ledger_id": "pilot-ledger-0000000000000001",
+            "witness_public_key_path": witness_key_path,
+            "witness_public_key_sha256": witness_key_sha256,
+            "planned_episode_ids": episode_ids,
+            "minimum_duration_days": 28,
+            "maximum_duration_days": 56,
+            "stop_categories": [
+                "privacy",
+                "hard_safety",
+                "dependence",
+                "fabricated_persistence",
+            ],
+        }
+        protocol_path = directory / "pilot-protocol.json"
+        protocol_sha256 = write_json(protocol_path, protocol)
         episodes = []
+        start = datetime(2026, 8, 13, tzinfo=timezone.utc)
+        offsets = (0, 3, 6, 9, 12, 15, 18, 21, 24, 28)
         for index, episode_id in enumerate(episode_ids):
             consent_path, consent_sha256 = write_evidence(
                 directory, f"pilot-consent-{index}.evidence"
@@ -210,8 +377,12 @@ class ExternalGateSourceTests(unittest.TestCase):
             episodes.append(
                 {
                     "episode_id": episode_id,
-                    "scheduled_at": f"2026-08-{13 + index:02d}T00:00:00Z",
-                    "closed_at": f"2026-08-{13 + index:02d}T01:00:00Z",
+                    "scheduled_at": release_packet.timestamp(
+                        start + timedelta(days=offsets[index])
+                    ),
+                    "closed_at": release_packet.timestamp(
+                        start + timedelta(days=offsets[index], hours=1)
+                    ),
                     "outcome": "COMPLETED",
                     "consent_evidence_path": consent_path,
                     "consent_evidence_sha256": consent_sha256,
@@ -223,29 +394,72 @@ class ExternalGateSourceTests(unittest.TestCase):
                     "deletion_completed_at": None,
                 }
             )
-        return {
+        source = {
             "schema_version": "1.0",
             "evidence_class": "pilot-source",
             "candidate_commit": CANDIDATE,
-            "protocol_path": protocol_path,
+            "protocol_path": protocol_path.name,
             "protocol_sha256": protocol_sha256,
             "preregistered_at": "2026-08-12T00:00:00Z",
             "started_at": "2026-08-13T00:00:00Z",
-            "ended_at": "2026-09-10T00:00:00Z",
+            "ended_at": "2026-09-10T01:00:00Z",
             "planned_episode_ids": episode_ids,
             "episodes": episodes,
             "incidents": [],
         }
+        source["ledger_sha256"] = release_evidence.selected_hash(
+            source,
+            (
+                "candidate_commit",
+                "protocol_sha256",
+                "started_at",
+                "ended_at",
+                "planned_episode_ids",
+                "episodes",
+                "incidents",
+            ),
+        )
+        source["ledger_event_count"] = len(source["episodes"]) + len(source["incidents"])
+        payload = {
+            "domain": "pgc-pilot-ledger-witness-v1",
+            "candidate_commit": CANDIDATE,
+            "ledger_id": protocol["ledger_id"],
+            "protocol_sha256": protocol_sha256,
+            "ledger_sha256": source["ledger_sha256"],
+            "event_count": source["ledger_event_count"],
+            "completed_at": source["ended_at"],
+            "nonce": "pilot-ledger-nonce-0001",
+        }
+        source["ledger_receipt"] = {
+            "payload": payload,
+            "signature_base64": sign_payload(
+                directory, "pilot-ledger", payload, private_key
+            ),
+        }
+        return source
 
     def reviewer_fixture(self, directory: Path):
         rubric_hash = hashlib.sha256((ROOT / "evals/rubric.md").read_bytes()).hexdigest()
         reviewer_ids = ["reviewer-0000000000000001", "reviewer-0000000000000002"]
         roster = []
         reviewer_evidence = []
+        calibration_set_path, calibration_set_sha256 = write_evidence(
+            directory, "reviewer-calibration-set.json"
+        )
         for index, reviewer_id in enumerate(reviewer_ids, start=1):
-            identity_path, identity_sha256 = write_evidence(
-                directory, f"reviewer-{index}-identity.evidence"
-            )
+            subject_sha256 = str(index + 6) * 64
+            identity = {
+                "schema_version": "1.0",
+                "evidence_class": "reviewer-identity-attestation",
+                "reviewer_id": reviewer_id,
+                "subject_sha256": subject_sha256,
+                "issuer": "independent-review-coordinator",
+                "attested_at": "2026-08-12T00:00:00Z",
+            }
+            identity["identity_sha256"] = release_evidence.digest(identity)
+            identity_file = directory / f"reviewer-{index}-identity.json"
+            identity_sha256 = write_json(identity_file, identity)
+            identity_path = identity_file.name
             independence_path, independence_sha256 = write_evidence(
                 directory, f"reviewer-{index}-independence.evidence"
             )
@@ -264,7 +478,7 @@ class ExternalGateSourceTests(unittest.TestCase):
             reviewer_evidence.append(
                 {
                     "reviewer_id": reviewer_id,
-                    "subject_sha256": str(index + 6) * 64,
+                    "subject_sha256": subject_sha256,
                     "languages": ["en", "zh", "mixed"],
                     "identity_evidence_path": identity_path,
                     "identity_evidence_sha256": identity_sha256,
@@ -331,7 +545,8 @@ class ExternalGateSourceTests(unittest.TestCase):
             "candidate_commit": CANDIDATE,
             "completed_at": "2026-08-15T00:00:00Z",
             "rubric_sha256": rubric_hash,
-            "calibration_set_sha256": "f" * 64,
+            "calibration_set_path": calibration_set_path,
+            "calibration_set_sha256": calibration_set_sha256,
             "config_path": config_path.name,
             "config_sha256": config_hash,
             "result_manifest_path": manifest_path.name,
@@ -373,6 +588,7 @@ class ExternalGateSourceTests(unittest.TestCase):
             )
             self.assertEqual(errors, [])
             self.assertAlmostEqual(holdout_assertions["holdout_fraction"], 4 / 17)
+            self.assertFalse(holdout_assertions["candidate_author_access"])
             privacy_assertions, errors = self.verify(
                 "privacy_preflight", self.privacy_source(directory), directory
             )
@@ -393,6 +609,15 @@ class ExternalGateSourceTests(unittest.TestCase):
             _, errors = self.verify("holdout", holdout, directory)
             self.assertTrue(any("exact sealed case set" in item for item in errors))
             holdout = self.holdout_source(directory)
+            transcript_path = directory / json.loads(
+                (directory / holdout["results"][0]["result_path"]).read_text(
+                    encoding="utf-8"
+                )
+            )["transcript_path"]
+            transcript_path.write_text("tampered transcript", encoding="utf-8")
+            _, errors = self.verify("holdout", holdout, directory)
+            self.assertTrue(any("transcript hash mismatch" in item for item in errors))
+            holdout = self.holdout_source(directory)
             result_reference = holdout["results"][0]
             result_path = directory / result_reference["result_path"]
             result = json.loads(result_path.read_text(encoding="utf-8"))
@@ -405,14 +630,86 @@ class ExternalGateSourceTests(unittest.TestCase):
             result_reference["result_file_sha256"] = write_json(result_path, result)
             _, errors = self.verify("holdout", holdout, directory)
             self.assertTrue(any("all_hard_gates_pass" in item for item in errors))
+            holdout = self.holdout_source(directory)
+            audit_path = directory / holdout["access_audit_path"]
+            audit = json.loads(audit_path.read_text(encoding="utf-8"))
+            evidence_path, evidence_sha256 = write_evidence(
+                directory, "candidate-author-access.evidence"
+            )
+            audit["events"].append(
+                {
+                    "event_id": "access-0000000000000001",
+                    "actor_role": "candidate_author",
+                    "accessed_at": "2026-08-14T00:00:00Z",
+                    "evidence_path": evidence_path,
+                    "evidence_sha256": evidence_sha256,
+                }
+            )
+            audit["audit_sha256"] = release_evidence.object_hash(
+                audit, "audit_sha256"
+            )
+            holdout["access_audit_sha256"] = audit["audit_sha256"]
+            holdout["access_audit_file_sha256"] = write_json(audit_path, audit)
+            _, errors = self.verify("holdout", holdout, directory)
+            self.assertTrue(any("candidate-author access" in item for item in errors))
+            holdout = self.holdout_source(directory)
+            audit_path = directory / holdout["access_audit_path"]
+            audit = json.loads(audit_path.read_text(encoding="utf-8"))
+            audit["events"] = [None]
+            audit["audit_sha256"] = release_evidence.object_hash(
+                audit, "audit_sha256"
+            )
+            holdout["access_audit_sha256"] = audit["audit_sha256"]
+            holdout["access_audit_file_sha256"] = write_json(audit_path, audit)
+            _, errors = self.verify("holdout", holdout, directory)
+            self.assertTrue(any("external source replay failed" in item for item in errors))
             privacy = self.privacy_source(directory)
             privacy["checks"][0]["status"] = "FAIL"
             _, errors = self.verify("privacy_preflight", privacy, directory)
             self.assertTrue(any("storage_map_verified" in item for item in errors))
+            privacy = self.privacy_source(directory)
+            evidence_path, evidence_sha256 = write_evidence(
+                directory, "privacy-extra-failed-control.evidence"
+            )
+            privacy["checks"].append(
+                {
+                    "check_id": "provider_retention",
+                    "status": "FAIL",
+                    "executed_at": "2026-08-13T00:00:00Z",
+                    "evidence_path": evidence_path,
+                    "evidence_sha256": evidence_sha256,
+                }
+            )
+            _, errors = self.verify("privacy_preflight", privacy, directory)
+            self.assertTrue(any("exact required control catalog" in item for item in errors))
+            privacy = self.privacy_source(directory)
+            privacy["named_host"] = "substituted-host"
+            _, errors = self.verify("privacy_preflight", privacy, directory)
+            self.assertTrue(any("differs from its identity" in item for item in errors))
             pilot = self.pilot_source(directory)
             pilot["ended_at"] = "2026-08-13T00:00:00Z"
             _, errors = self.verify("pilot", pilot, directory)
-            self.assertTrue(any("28 through 56" in item for item in errors))
+            self.assertTrue(any("exact episode coverage" in item for item in errors))
+            pilot = self.pilot_source(directory)
+            pilot["planned_episode_ids"][-1] = "episode-ffffffffffffffff"
+            _, errors = self.verify("pilot", pilot, directory)
+            self.assertTrue(any("owner-frozen protocol" in item for item in errors))
+            pilot = self.pilot_source(directory)
+            incident_path, incident_sha256 = write_evidence(
+                directory, "pilot-critical-other.evidence"
+            )
+            pilot["incidents"].append(
+                {
+                    "incident_id": "CRITICAL_OTHER_INCIDENT",
+                    "category": "other",
+                    "severity": "critical",
+                    "detected_at": "2026-08-20T00:00:00Z",
+                    "evidence_path": incident_path,
+                    "evidence_sha256": incident_sha256,
+                }
+            )
+            _, errors = self.verify("pilot", pilot, directory)
+            self.assertTrue(any("high-severity uncategorized" in item for item in errors))
 
     def test_reviewer_and_bilingual_sources_reconcile_exact_results(self):
         with tempfile.TemporaryDirectory() as directory_name:
@@ -428,6 +725,19 @@ class ExternalGateSourceTests(unittest.TestCase):
                 )
                 self.assertEqual(errors, [])
                 self.assertEqual(reviewer_assertions["reviewer_count"], 2)
+                aliased = copy.deepcopy(reviewer_source)
+                aliased["reviewers"][1]["identity_evidence_path"] = aliased[
+                    "reviewers"
+                ][0]["identity_evidence_path"]
+                aliased["reviewers"][1]["identity_evidence_sha256"] = aliased[
+                    "reviewers"
+                ][0]["identity_evidence_sha256"]
+                _, alias_errors = self.verify(
+                    "reviewer_attestation", aliased, directory
+                )
+                self.assertTrue(
+                    any("identity attestations must be unique" in item for item in alias_errors)
+                )
                 reviewer_path = directory / "reviewer-source.json"
                 reviewer_hash = write_json(reviewer_path, reviewer_source)
                 bilingual_reviews = []
@@ -579,6 +889,9 @@ class ExternalGateSourceTests(unittest.TestCase):
                     release_packet.target_session, "validate_target_config", return_value=[]
                 ),
                 mock.patch.object(
+                    release_packet.campaign, "_require_full_suite_scope", return_value=None
+                ) as full_scope,
+                mock.patch.object(
                     release_packet,
                     "now",
                     return_value=datetime(2026, 8, 13, tzinfo=timezone.utc),
@@ -586,6 +899,8 @@ class ExternalGateSourceTests(unittest.TestCase):
             ):
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(release_packet.command_policy(args), 0)
+            full_scope.assert_called_once()
+            self.assertEqual(full_scope.call_args.args[1], config)
             policy = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(release_evidence.schema_errors(policy, "policy"), [])
             self.assertEqual(policy["target_config_sha256"], config_sha256)
@@ -596,7 +911,6 @@ class ExternalGateSourceTests(unittest.TestCase):
             )
             self.assertEqual(policy["pilot_protocol_sha256"], pilot["protocol_sha256"])
             self.assertEqual(len(policy["authorities"]), 9)
-
 
 if __name__ == "__main__":
     unittest.main()

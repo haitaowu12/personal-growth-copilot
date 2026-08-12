@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/privacy-host-identity.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "named_host", "environment_id", "storage_root_sha256", "audit_id", "audit_public_key_path", "audit_public_key_sha256", "captured_at"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "privacy-host-identity"},
+    "named_host": {"type": "string", "minLength": 1, "maxLength": 200},
+    "environment_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "storage_root_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "audit_id": {"type": "string", "pattern": "^privacy-audit-[0-9a-f]{16}$"},
+    "audit_public_key_path": {"type": "string", "minLength": 1, "maxLength": 500},
+    "audit_public_key_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "captured_at": {"type": "string", "format": "date-time"}
+  }
+}

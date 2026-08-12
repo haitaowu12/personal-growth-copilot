@@ -3,7 +3,7 @@
   "$id": "https://personal-growth-copilot.local/release/holdout-seal.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "evidence_class", "candidate_commit", "sealed_at", "public_case_count", "sealed_case_ids", "ciphertext_path", "ciphertext_sha256", "case_schema_path", "case_schema_sha256", "authors", "seal_sha256"],
+  "required": ["schema_version", "evidence_class", "candidate_commit", "sealed_at", "public_case_count", "sealed_case_ids", "ciphertext_path", "ciphertext_sha256", "case_schema_path", "case_schema_sha256", "witness_public_key_path", "witness_public_key_sha256", "authors", "seal_sha256"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "evidence_class": {"const": "holdout-seal"},
@@ -20,6 +20,8 @@
     "ciphertext_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "case_schema_path": {"type": "string", "minLength": 1, "maxLength": 500},
     "case_schema_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "witness_public_key_path": {"type": "string", "minLength": 1, "maxLength": 500},
+    "witness_public_key_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "authors": {
       "type": "array",
       "minItems": 1,

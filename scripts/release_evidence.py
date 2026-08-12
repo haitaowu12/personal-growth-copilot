@@ -33,6 +33,10 @@ SCHEMAS = {
     "holdout_seal": ROOT / "release/holdout-seal.schema.json",
     "holdout_result": ROOT / "release/holdout-result.schema.json",
     "holdout_attempt": ROOT / "release/holdout-attempt.schema.json",
+    "holdout_access": ROOT / "release/holdout-access-audit.schema.json",
+    "privacy_host": ROOT / "release/privacy-host-identity.schema.json",
+    "pilot_protocol": ROOT / "release/pilot-protocol.schema.json",
+    "reviewer_identity": ROOT / "release/reviewer-identity-attestation.schema.json",
 }
 GATES = (
     "behavioral_qualification",
@@ -343,7 +347,25 @@ def verify_source_file(
         errors.append(f"{label}: {exc}")
 
 
-def verify_external_source(
+def load_bound_public_key(
+    root: Path,
+    relative_path: str,
+    expected_sha256: str,
+    label: str,
+) -> bytes:
+    path = safe_path(root, relative_path)
+    public_key = read_once(path, maximum=65_536)
+    if hashlib.sha256(public_key).hexdigest() != expected_sha256:
+        raise ReleaseEvidenceError(f"{label} public-key hash mismatch")
+    validate_public_key(public_key)
+    return public_key
+
+
+def selected_hash(value: dict[str, Any], fields: tuple[str, ...]) -> str:
+    return digest({field: value[field] for field in fields})
+
+
+def _verify_external_source_impl(
     gate: str,
     source: dict[str, Any],
     *,
@@ -388,6 +410,13 @@ def verify_external_source(
             errors.append("reviewer source target-config hash mismatch")
         if source["config_sha256"] != policy_bindings.get("target_config_sha256"):
             errors.append("reviewer target config differs from the owner-frozen policy")
+        verify_source_file(
+            source_root,
+            source["calibration_set_path"],
+            source["calibration_set_sha256"],
+            "reviewer calibration set",
+            errors,
+        )
         if hashlib.sha256(manifest_bytes).hexdigest() != source["result_manifest_sha256"]:
             errors.append("reviewer source result-manifest hash mismatch")
         manifest = json_object(manifest_bytes, "reviewer source result manifest")
@@ -424,8 +453,14 @@ def verify_external_source(
             errors.append("reviewer source ids must be unique")
         if len(subjects) != len(set(subjects)):
             errors.append("reviewer source subjects must be unique")
+        identity_paths = [item["identity_evidence_path"] for item in reviewers]
+        identity_hashes = [item["identity_evidence_sha256"] for item in reviewers]
+        if len(identity_paths) != len(set(identity_paths)) or len(identity_hashes) != len(
+            set(identity_hashes)
+        ):
+            errors.append("reviewer identity attestations must be unique")
         for item in reviewers:
-            for prefix in ("identity", "independence", "calibration"):
+            for prefix in ("independence", "calibration"):
                 verify_source_file(
                     source_root,
                     item[f"{prefix}_evidence_path"],
@@ -433,8 +468,27 @@ def verify_external_source(
                     f"reviewer {prefix} evidence",
                     errors,
                 )
+            identity_path = safe_path(source_root, item["identity_evidence_path"])
+            identity_bytes = read_once(identity_path)
+            if hashlib.sha256(identity_bytes).hexdigest() != item[
+                "identity_evidence_sha256"
+            ]:
+                errors.append("reviewer identity evidence hash mismatch")
+            identity = json_object(identity_bytes, "reviewer identity attestation")
+            errors.extend(schema_errors(identity, "reviewer_identity"))
+            if identity.get("identity_sha256") != object_hash(
+                identity, "identity_sha256"
+            ):
+                errors.append("reviewer identity attestation self-hash mismatch")
+            if (
+                identity.get("reviewer_id") != item["reviewer_id"]
+                or identity.get("subject_sha256") != item["subject_sha256"]
+            ):
+                errors.append("reviewer identity attestation binding mismatch")
+            if parse_time(identity["attested_at"]) > completed:
+                errors.append("reviewer identity attestation follows gate completion")
             calibrated = parse_time(item["calibrated_at"])
-            if calibrated < frozen_at or calibrated > completed:
+            if calibrated > completed:
                 errors.append("reviewer calibration chronology is invalid")
             if item["used_run_count"] != actual_counts.get(item["reviewer_id"], 0):
                 errors.append("reviewer source usage count differs from verified results")
@@ -502,13 +556,53 @@ def verify_external_source(
                 f"holdout {prefix} evidence",
                 errors,
             )
-        verify_source_file(
-            source_root,
-            source["access_audit_path"],
-            source["access_audit_sha256"],
-            "holdout access_audit evidence",
-            errors,
+        witness_key = load_bound_public_key(
+            seal_path.parent,
+            seal["witness_public_key_path"],
+            seal["witness_public_key_sha256"],
+            "holdout witness",
         )
+        access_path = safe_path(source_root, source["access_audit_path"])
+        access_bytes = read_once(access_path)
+        if hashlib.sha256(access_bytes).hexdigest() != source[
+            "access_audit_file_sha256"
+        ]:
+            errors.append("holdout access-audit file hash mismatch")
+        access_audit = json_object(access_bytes, "holdout access audit")
+        errors.extend(schema_errors(access_audit, "holdout_access"))
+        if access_audit.get("audit_sha256") != object_hash(
+            access_audit, "audit_sha256"
+        ):
+            errors.append("holdout access-audit self-hash mismatch")
+        if access_audit.get("audit_sha256") != source["access_audit_sha256"]:
+            errors.append("holdout source and access-audit self-hashes differ")
+        if (
+            access_audit.get("candidate_commit") != candidate_commit
+            or access_audit.get("holdout_seal_sha256") != seal.get("seal_sha256")
+        ):
+            errors.append("holdout access audit candidate or seal binding mismatch")
+        audit_generated = parse_time(access_audit["generated_at"])
+        if audit_generated < revealed or audit_generated > completed:
+            errors.append("holdout access-audit chronology is invalid")
+        access_ids = [item["event_id"] for item in access_audit["events"]]
+        if len(access_ids) != len(set(access_ids)):
+            errors.append("holdout access-audit event ids must be unique")
+        candidate_access_events = [
+            item
+            for item in access_audit["events"]
+            if item.get("actor_role") == "candidate_author"
+        ]
+        for access in access_audit["events"]:
+            accessed_at = parse_time(access["accessed_at"])
+            if accessed_at < sealed or accessed_at > audit_generated:
+                errors.append("holdout access-event chronology is invalid")
+            verify_source_file(
+                access_path.parent,
+                access["evidence_path"],
+                access["evidence_sha256"],
+                "holdout access-event evidence",
+                errors,
+            )
         for author in seal["authors"]:
             for prefix in ("identity", "independence", "authorship"):
                 verify_source_file(
@@ -518,14 +612,6 @@ def verify_external_source(
                     f"holdout author {prefix} evidence",
                     errors,
                 )
-        for access in source["candidate_author_access_events"]:
-            verify_source_file(
-                source_root,
-                access["evidence_path"],
-                access["evidence_sha256"],
-                "holdout candidate-author access evidence",
-                errors,
-            )
         verified_results: list[dict[str, Any]] = []
         verified_attempts: list[dict[str, Any]] = []
         for reference in source["results"]:
@@ -544,6 +630,14 @@ def verify_external_source(
                     "case_id"
                 ) != reference["case_id"]:
                     errors.append("holdout result candidate or case binding mismatch")
+                transcript_path = safe_path(
+                    result_path.parent, result["transcript_path"]
+                )
+                transcript = read_once(transcript_path)
+                if hashlib.sha256(transcript).hexdigest() != result[
+                    "transcript_sha256"
+                ]:
+                    errors.append("holdout transcript hash mismatch")
                 result_completed = parse_time(result["completed_at"])
                 if result_completed < revealed or result_completed > completed:
                     errors.append("holdout result completion chronology is invalid")
@@ -575,6 +669,59 @@ def verify_external_source(
                     "case_id"
                 ) != reference["case_id"]:
                     errors.append("holdout attempt candidate or case binding mismatch")
+                ledger_hash = selected_hash(
+                    attempt,
+                    (
+                        "schema_version",
+                        "evidence_class",
+                        "candidate_commit",
+                        "case_id",
+                        "events",
+                    ),
+                )
+                if attempt.get("ledger_sha256") != ledger_hash:
+                    errors.append("holdout attempt ledger hash mismatch")
+                events = attempt["events"]
+                event_ids = [item["attempt_id"] for item in events]
+                if len(event_ids) != len(set(event_ids)):
+                    errors.append("holdout attempt ids must be unique")
+                previous = None
+                for sequence, event in enumerate(events):
+                    if event["sequence"] != sequence or event[
+                        "previous_event_sha256"
+                    ] != previous:
+                        errors.append("holdout attempt event chain is invalid")
+                    if event["event_sha256"] != object_hash(event, "event_sha256"):
+                        errors.append("holdout attempt event hash mismatch")
+                    if event["outcome"] == "PASS" and event[
+                        "result_sha256"
+                    ] != result.get("result_sha256"):
+                        errors.append("holdout attempt PASS is bound to another result")
+                    if event["outcome"] != "PASS" and event["result_sha256"] is not None:
+                        errors.append("failed holdout attempt may not claim a result")
+                    occurred = parse_time(event["occurred_at"])
+                    if occurred < revealed or occurred > completed:
+                        errors.append("holdout attempt event chronology is invalid")
+                    previous = event["event_sha256"]
+                receipt = attempt["witness_receipt"]
+                expected_payload = {
+                    "domain": "pgc-holdout-attempt-witness-v1",
+                    "candidate_commit": candidate_commit,
+                    "case_id": reference["case_id"],
+                    "ledger_sha256": ledger_hash,
+                    "event_count": len(events),
+                    "head_event_sha256": events[-1]["event_sha256"],
+                    "issued_at": receipt["payload"]["issued_at"],
+                    "nonce": receipt["payload"]["nonce"],
+                }
+                if receipt["payload"] != expected_payload:
+                    errors.append("holdout attempt witness payload mismatch")
+                issued = parse_time(receipt["payload"]["issued_at"])
+                if issued < parse_time(events[-1]["occurred_at"]) or issued > completed:
+                    errors.append("holdout attempt witness chronology is invalid")
+                verify_signature(
+                    receipt["payload"], receipt["signature_base64"], witness_key
+                )
                 verified_attempts.append(attempt)
             except ReleaseEvidenceError as exc:
                 errors.append(f"holdout result replay failed: {exc}")
@@ -591,13 +738,11 @@ def verify_external_source(
                 )
                 and len(verified_attempts) == len(cases)
                 and all(
-                    item.get("status") == "PASS"
-                    and item.get("all_attempts_accounted_for") is True
-                    and item.get("omitted_attempt_count") == 0
+                    all(event.get("outcome") == "PASS" for event in item["events"])
                     for item in verified_attempts
                 )
             ),
-            "candidate_author_access": bool(source["candidate_author_access_events"]),
+            "candidate_author_access": bool(candidate_access_events),
             "holdout_fraction": fraction,
             "case_count": len(cases),
         }
@@ -609,6 +754,17 @@ def verify_external_source(
             source["host_identity_sha256"],
             "privacy named-host identity evidence",
             errors,
+        )
+        host_path = safe_path(source_root, source["host_identity_path"])
+        host_identity = json_object(read_once(host_path), "privacy host identity")
+        errors.extend(schema_errors(host_identity, "privacy_host"))
+        if host_identity.get("named_host") != source["named_host"]:
+            errors.append("privacy source named host differs from its identity record")
+        privacy_key = load_bound_public_key(
+            host_path.parent,
+            host_identity["audit_public_key_path"],
+            host_identity["audit_public_key_sha256"],
+            "privacy audit",
         )
         if source["host_identity_sha256"] != policy_bindings.get(
             "privacy_host_identity_sha256"
@@ -627,9 +783,8 @@ def verify_external_source(
         ids = [item["check_id"] for item in checks]
         if len(ids) != len(set(ids)):
             errors.append("privacy control check ids must be unique")
-        missing = sorted(required - set(ids))
-        if missing:
-            errors.append("privacy source is missing required checks: " + ", ".join(missing))
+        if set(ids) != required or len(ids) != len(required):
+            errors.append("privacy source must contain the exact required control catalog")
         for item in checks:
             verify_source_file(
                 source_root,
@@ -654,6 +809,41 @@ def verify_external_source(
                 f"privacy finding {finding['finding_id']} evidence",
                 errors,
             )
+        audit_hash = selected_hash(
+            source,
+            (
+                "candidate_commit",
+                "named_host",
+                "host_identity_sha256",
+                "completed_at",
+                "retention_days",
+                "checks",
+                "findings",
+            ),
+        )
+        audit_count = len(source["checks"]) + len(source["findings"])
+        if source["audit_sha256"] != audit_hash or source[
+            "audit_event_count"
+        ] != audit_count:
+            errors.append("privacy audit hash or event count mismatch")
+        privacy_receipt = source["audit_receipt"]
+        expected_privacy_payload = {
+            "domain": "pgc-privacy-audit-witness-v1",
+            "candidate_commit": candidate_commit,
+            "audit_id": host_identity["audit_id"],
+            "host_identity_sha256": source["host_identity_sha256"],
+            "audit_sha256": audit_hash,
+            "event_count": audit_count,
+            "completed_at": source["completed_at"],
+            "nonce": privacy_receipt["payload"]["nonce"],
+        }
+        if privacy_receipt["payload"] != expected_privacy_payload:
+            errors.append("privacy audit witness payload mismatch")
+        verify_signature(
+            privacy_receipt["payload"],
+            privacy_receipt["signature_base64"],
+            privacy_key,
+        )
         assertions = {
             "storage_map_verified": passed.get("storage_map", False),
             "encryption_verified": passed.get("encryption", False),
@@ -794,12 +984,62 @@ def verify_external_source(
             "pilot protocol evidence",
             errors,
         )
+        protocol_path = safe_path(source_root, source["protocol_path"])
+        protocol = json_object(read_once(protocol_path), "pilot protocol")
+        errors.extend(schema_errors(protocol, "pilot_protocol"))
+        if protocol.get("candidate_commit") != candidate_commit:
+            errors.append("pilot protocol is not bound to the candidate commit")
+        if protocol.get("preregistered_at") != source["preregistered_at"]:
+            errors.append("pilot source preregistration differs from its protocol")
+        if protocol.get("planned_episode_ids") != source["planned_episode_ids"]:
+            errors.append("pilot schedule differs from the owner-frozen protocol")
+        pilot_key = load_bound_public_key(
+            protocol_path.parent,
+            protocol["witness_public_key_path"],
+            protocol["witness_public_key_sha256"],
+            "pilot witness",
+        )
         if source["protocol_sha256"] != policy_bindings.get("pilot_protocol_sha256"):
             errors.append("pilot protocol differs from the owner-frozen policy")
         planned = source["planned_episode_ids"]
         episode_ids = [item["episode_id"] for item in source["episodes"]]
         if len(episode_ids) != len(set(episode_ids)) or set(episode_ids) != set(planned):
             errors.append("pilot episodes do not cover the exact preregistered schedule")
+        ledger_hash = selected_hash(
+            source,
+            (
+                "candidate_commit",
+                "protocol_sha256",
+                "started_at",
+                "ended_at",
+                "planned_episode_ids",
+                "episodes",
+                "incidents",
+            ),
+        )
+        ledger_count = len(source["episodes"]) + len(source["incidents"])
+        if source["ledger_sha256"] != ledger_hash or source[
+            "ledger_event_count"
+        ] != ledger_count:
+            errors.append("pilot ledger hash or event count mismatch")
+        pilot_receipt = source["ledger_receipt"]
+        expected_pilot_payload = {
+            "domain": "pgc-pilot-ledger-witness-v1",
+            "candidate_commit": candidate_commit,
+            "ledger_id": protocol["ledger_id"],
+            "protocol_sha256": source["protocol_sha256"],
+            "ledger_sha256": ledger_hash,
+            "event_count": ledger_count,
+            "completed_at": source["ended_at"],
+            "nonce": pilot_receipt["payload"]["nonce"],
+        }
+        if pilot_receipt["payload"] != expected_pilot_payload:
+            errors.append("pilot ledger witness payload mismatch")
+        verify_signature(
+            pilot_receipt["payload"],
+            pilot_receipt["signature_base64"],
+            pilot_key,
+        )
         withdrawals_honored = True
         deletions_honored = True
         consent = True
@@ -828,12 +1068,27 @@ def verify_external_source(
                 withdrawals_honored = False
             if (requested is None) != (honored is None):
                 withdrawals_honored = False
-            elif requested is not None and parse_time(honored) < parse_time(requested):
-                withdrawals_honored = False
+            elif requested is not None:
+                requested_time = parse_time(requested)
+                honored_time = parse_time(honored)
+                if (
+                    requested_time < scheduled
+                    or honored_time < requested_time
+                    or honored_time > ended
+                    or item["outcome"] != "WITHDRAWN"
+                ):
+                    withdrawals_honored = False
             if item["deletion_requested"] != (item["deletion_completed_at"] is not None):
                 deletions_honored = False
+            elif item["deletion_completed_at"] is not None:
+                deletion_time = parse_time(item["deletion_completed_at"])
+                if deletion_time < scheduled or deletion_time > ended:
+                    deletions_honored = False
             consent = consent and bool(item["consent_evidence_sha256"])
         categories = [item["category"] for item in source["incidents"]]
+        incident_ids = [item["incident_id"] for item in source["incidents"]]
+        if len(incident_ids) != len(set(incident_ids)):
+            errors.append("pilot incident ids must be unique")
         for incident in source["incidents"]:
             verify_source_file(
                 source_root,
@@ -842,7 +1097,19 @@ def verify_external_source(
                 f"pilot incident {incident['incident_id']} evidence",
                 errors,
             )
-        duration = (ended.date() - started.date()).days
+            detected = parse_time(incident["detected_at"])
+            if detected < started or detected > ended:
+                errors.append("pilot incident chronology is invalid")
+            if incident["category"] == "other" and incident["severity"] in {
+                "high",
+                "critical",
+            }:
+                errors.append("pilot contains a high-severity uncategorized incident")
+        episode_start = min(parse_time(item["scheduled_at"]) for item in source["episodes"])
+        episode_end = max(parse_time(item["closed_at"]) for item in source["episodes"])
+        if episode_start != started or episode_end != ended:
+            errors.append("pilot declared endpoints differ from exact episode coverage")
+        duration = (episode_end.date() - episode_start.date()).days
         assertions = {
             "explicit_consent": consent,
             "withdrawals_honored": withdrawals_honored,
@@ -856,6 +1123,36 @@ def verify_external_source(
         }
     errors.extend(assertion_errors(gate, assertions))
     return assertions, errors
+
+
+def verify_external_source(
+    gate: str,
+    source: dict[str, Any],
+    *,
+    candidate_commit: str,
+    frozen_at: datetime,
+    source_root: Path,
+    policy_bindings: dict[str, Any],
+) -> tuple[dict[str, Any], list[str]]:
+    """Replay an external source pack and fail closed on malformed nested records."""
+    try:
+        return _verify_external_source_impl(
+            gate,
+            source,
+            candidate_commit=candidate_commit,
+            frozen_at=frozen_at,
+            source_root=source_root,
+            policy_bindings=policy_bindings,
+        )
+    except (
+        KeyError,
+        TypeError,
+        ValueError,
+        OSError,
+        subprocess.SubprocessError,
+        ReleaseEvidenceError,
+    ) as exc:
+        return {}, [f"external source replay failed: {type(exc).__name__}: {exc}"]
 
 
 def verify_signature(payload: dict[str, Any], signature: str, public_key: bytes) -> None:
@@ -1156,7 +1453,14 @@ def verify(
             verified_artifacts[gate] = artifact
             artifact_times[gate] = artifact_time
             receipt_times[gate] = receipt_time
-        except (OSError, subprocess.SubprocessError, ReleaseEvidenceError) as exc:
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            OSError,
+            subprocess.SubprocessError,
+            ReleaseEvidenceError,
+        ) as exc:
             errors.append(f"{gate}: {exc}")
     review_gate = "independent_release_review"
     review_prerequisites = GATES[:7]
@@ -1237,7 +1541,14 @@ def main() -> int:
             result["release_status"] = "BLOCKED"
             result["qualification_update_allowed"] = False
             result["errors"].append("candidate source changed during verification")
-    except (OSError, subprocess.SubprocessError, ReleaseEvidenceError) as exc:
+    except (
+        KeyError,
+        TypeError,
+        ValueError,
+        OSError,
+        subprocess.SubprocessError,
+        ReleaseEvidenceError,
+    ) as exc:
         result = {
             "verification_status": "fail",
             "release_status": "BLOCKED",

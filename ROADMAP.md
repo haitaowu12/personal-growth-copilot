@@ -1,6 +1,6 @@
 # Roadmap
 
-## Completed through 0.4.0-alpha.5
+## Completed through 0.4.0-alpha.6
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
