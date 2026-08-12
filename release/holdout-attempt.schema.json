@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/holdout-attempt.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "candidate_commit", "case_id", "status", "all_attempts_accounted_for", "attempt_count", "omitted_attempt_count", "witness_head_sha256", "attempt_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "holdout-attempt-inventory"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "case_id": {"type": "string", "pattern": "^holdout-[a-z0-9_-]{3,79}$"},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "all_attempts_accounted_for": {"type": "boolean"},
+    "attempt_count": {"type": "integer", "minimum": 1},
+    "omitted_attempt_count": {"type": "integer", "minimum": 0},
+    "witness_head_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "attempt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

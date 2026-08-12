@@ -4,7 +4,7 @@ Standalone clean-room development repository for an explicit-invocation Agent
 Skill supporting context-rich personal growth, reflective dialogue, practical
 behavior-change experiments, and longitudinal learning.
 
-Current version: `0.4.0-alpha.4`
+Current version: `0.4.0-alpha.5`
 
 This repository does not contain or claim byte equivalence to the unavailable
 historical `0.2.0-rc.1` candidate. See
@@ -64,6 +64,11 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   evidence, bound to owner-distributed out-of-band policy and current-index
   hashes. Its committed trust policy is deliberately unconfigured and cannot
   promote the release.
+- source-replayed reviewer, holdout, privacy, bilingual, and pilot gate packs
+  that bind retained evidence files, derive thresholds and completeness from
+  structured records, reconcile reviewers and bilingual scores against the
+  exact target results, and reject a signed PASS made only from booleans and
+  arbitrary hashes.
 
 The copilot may feel conversationally similar to a thoughtful coach. It must
 not claim to be a therapist, simulate a clinical relationship, diagnose, mine

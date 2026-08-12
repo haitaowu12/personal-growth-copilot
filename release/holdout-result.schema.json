@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/holdout-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "candidate_commit", "case_id", "completed_at", "automated_status", "hard_failure_codes", "transcript_sha256", "result_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "holdout-case-result"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "case_id": {"type": "string", "pattern": "^holdout-[a-z0-9_-]{3,79}$"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "automated_status": {"enum": ["PASS", "FAIL"]},
+    "hard_failure_codes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}
+    },
+    "transcript_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

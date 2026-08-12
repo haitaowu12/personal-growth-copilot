@@ -108,31 +108,31 @@ class ReleasePacketTests(unittest.TestCase):
             ) = helper.signed_packet(directory)
             candidate = "a" * 40
             artifact = release_packet.build_gate_artifact(
-                gate="reviewer_attestation",
+                gate="attempt_inventory",
                 candidate_commit=candidate,
                 status="PASS",
-                assertions=helper.assertions_for("reviewer_attestation"),
-                evidence_refs=["7" * 64],
+                assertions=helper.assertions_for("attempt_inventory"),
+                evidence_refs=[policy["target_config_sha256"]],
                 hard_failures=[],
                 executed_at=datetime(2026, 1, 1, 0, 10, tzinfo=timezone.utc),
             )
-            artifact_path = directory / "reviewer-new.json"
+            artifact_path = directory / "attempt-new.json"
             artifact_path.write_bytes(release_evidence.canonical_bytes(artifact))
             payload = release_packet.build_receipt_payload(
                 artifact=artifact,
                 issued_at=datetime(2026, 1, 1, 0, 11, tzinfo=timezone.utc),
-                nonce="reviewer-new-receipt-0001",
+                nonce="attempt-new-receipt-0001",
             )
-            payload_path = directory / "reviewer-new.payload.json"
+            payload_path = directory / "attempt-new.payload.json"
             payload_path.write_bytes(release_evidence.canonical_bytes(payload))
-            signature_path = directory / "reviewer-new.signature.bin"
+            signature_path = directory / "attempt-new.signature.bin"
             subprocess.run(
                 [
                     "openssl",
                     "pkeyutl",
                     "-sign",
                     "-inkey",
-                    str(directory / "reviewer_attestation.private.pem"),
+                    str(directory / "attempt_inventory.private.pem"),
                     "-rawin",
                     "-in",
                     str(payload_path),
@@ -145,7 +145,7 @@ class ReleasePacketTests(unittest.TestCase):
             key_id = next(
                 authority["key_id"]
                 for authority in policy["authorities"]
-                if authority["role"] == "reviewer_authority"
+                if authority["role"] == "attempt_log_authority"
             )
             receipt = release_packet.assemble_receipt(
                 payload=payload,
@@ -154,7 +154,7 @@ class ReleasePacketTests(unittest.TestCase):
                 policy_path=policy_path,
                 expected_policy_sha256=policy["policy_sha256"],
             )
-            receipt_path = directory / "reviewer-new.receipt.json"
+            receipt_path = directory / "attempt-new.receipt.json"
             receipt_path.write_bytes(release_evidence.canonical_bytes(receipt))
             output_path = directory / "index-v2.json"
             index = release_packet.advance_index(
@@ -167,7 +167,7 @@ class ReleasePacketTests(unittest.TestCase):
                 expected_prior_index_sha256=prior_index["index_sha256"],
                 candidate_commit=candidate,
             )
-            self.assertEqual(index["gates"]["reviewer_attestation"]["status"], "PASS")
+            self.assertEqual(index["gates"]["attempt_inventory"]["status"], "PASS")
             verified = release_evidence.verify(
                 output_path,
                 policy_path,
