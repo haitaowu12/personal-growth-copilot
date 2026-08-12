@@ -88,8 +88,12 @@ class QualificationPacketTests(unittest.TestCase):
             self.assertEqual(result["status"], "NOT_READY")
             self.assertFalse(result["ready_to_freeze"])
             self.assertEqual(result["missing_inputs"], list(qualification_packet.INPUT_LABELS))
+            self.assertEqual(result["invalid_inputs"], [])
             self.assertEqual(result["errors"], [])
             self.assertIsNone(result["validated_bindings"])
+            self.assertTrue(
+                all(item["status"] == "MISSING" for item in result["requirements"])
+            )
             self.assertEqual(
                 result["preflight_sha256"],
                 release_evidence.object_hash(result, "preflight_sha256"),
@@ -116,12 +120,17 @@ class QualificationPacketTests(unittest.TestCase):
                 root,
                 source_identity=lambda _: CANDIDATE,
                 clock=lambda: FIXED_TIME,
+                input_validator=lambda **_: None,
                 policy_preparer=prepare,
             )
             self.assertEqual(result["status"], "READY_TO_FREEZE")
             self.assertTrue(result["ready_to_freeze"])
             self.assertEqual(result["missing_inputs"], [])
+            self.assertEqual(result["invalid_inputs"], [])
             self.assertEqual(result["errors"], [])
+            self.assertTrue(
+                all(item["status"] == "VALID" for item in result["requirements"])
+            )
             self.assertEqual(result["validated_bindings"]["authority_count"], 9)
             self.assertEqual(
                 result["validated_bindings"]["qualification_plan_sha256"],
@@ -130,6 +139,93 @@ class QualificationPacketTests(unittest.TestCase):
             self.assertEqual(captured["candidate"], CANDIDATE)
             self.assertEqual(captured["packet_root"], root.resolve())
             self.assertNotIn("policy_sha256", result["validated_bindings"])
+
+    def test_preflight_validates_each_available_input_before_full_freeze(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            target = root / "target" / "target-config.json"
+            target.write_bytes(release_evidence.canonical_bytes({}))
+            os.chmod(target, 0o600)
+
+            def unexpected(**_: object) -> dict:
+                self.fail("policy builder must not run with invalid or missing inputs")
+
+            result = qualification_packet.preflight_packet(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                policy_preparer=unexpected,
+            )
+            statuses = {
+                item["input_id"]: item for item in result["requirements"]
+            }
+            self.assertEqual(result["status"], "NOT_READY")
+            self.assertEqual(result["invalid_inputs"], ["target_config"])
+            self.assertNotIn("target_config", result["missing_inputs"])
+            self.assertEqual(statuses["target_config"]["status"], "INVALID")
+            self.assertTrue(statuses["target_config"]["validation_errors"])
+            self.assertTrue(
+                all(
+                    statuses[input_id]["status"] == "MISSING"
+                    for input_id in qualification_packet.INPUT_LABELS
+                    if input_id != "target_config"
+                )
+            )
+
+    def test_preflight_reports_partial_validity_without_calling_policy_builder(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            target = root / "target" / "target-config.json"
+            target.write_bytes(release_evidence.canonical_bytes({"draft": True}))
+            os.chmod(target, 0o600)
+            validated: list[str] = []
+
+            def validate(**kwargs: object) -> None:
+                validated.append(str(kwargs["input_id"]))
+
+            def unexpected(**_: object) -> dict:
+                self.fail("policy builder must wait for all validated inputs")
+
+            result = qualification_packet.preflight_packet(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                input_validator=validate,
+                policy_preparer=unexpected,
+            )
+            statuses = {
+                item["input_id"]: item for item in result["requirements"]
+            }
+            self.assertEqual(validated, ["target_config"])
+            self.assertEqual(result["invalid_inputs"], [])
+            self.assertEqual(statuses["target_config"]["status"], "VALID")
+            self.assertEqual(statuses["target_config"]["validation_errors"], [])
+            self.assertFalse(result["ready_to_freeze"])
+
+    def test_preflight_dispatches_validation_for_every_declared_input(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            self.populate_declared_inputs(root)
+
+            def unexpected(**_: object) -> dict:
+                self.fail("policy builder must not run with invalid inputs")
+
+            result = qualification_packet.preflight_packet(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                policy_preparer=unexpected,
+            )
+            self.assertEqual(
+                result["invalid_inputs"], list(qualification_packet.INPUT_LABELS)
+            )
+            self.assertEqual(result["missing_inputs"], [])
+            self.assertTrue(
+                all(
+                    item["status"] == "INVALID" and item["validation_errors"]
+                    for item in result["requirements"]
+                )
+            )
 
     def test_preflight_rejects_candidate_drift_private_keys_and_existing_policy(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:

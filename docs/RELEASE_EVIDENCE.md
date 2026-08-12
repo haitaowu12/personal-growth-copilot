@@ -113,9 +113,13 @@ Until every real input exists and passes the same validation used by
 different or dirty candidate checkout, path or permission escape, symlinks,
 detectable PEM private-key material, an existing policy output, invalid source
 schemas/hashes/times, noncanonical target config, incomplete run scope, and
-aliased witness or authority key material. `READY_TO_FREEZE` is only permission
-to execute the create-only trust-policy builder; it is not gate evidence or a
-release claim.
+aliased witness or authority key material. Each declared input is reported as
+`MISSING`, `INVALID`, or `VALID`, with bounded validation errors for an invalid
+input, even while other inputs remain missing. Cross-input key independence,
+chronology, and the complete frozen bindings are still checked only through the
+combined policy preparation. `READY_TO_FREEZE` is only permission to execute
+the create-only trust-policy builder; it is not gate evidence or a release
+claim.
 
 The policy builder independently repeats the packet-permission, symlink,
 private-key-marker, plan, path, candidate, campaign, and preregistration input

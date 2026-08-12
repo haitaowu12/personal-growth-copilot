@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "release": "0.4.0-alpha.8",
+  "release": "0.4.0-alpha.9",
   "status": "blocked",
   "production_claim_allowed": false,
   "activation": "explicit-only-unregistered",
@@ -53,7 +53,7 @@
         "unconfigured fail-closed, role-scoped signed release-evidence construction and verification bound to an exact clean candidate checkout and out-of-band policy/current-index anchors",
         "unconfigured owner-epoch-bound externally witnessed provider-attempt capture, post-freeze result reconciliation, retry/omission detection, and out-of-band witness-head anchoring",
         "unconfigured source-manifest replay for reviewer, holdout, privacy, bilingual, and pilot gate evidence",
-        "create-only private qualification-packet initialization plus fail-closed preregistration and authoritative trust-policy freeze validation",
+        "create-only private qualification-packet initialization plus fail-closed incremental preregistration and authoritative all-or-nothing trust-policy freeze validation",
         "read-only, non-promotional named-host privacy discovery with bounded hashed observations and no persistence authorization",
         "skill structure"
       ],

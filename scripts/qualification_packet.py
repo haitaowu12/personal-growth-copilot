@@ -151,11 +151,18 @@ def preflight_packet(
     *,
     source_identity: Callable[[Path], str] = release_evidence.source_identity,
     clock: Callable[[], datetime] = now,
+    input_validator: Callable[..., None] = (
+        release_packet.validate_qualification_preregistration_input
+    ),
     policy_preparer: Callable[..., dict[str, Any]] = release_packet.prepare_trust_policy,
 ) -> dict[str, Any]:
     root = _existing_packet_root(packet_root)
     errors: list[str] = []
     missing_inputs: list[str] = []
+    invalid_inputs: list[str] = []
+    validation_errors: dict[str, list[str]] = {
+        input_id: [] for input_id in INPUT_LABELS
+    }
     try:
         release_packet.validate_qualification_packet_hygiene(root)
     except release_evidence.ReleaseEvidenceError as exc:
@@ -175,11 +182,39 @@ def preflight_packet(
         path = declared[input_id]
         if path.is_symlink() or not path.is_file():
             missing_inputs.append(input_id)
+            continue
+        if errors or current_candidate is None:
+            invalid_inputs.append(input_id)
+            validation_errors[input_id].append(
+                "packet-level validation must pass before this input can be trusted"
+            )
+            continue
+        try:
+            input_validator(
+                input_id=input_id,
+                packet_root=root,
+                path=path,
+                candidate=current_candidate,
+            )
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            OSError,
+            release_evidence.ReleaseEvidenceError,
+        ) as exc:
+            invalid_inputs.append(input_id)
+            validation_errors[input_id].append(str(exc))
     policy_output = declared["trust_policy"]
     if policy_output.exists() or policy_output.is_symlink():
         errors.append("configured trust-policy output already exists")
     bindings: dict[str, Any] | None = None
-    if not errors and not missing_inputs and current_candidate is not None:
+    if (
+        not errors
+        and not missing_inputs
+        and not invalid_inputs
+        and current_candidate is not None
+    ):
         try:
             policy = policy_preparer(
                 packet_root=root,
@@ -211,13 +246,25 @@ def preflight_packet(
                 "pilot_protocol_sha256": policy["pilot_protocol_sha256"],
                 "authority_count": len(policy["authorities"]),
             }
-    ready = not errors and not missing_inputs and bindings is not None
+    ready = (
+        not errors
+        and not missing_inputs
+        and not invalid_inputs
+        and bindings is not None
+    )
     requirements = [
         {
             "input_id": input_id,
             "description": description,
             "path": plan["paths"][input_id],
-            "status": "MISSING" if input_id in missing_inputs else "PRESENT",
+            "status": (
+                "MISSING"
+                if input_id in missing_inputs
+                else "INVALID"
+                if input_id in invalid_inputs
+                else "VALID"
+            ),
+            "validation_errors": validation_errors[input_id],
         }
         for input_id, description in INPUT_LABELS.items()
     ]
@@ -231,6 +278,7 @@ def preflight_packet(
         "ready_to_freeze": ready,
         "requirements": requirements,
         "missing_inputs": missing_inputs,
+        "invalid_inputs": invalid_inputs,
         "errors": errors,
         "validated_bindings": bindings,
     }
