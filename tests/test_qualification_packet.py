@@ -6,7 +6,7 @@ import stat
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +27,8 @@ class QualificationPacketTests(unittest.TestCase):
         qualification_packet.initialize_packet(
             root,
             "campaign-private-qualification-0001",
+            "restricted-local-host",
+            "pgc-private-evaluation-001",
             source_identity=lambda _: CANDIDATE,
             clock=lambda: FIXED_TIME,
         )
@@ -55,6 +57,8 @@ class QualificationPacketTests(unittest.TestCase):
             self.assertEqual(stat.S_IMODE(plan_path.stat().st_mode), 0o600)
             plan_bytes = plan_path.read_bytes()
             plan = json.loads(plan_bytes)
+            self.assertEqual(plan["named_host"], "restricted-local-host")
+            self.assertEqual(plan["environment_id"], "pgc-private-evaluation-001")
             self.assertEqual(plan_bytes, release_evidence.canonical_bytes(plan))
             self.assertEqual(release_evidence.schema_errors(plan, "qualification_plan"), [])
             self.assertEqual(
@@ -69,6 +73,8 @@ class QualificationPacketTests(unittest.TestCase):
                 qualification_packet.initialize_packet(
                     root,
                     "campaign-private-qualification-0001",
+                    "restricted-local-host",
+                    "pgc-private-evaluation-001",
                     source_identity=lambda _: CANDIDATE,
                 )
 
@@ -250,6 +256,7 @@ class QualificationPacketTests(unittest.TestCase):
             self.assertEqual(
                 intake["host_remediation"][0]["status"], "MISSING"
             )
+            self.assertEqual(intake["host_discovery"]["status"], "MISSING")
             serialized = release_evidence.canonical_bytes(intake)
             self.assertNotIn(b"PRIVATE KEY", serialized)
             self.assertNotIn(b"public_key_path\":null", serialized)
@@ -271,6 +278,79 @@ class QualificationPacketTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 release_evidence.ReleaseEvidenceError,
                 "invalid host privacy discovery",
+            ):
+                qualification_packet.build_external_intake(
+                    root,
+                    source_identity=lambda _: CANDIDATE,
+                    clock=lambda: FIXED_TIME,
+                )
+
+    def test_external_intake_preserves_exact_host_discovery_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            discovery_record = qualification_packet.host_privacy_discovery.discover(
+                storage_root=root,
+                named_host="restricted-local-host",
+                environment_id="pgc-private-evaluation-001",
+                sync_roots=[],
+                sync_inventory_complete=False,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                runner=lambda *_: self.fail("Linux discovery must not run host commands"),
+                platform_system=lambda: "Linux",
+                platform_release=lambda: "test",
+                platform_machine=lambda: "test",
+                home_root=lambda: root.parent,
+                directory_acl_probe=lambda *_: "ABSENT",
+            )
+            discovery = root / "privacy" / "host-discovery.json"
+            discovery.write_bytes(release_evidence.canonical_bytes(discovery_record))
+            os.chmod(discovery, 0o600)
+            intake = qualification_packet.build_external_intake(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+            )
+            provenance = intake["host_discovery"]
+            self.assertEqual(provenance["status"], "PRESENT")
+            self.assertEqual(provenance["named_host"], "restricted-local-host")
+            self.assertEqual(
+                provenance["environment_id"], "pgc-private-evaluation-001"
+            )
+            self.assertEqual(
+                provenance["generated_at"], discovery_record["generated_at"]
+            )
+            self.assertEqual(
+                provenance["report_sha256"], discovery_record["report_sha256"]
+            )
+            self.assertEqual(
+                provenance["storage_root_sha256"],
+                discovery_record["storage_root_sha256"],
+            )
+
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            discovery_record = qualification_packet.host_privacy_discovery.discover(
+                storage_root=root,
+                named_host="restricted-local-host",
+                environment_id="pgc-private-evaluation-001",
+                sync_roots=[],
+                sync_inventory_complete=False,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME - timedelta(days=1),
+                runner=lambda *_: self.fail("Linux discovery must not run host commands"),
+                platform_system=lambda: "Linux",
+                platform_release=lambda: "test",
+                platform_machine=lambda: "test",
+                home_root=lambda: root.parent,
+                directory_acl_probe=lambda *_: "ABSENT",
+            )
+            discovery = root / "privacy" / "host-discovery.json"
+            discovery.write_bytes(release_evidence.canonical_bytes(discovery_record))
+            os.chmod(discovery, 0o600)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError,
+                "predates the qualification packet",
             ):
                 qualification_packet.build_external_intake(
                     root,

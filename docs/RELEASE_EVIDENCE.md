@@ -44,8 +44,9 @@ python scripts/release_packet.py build-trust-policy \
 ```
 
 The resulting policy also binds the exact self-hashed qualification plan, so
-the candidate, campaign epoch, preregistration input paths, and fixed policy
-destination cannot be changed after freeze. The authority roster contains only
+the candidate, campaign epoch, named host, environment, preregistration input
+paths, and fixed policy destination cannot be changed after freeze. The target
+provider host and privacy-host identity must match that plan. The authority roster contains only
 `authorities`; each entry supplies a unique
 `key_id`, one release role, and a packet-relative Ed25519 public-key path. The
 builder reads, canonicalizes, and hashes the exact config, seal, host identity,
@@ -96,7 +97,9 @@ private keys:
 ```text
 python scripts/qualification_packet.py init \
   --packet-root /private/release-packet \
-  --attempt-campaign-id campaign-2026-08-12-001
+  --attempt-campaign-id campaign-2026-08-12-001 \
+  --named-host restricted-local-host \
+  --environment-id pgc-private-evaluation-001
 ```
 
 Place the real externally controlled inputs at the packet-relative locations

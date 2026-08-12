@@ -833,7 +833,10 @@ class ExternalGateSourceTests(unittest.TestCase):
     def test_trust_policy_builder_freezes_every_preregistered_source(self):
         with tempfile.TemporaryDirectory() as directory_name:
             directory = Path(directory_name).resolve()
-            config = {"source_commit": CANDIDATE}
+            config = {
+                "source_commit": CANDIDATE,
+                "provider": {"host": "restricted-evaluation-host-1"},
+            }
             config_path = directory / "target-config.json"
             config_sha256 = write_json(config_path, config)
             holdout = self.holdout_source(directory)
@@ -883,6 +886,8 @@ class ExternalGateSourceTests(unittest.TestCase):
                 "candidate_commit": CANDIDATE,
                 "initialized_at": "2026-08-12T00:00:00Z",
                 "attempt_campaign_id": "campaign-release-0001",
+                "named_host": "restricted-evaluation-host-1",
+                "environment_id": "pgc-private-evaluation-001",
                 "paths": {
                     "target_config": config_path.name,
                     "holdout_seal": seal_path.name,
