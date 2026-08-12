@@ -494,7 +494,10 @@ def verify(
     pass_gates = {gate for gate, status in gate_status.items() if status == "PASS" and gate in artifact_hashes}
     prerequisites = set(GATES[:-1])
     derived = "BLOCKED"
-    if prerequisites.issubset(pass_gates):
+    has_signed_failure = any(
+        status in {"FAIL", "INVALIDATED"} for status in gate_status.values()
+    )
+    if not has_signed_failure and prerequisites.issubset(pass_gates):
         derived = "ELIGIBLE"
         if gate_status["owner_promotion"] == "PASS" and "owner_promotion" in artifact_hashes:
             derived = "PROMOTED"
