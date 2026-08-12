@@ -207,10 +207,12 @@ def validate() -> list[str]:
         ROOT / "release/privacy-host-identity.schema.json",
         ROOT / "release/pilot-protocol.schema.json",
         ROOT / "release/reviewer-identity-attestation.schema.json",
+        ROOT / "release/qualification-packet-plan.schema.json",
         ROOT / "release/trust-policy.json",
         ROOT / "release/evidence-index.json",
         ROOT / "scripts/release_evidence.py",
         ROOT / "scripts/release_packet.py",
+        ROOT / "scripts/qualification_packet.py",
     }
     for path in sorted(required_runtime):
         if not path.exists():
@@ -242,6 +244,7 @@ def validate() -> list[str]:
         ROOT / "release/privacy-host-identity.schema.json",
         ROOT / "release/pilot-protocol.schema.json",
         ROOT / "release/reviewer-identity-attestation.schema.json",
+        ROOT / "release/qualification-packet-plan.schema.json",
     ):
         try:
             Draft202012Validator.check_schema(

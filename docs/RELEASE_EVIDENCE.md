@@ -57,6 +57,36 @@ It also requires the packet's candidate to equal the exact clean Git checkout
 provided to the verifier. Git and OpenSSL are trusted host dependencies; run
 the verifier only on the restricted evaluation host.
 
+Initialize the restricted packet outside the source repository and any synced
+folder. This command creates only mode-`0700` directories and a mode-`0600`,
+self-hashed draft plan. It does not create or impersonate reviewers, holdout
+authors, authorities, witnesses, host controls, participants, evidence, or
+private keys:
+
+```text
+python scripts/qualification_packet.py init \
+  --packet-root /private/release-packet \
+  --attempt-campaign-id campaign-2026-08-12-001
+```
+
+Place the real externally controlled inputs at the packet-relative locations
+recorded in `qualification-plan.json`, keeping every private key outside the
+packet and candidate-author access. Then run:
+
+```text
+python scripts/qualification_packet.py preflight \
+  --packet-root /private/release-packet
+```
+
+Until every real input exists and passes the same validation used by
+`build-trust-policy`, preflight exits nonzero with `NOT_READY`. It rejects a
+different or dirty candidate checkout, path or permission escape, symlinks,
+detectable PEM private-key material, an existing policy output, invalid source
+schemas/hashes/times, noncanonical target config, incomplete run scope, and
+aliased witness or authority key material. `READY_TO_FREEZE` is only permission
+to execute the create-only trust-policy builder; it is not gate evidence or a
+release claim.
+
 ## Required gates
 
 | Gate | Required external role | Executable minimum |

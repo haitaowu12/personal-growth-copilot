@@ -664,15 +664,30 @@ def command_source(args: argparse.Namespace) -> int:
     return 0
 
 
-def command_policy(args: argparse.Namespace) -> int:
-    candidate = _source_commit()
-    packet_root = args.packet_root.resolve(strict=True)
-    if args.output.parent.resolve() != packet_root:
-        raise release_evidence.ReleaseEvidenceError(
-            "trust policy output must be directly inside the packet directory"
-        )
+def prepare_trust_policy(
+    *,
+    packet_root: Path,
+    config_path: Path,
+    holdout_seal_path: Path,
+    privacy_host_identity_path: Path,
+    pilot_protocol_path: Path,
+    authorities_path: Path,
+    attempt_campaign_id: str,
+    candidate: str,
+    frozen: datetime,
+) -> dict[str, Any]:
+    """Validate the preregistration inputs and derive a configured policy."""
+    packet_root = packet_root.resolve(strict=True)
+    for path in (
+        config_path,
+        holdout_seal_path,
+        privacy_host_identity_path,
+        pilot_protocol_path,
+        authorities_path,
+    ):
+        _relative_packet_path(packet_root, path)
     suite = load_json(ROOT / "evals/cases.json", "canonical target suite")
-    config_bytes = release_evidence.read_once(args.config)
+    config_bytes = release_evidence.read_once(config_path)
     config = release_evidence.json_object(config_bytes, "target config")
     if config_bytes != release_evidence.canonical_bytes(config):
         raise release_evidence.ReleaseEvidenceError(
@@ -687,7 +702,7 @@ def command_policy(args: argparse.Namespace) -> int:
             "invalid target config: " + "; ".join(errors)
         )
     campaign._require_full_suite_scope(suite, config)
-    seal = load_json(args.holdout_seal, "holdout seal")
+    seal = load_json(holdout_seal_path, "holdout seal")
     if errors := release_evidence.schema_errors(seal, "holdout_seal"):
         raise release_evidence.ReleaseEvidenceError(
             "invalid holdout seal: " + "; ".join(errors)
@@ -700,7 +715,7 @@ def command_policy(args: argparse.Namespace) -> int:
         )
     for prefix in ("ciphertext", "case_schema"):
         evidence_path = release_evidence.safe_path(
-            args.holdout_seal.resolve().parent, seal[f"{prefix}_path"]
+            holdout_seal_path.resolve().parent, seal[f"{prefix}_path"]
         )
         evidence = release_evidence.read_once(evidence_path)
         if hashlib.sha256(evidence).hexdigest() != seal[f"{prefix}_sha256"]:
@@ -708,12 +723,12 @@ def command_policy(args: argparse.Namespace) -> int:
                 f"holdout {prefix} hash mismatch"
             )
     holdout_witness_key = release_evidence.load_bound_public_key(
-        args.holdout_seal.resolve().parent,
+        holdout_seal_path.resolve().parent,
         seal["witness_public_key_path"],
         seal["witness_public_key_sha256"],
         "holdout witness",
     )
-    authority_document = load_json(args.authorities, "release authority roster")
+    authority_document = load_json(authorities_path, "release authority roster")
     if set(authority_document) != {"authorities"} or not isinstance(
         authority_document["authorities"], list
     ):
@@ -765,7 +780,7 @@ def command_policy(args: argparse.Namespace) -> int:
         raise release_evidence.ReleaseEvidenceError(
             "release authorities must use distinct Ed25519 key material"
         )
-    host_identity = release_evidence.read_once(args.privacy_host_identity)
+    host_identity = release_evidence.read_once(privacy_host_identity_path)
     host_identity_record = release_evidence.json_object(
         host_identity, "privacy host identity"
     )
@@ -774,12 +789,12 @@ def command_policy(args: argparse.Namespace) -> int:
             "invalid privacy host identity: " + "; ".join(errors)
         )
     privacy_witness_key = release_evidence.load_bound_public_key(
-        args.privacy_host_identity.resolve().parent,
+        privacy_host_identity_path.resolve().parent,
         host_identity_record["audit_public_key_path"],
         host_identity_record["audit_public_key_sha256"],
         "privacy audit",
     )
-    pilot_protocol = release_evidence.read_once(args.pilot_protocol)
+    pilot_protocol = release_evidence.read_once(pilot_protocol_path)
     pilot_protocol_record = release_evidence.json_object(
         pilot_protocol, "pilot protocol"
     )
@@ -794,7 +809,7 @@ def command_policy(args: argparse.Namespace) -> int:
             "pilot protocol differs from the clean candidate checkout"
         )
     pilot_witness_key = release_evidence.load_bound_public_key(
-        args.pilot_protocol.resolve().parent,
+        pilot_protocol_path.resolve().parent,
         pilot_protocol_record["witness_public_key_path"],
         pilot_protocol_record["witness_public_key_sha256"],
         "pilot witness",
@@ -809,7 +824,6 @@ def command_policy(args: argparse.Namespace) -> int:
         raise release_evidence.ReleaseEvidenceError(
             "holdout, privacy, pilot, and release authorities require distinct key material"
         )
-    frozen = now()
     if release_evidence.parse_time(seal["sealed_at"]) > frozen:
         raise release_evidence.ReleaseEvidenceError(
             "holdout seal may not follow the policy freeze"
@@ -827,7 +841,7 @@ def command_policy(args: argparse.Namespace) -> int:
         "status": "CONFIGURED",
         "candidate_commit": candidate,
         "frozen_at": timestamp(frozen),
-        "attempt_campaign_id": args.attempt_campaign_id,
+        "attempt_campaign_id": attempt_campaign_id,
         "target_config_sha256": target_session._digest(config),
         "holdout_seal_sha256": seal["seal_sha256"],
         "privacy_host_identity_sha256": hashlib.sha256(host_identity).hexdigest(),
@@ -839,6 +853,27 @@ def command_policy(args: argparse.Namespace) -> int:
         raise release_evidence.ReleaseEvidenceError(
             "invalid configured trust policy: " + "; ".join(errors)
         )
+    return policy
+
+
+def command_policy(args: argparse.Namespace) -> int:
+    candidate = _source_commit()
+    packet_root = args.packet_root.resolve(strict=True)
+    if args.output.parent.resolve() != packet_root:
+        raise release_evidence.ReleaseEvidenceError(
+            "trust policy output must be directly inside the packet directory"
+        )
+    policy = prepare_trust_policy(
+        packet_root=packet_root,
+        config_path=args.config,
+        holdout_seal_path=args.holdout_seal,
+        privacy_host_identity_path=args.privacy_host_identity,
+        pilot_protocol_path=args.pilot_protocol,
+        authorities_path=args.authorities,
+        attempt_campaign_id=args.attempt_campaign_id,
+        candidate=candidate,
+        frozen=now(),
+    )
     write_private_new(args.output, policy)
     print(
         json.dumps(

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/qualification-packet-plan.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "status", "candidate_commit", "initialized_at", "attempt_campaign_id", "paths", "plan_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "qualification-packet-plan"},
+    "status": {"const": "DRAFT"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "initialized_at": {"type": "string", "format": "date-time"},
+    "attempt_campaign_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{15,99}$"},
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_config", "holdout_seal", "privacy_host_identity", "pilot_protocol", "authority_roster", "trust_policy"],
+      "properties": {
+        "target_config": {"$ref": "#/$defs/relativePath"},
+        "holdout_seal": {"$ref": "#/$defs/relativePath"},
+        "privacy_host_identity": {"$ref": "#/$defs/relativePath"},
+        "pilot_protocol": {"$ref": "#/$defs/relativePath"},
+        "authority_roster": {"$ref": "#/$defs/relativePath"},
+        "trust_policy": {"$ref": "#/$defs/relativePath"}
+      }
+    },
+    "plan_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+    }
+  }
+}
