@@ -129,12 +129,26 @@ class ReservedPrivateOutput:
             raise HostDiscoveryError("reserved output file identity changed")
         self.secure_bound_file(require_empty=True)
         data = release_evidence.canonical_bytes(value)
+        os.lseek(self.file_fd, 0, os.SEEK_SET)
         remaining = memoryview(data)
         while remaining:
             written = os.write(self.file_fd, remaining)
             if written <= 0:
                 raise HostDiscoveryError("reserved output write made no progress")
             remaining = remaining[written:]
+        self.secure_bound_file(require_empty=False)
+        written_metadata = os.fstat(self.file_fd)
+        if written_metadata.st_size != len(data):
+            raise HostDiscoveryError("reserved output size differs from canonical report")
+        os.lseek(self.file_fd, 0, os.SEEK_SET)
+        captured = bytearray()
+        while len(captured) < len(data):
+            block = os.read(self.file_fd, min(65_536, len(data) - len(captured)))
+            if not block:
+                break
+            captured.extend(block)
+        if bytes(captured) != data:
+            raise HostDiscoveryError("reserved output differs from canonical report")
         self.secure_bound_file(require_empty=False)
         os.fsync(self.file_fd)
         os.close(self.file_fd)
@@ -328,7 +342,7 @@ def reserve_private_output(
             metadata.st_ino,
         ):
             raise HostDiscoveryError("output parent changed during reservation")
-        file_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        file_flags = os.O_RDWR | os.O_CREAT | os.O_EXCL
         if hasattr(os, "O_NOFOLLOW"):
             file_flags |= os.O_NOFOLLOW
         file_fd = os.open(output.name, file_flags, 0o600, dir_fd=parent_fd)
