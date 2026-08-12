@@ -76,8 +76,9 @@ sandbox and `tool_permissions` is frozen disclosure metadata, not enforcement.
    object whose only key is `reviewers`; every entry declares a pseudonymous ID,
    languages, and SHA-256 values for externally retained identity,
    independence, and completed-calibration artifacts. These are references,
-   not verified evidence: the only accepted state is `external_pending` until a
-   separately trusted signed-receipt workflow is implemented. Then build the config:
+   not verified evidence: the config remains `external_pending` until the
+   separate reviewer-attestation authority signs a passing release-gate
+   artifact. Then build the config:
 
    ```text
    python scripts/build_target_config.py \
@@ -199,6 +200,97 @@ Because this local workflow neither verifies an independent reviewer receipt
 nor inventories all attempts in an immutable external system, it always emits
 `campaign_complete: false`, `attempt_inventory_verified: false`, and
 `evidence_status: blocked`.
+
+## Externally witnessed attempt inventory
+
+Release qualification must use `scripts/attempt_inventory_cli.py` around every
+provider capture. The ordinary `target_session_cli.py capture` command remains
+available for development only and can never satisfy the release attempt gate.
+The witnessed workflow requires the full canonical suite, an exact clean
+candidate checkout, a configured release trust policy, and a stateful external
+witness controlled by the `attempt_log_authority`.
+The command's campaign id must equal the single `attempt_campaign_id` frozen in
+the owner-anchored policy. Every event and receipt must occur at or after that
+policy's `frozen_at`; a new campaign id or later policy cannot launder an older
+failure chain.
+
+The witness adapter receives one canonical event on standard input. Before it
+signs, it must durably enforce the exact campaign id, candidate commit,
+contiguous sequence, and prior head. It returns one Ed25519 receipt matching
+`evals/attempt-witness-receipt.schema.json`. The authority distributes the
+current head hash and event count through an independent current-state channel;
+the run operator cannot choose these values. A stateless signing script is not
+an external witness.
+
+Register the campaign before any provider call:
+
+```text
+python scripts/attempt_inventory_cli.py register \
+  --config /private/evidence/target-config.json \
+  --campaign-id campaign-2026-08-12-001 \
+  --packet-directory /private/evidence \
+  --witness-adapter /private/bin/attempt-witness \
+  --policy /private/release-packet/trust-policy.json \
+  --expected-policy-sha256 OWNER_DISTRIBUTED_POLICY_HASH
+```
+
+For each turn, pass the latest index printed by the prior command. This writes
+a witnessed `CAPTURE_STARTED` before provider access and a witnessed
+`CAPTURE_FINISHED` after the protocol response. Provider failures and operator
+aborts are retained as hard failures; retrying the same logical run turn under
+a new attempt id is prohibited.
+
+```text
+python scripts/attempt_inventory_cli.py capture \
+  --config /private/evidence/target-config.json \
+  --campaign-id campaign-2026-08-12-001 \
+  --packet-directory /private/evidence \
+  --prior-index /private/evidence/attempt-ledger/index-000000.json \
+  --session /private/evidence/sessions/run-001-before.json \
+  --session-output /private/evidence/sessions/run-001-after.json \
+  --adapter providers/codex_cli_adapter.py --env PGC_CODEX_BIN \
+  --witness-adapter /private/bin/attempt-witness \
+  --policy /private/release-packet/trust-policy.json \
+  --expected-policy-sha256 OWNER_DISTRIBUTED_POLICY_HASH
+```
+
+After deterministic session finalization, append `finalize-run` for the exact
+result file. Build the ordinary result manifest only after every planned run is
+finalized, then append `seal`. Sealing requires hashes of two independently
+retained audit artifacts: the provider-access control/audit and the complete
+artifact inventory. The provider account, gateway, or inference host must make
+unwitnessed access detectable or impossible; merely invoking this wrapper does
+not prove provider-access enforcement.
+
+Finally, obtain the witness head and count from the independent authority and
+verify the complete packet:
+
+```text
+python scripts/attempt_inventory_cli.py verify \
+  --config /private/evidence/target-config.json \
+  --index /private/evidence/attempt-ledger/index-FINAL.json \
+  --manifest /private/evidence/result-manifest.json \
+  --policy /private/release-packet/trust-policy.json \
+  --expected-policy-sha256 OWNER_DISTRIBUTED_POLICY_HASH \
+  --expected-head-sha256 WITNESS_DISTRIBUTED_CURRENT_HEAD \
+  --expected-event-count WITNESS_DISTRIBUTED_CURRENT_COUNT \
+  --output /private/evidence/attempt-inventory-verification.json
+```
+
+Verification reads each result file once, replays its target-session contract,
+and reconciles every turn id, request hash, completion hash, response id, and
+capture time against the signed chain. It also rejects missing or duplicate
+runs, retries, reused response ids, open attempts, malformed signatures,
+future-dated receipts, changed artifacts, noncanonical suite scope, and a stale
+external head or count. A host crash after the witness advances may require the
+authority to export the retained receipt; until the local packet and external
+head reconcile exactly, the candidate remains failed rather than silently
+skipping the event.
+
+The ledger contains hashes, opaque response ids, bounded failure codes, and
+run identifiers—not prompts, completion text, reviewer identities, or pilot
+content. The session, result, reviewer, access-audit, and artifact-inventory
+files remain private evidence and are not committed to this repository.
 
 The config builder's optional `--case-id` is for bounded development runs only.
 Any config that does not list every governed suite case in exact suite order is
