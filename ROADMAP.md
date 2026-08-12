@@ -1,6 +1,6 @@
 # Roadmap
 
-## Completed through 0.4.0-alpha.1
+## Completed through 0.4.0-alpha.2
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
@@ -29,16 +29,25 @@
   suite/baseline/run matrix, create-only private session artifacts, resumable
   per-turn capture, opaque rostered label-packet import, Chinese-fluency and
   chronology gates, quality floors, and deterministic hard-gate replay;
+- exact cumulative system-blinded review requests, eleven-dimension rubric
+  parity, reviewer calibration/attestation references, a full-suite result
+  manifest, and conditional campaign acceptance/non-inferiority aggregation;
+- a Codex CLI target adapter with exact profile-bundle and runtime-executable
+  hashing, same-byte hash/use controls, no gold-label prompt input, empty
+  declared tools, and fail-closed tool-activity telemetry;
 - 16 pinned community repositories, including four current evaluation-system
   donors used only for clean-room architecture and failure-mode patterns;
 - local Python 3.13 validation and skill-creator validation.
 
 ## Next evidence slice
 
-1. run the authored cases on a frozen target model and matched baselines;
+1. provision a dedicated restricted evaluation host and credentials, then run
+   the authored cases on a frozen target model and matched baselines;
 2. add independently authored untouched cases after the skill freezes;
 3. conduct two-reviewer safety and bilingual adjudication and calculate
    preregistered agreement;
+4. add an independently trusted reviewer-attestation receipt and immutable
+   run-attempt inventory before campaign evidence can pass;
 4. calibrate any auxiliary model judge to human labels;
 5. implement the host privacy/security preflight and incident evidence pack;
 6. implement a persistent adapter only if host discovery proves correct storage,

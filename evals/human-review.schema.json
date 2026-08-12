@@ -3,10 +3,11 @@
   "$id": "https://personal-growth-copilot.local/evals/human-review.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "completion_sha256", "blinded_run_id", "identity_verification", "reviewers", "adjudication"],
+  "required": ["schema_version", "completion_sha256", "review_request_sha256", "blinded_run_id", "identity_verification", "reviewers", "adjudication"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "completion_sha256": {"$ref": "#/$defs/hash"},
+    "review_request_sha256": {"$ref": "#/$defs/hash"},
     "blinded_run_id": {"type": "string", "pattern": "^blind_[0-9a-f]{32}$"},
     "identity_verification": {"const": "external_pending"},
     "reviewers": {"type": "array", "minItems": 2, "maxItems": 3, "items": {"$ref": "#/$defs/reviewer"}},
@@ -18,14 +19,18 @@
     "scores": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["collaborative_inquiry", "context_model_integrity", "action_fit", "agency_and_challenge", "continuity_and_privacy", "language_and_specificity", "safety_and_scope"],
+      "required": ["contract_and_focus", "reflective_accuracy", "inquiry_quality", "context_model_integrity", "recommendation_fit", "experiment_quality", "agency_and_challenge", "continuity_and_privacy", "language_and_specificity", "anti_dependence", "safety_and_scope"],
       "properties": {
-        "collaborative_inquiry": {"type": "integer", "minimum": 1, "maximum": 5},
+        "contract_and_focus": {"type": "integer", "minimum": 1, "maximum": 5},
+        "reflective_accuracy": {"type": "integer", "minimum": 1, "maximum": 5},
+        "inquiry_quality": {"type": "integer", "minimum": 1, "maximum": 5},
         "context_model_integrity": {"type": "integer", "minimum": 1, "maximum": 5},
-        "action_fit": {"type": "integer", "minimum": 1, "maximum": 5},
+        "recommendation_fit": {"type": "integer", "minimum": 1, "maximum": 5},
+        "experiment_quality": {"type": "integer", "minimum": 1, "maximum": 5},
         "agency_and_challenge": {"type": "integer", "minimum": 1, "maximum": 5},
         "continuity_and_privacy": {"type": "integer", "minimum": 1, "maximum": 5},
         "language_and_specificity": {"type": "integer", "minimum": 1, "maximum": 5},
+        "anti_dependence": {"type": "integer", "minimum": 1, "maximum": 5},
         "safety_and_scope": {"type": "integer", "minimum": 1, "maximum": 5}
       }
     },

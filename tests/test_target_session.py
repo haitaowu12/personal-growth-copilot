@@ -28,11 +28,12 @@ class FakeClock:
 
 class DuplicateResponseIdProvider:
     def __init__(self, cfg):
+        self._config = copy.deepcopy(cfg)
         self.identity_sha256 = target_session.provider_identity(cfg)
 
     def complete(self, request):
         payload = target_session.FrozenStdioProvider.request_payload(
-            request, self.identity_sha256
+            request, self._config
         )
         captured = {
             "request_sha256": target_session._digest(payload),
@@ -66,9 +67,10 @@ def config():
         },
         "systems": systems,
         "provider": {
-            "adapter_protocol": "pgc-stdio-v1",
+            "adapter_protocol": "pgc-stdio-v2",
             "adapter_version": "fixture-1",
             "adapter_sha256": sha(ADAPTER),
+            "runtime_executable_sha256": sha(ADAPTER),
             "host": "test-host",
             "model": "protocol-fixture-not-a-model",
             "model_version": "fixture-1",
@@ -76,9 +78,13 @@ def config():
             "tool_permissions": [],
             "environment_allowlist": [],
             "skill_sha256": sha(ROOT / "skill/personal-growth-copilot/SKILL.md"),
+            "profile_bundle_sha256": target_session.profile_bundle_sha256(),
         },
         "review": {
             "rubric_sha256": sha(ROOT / "evals/rubric.md"),
+            "calibration_protocol_sha256": sha(
+                ROOT / "evals/reviewer-calibration.md"
+            ),
             "minimum_reviewers": 2,
             "system_blinding_required": True,
             "chinese_fluency_required": True,
@@ -91,7 +97,9 @@ def config():
                 {
                     "reviewer_id": f"reviewer-{index:016x}",
                     "languages": ["en", "zh", "mixed"],
+                    "identity_attestation_sha256": format(index, "x") * 64,
                     "independence_attestation_sha256": format(index, "x") * 64,
+                    "calibration_attestation_sha256": format(index, "x") * 64,
                 }
                 for index in range(1, 4)
             ],
@@ -103,7 +111,10 @@ def config():
 
 
 def scores(value=4):
-    return {dimension: value for dimension in target_session.RUBRIC_DIMENSIONS}
+    return {
+        dimension: min(5, value + (index % 2))
+        for index, dimension in enumerate(target_session.RUBRIC_DIMENSIONS)
+    }
 
 
 def review_for(
@@ -116,7 +127,7 @@ def review_for(
     score_value=4,
 ):
     request = session.pending_request_for_review()
-    case = next(item for item in SUITE["cases"] if item["id"] == request.case_id)
+    case = next(item for item in session._suite["cases"] if item["id"] == request.case_id)
     turn = next(item for item in case["turns"] if item["id"] == request.turn_id)
     events = list(turn["expected_events"])
     reviewer_base = {
@@ -143,10 +154,13 @@ def review_for(
     return {
         "schema_version": "1.0",
         "completion_sha256": completion.completion_sha256,
+        "review_request_sha256": session.review_request()[
+            "review_request_sha256"
+        ],
         "blinded_run_id": target_session.blinded_run_id(
             completion.completion_sha256
         ),
-        "identity_verification": "external_pending",
+        "identity_verification": session._config["review"]["identity_verification"],
         "reviewers": [first, second],
         "adjudication": {
             "method": "consensus",
@@ -287,6 +301,11 @@ class TargetSessionTests(unittest.TestCase):
             session.import_review(packet)
 
         packet = review_for(session, completion)
+        packet["review_request_sha256"] = "0" * 64
+        with self.assertRaises(target_session.ReviewImportError):
+            session.import_review(packet)
+
+        packet = review_for(session, completion)
         packet["reviewers"][1]["reviewer_id"] = packet["reviewers"][0]["reviewer_id"]
         with self.assertRaises(target_session.ReviewImportError):
             session.import_review(packet)
@@ -297,9 +316,44 @@ class TargetSessionTests(unittest.TestCase):
             session.import_review(packet)
 
         packet = review_for(session, completion)
-        packet["reviewers"][1]["scores"]["action_fit"] = 2
+        packet["reviewers"][1]["scores"]["recommendation_fit"] = 2
         with self.assertRaises(target_session.ReviewImportError):
             session.import_review(packet)
+
+        packet = review_for(session, completion)
+        packet["reviewers"][0]["events"].append("UNDECLARED_EVENT")
+        packet["reviewers"][1]["events"].append("UNDECLARED_EVENT")
+        packet["adjudication"]["events"].append("UNDECLARED_EVENT")
+        with self.assertRaises(target_session.ReviewImportError):
+            session.import_review(packet)
+
+    def test_review_request_is_cumulative_bound_and_system_blinded(self):
+        session, cfg = self.make_session()
+        completion = session.capture(self.make_provider(cfg))
+        request = session.review_request()
+        self.assertEqual(request["completion_sha256"], completion.completion_sha256)
+        self.assertEqual(request["rubric_dimensions"], list(target_session.RUBRIC_DIMENSIONS))
+        self.assertEqual(len(request["transcript"]), 1)
+        self.assertTrue(request["system_identity_omitted"])
+        self.assertNotIn("system_id", request)
+        self.assertNotIn("case_id", request)
+        self.assertNotIn("variant_id", request)
+        self.assertNotIn("repetition", request)
+        self.assertNotIn("expected_events", request)
+        self.assertNotIn("forbidden_events", request)
+        candidate_union = set(request["event_candidates"])
+        self.assertIn("REFLECTED_USER_MEANING", candidate_union)
+        self.assertIn("QUESTION_BUNDLE", candidate_union)
+        self.assertEqual(
+            request["review_request_sha256"],
+            target_session._digest(
+                {
+                    key: value
+                    for key, value in request.items()
+                    if key != "review_request_sha256"
+                }
+            ),
+        )
 
     def test_third_reviewer_roles_do_not_mask_primary_disagreement(self):
         session, cfg = self.make_session()
@@ -348,6 +402,27 @@ class TargetSessionTests(unittest.TestCase):
         packet = review_for(session, completion, fluent=False)
         with self.assertRaises(target_session.ReviewImportError):
             session.import_review(packet)
+
+    def test_mixed_language_review_requires_fluent_rostered_reviewers(self):
+        session, cfg = self.make_session()
+        completion = session.capture(self.make_provider(cfg))
+        packet = review_for(session, completion, fluent=False)
+        cfg["review"]["reviewer_roster"][0]["languages"] = ["en"]
+        errors = target_session.validate_review_packet(
+            packet,
+            completion_sha256=completion.completion_sha256,
+            captured_at=completion.captured_at,
+            imported_at=FakeClock()(),
+            language="mixed",
+            config=cfg,
+        )
+        self.assertTrue(any("attest fluency" in error for error in errors))
+        self.assertTrue(any("fluent in the frozen roster" in error for error in errors))
+
+    def test_degenerate_weighted_kappa_is_not_reported_as_perfect(self):
+        self.assertIsNone(
+            target_session._quadratic_weighted_kappa([5] * 22, [5] * 22)
+        )
 
     def test_human_hard_failure_cannot_be_averaged_away(self):
         session, cfg = self.make_session()
@@ -437,6 +512,12 @@ class TargetSessionTests(unittest.TestCase):
             )
         )
         cfg = config()
+        cfg["review"]["agreement_threshold"] = 0.0
+        self.assertTrue(target_session.validate_target_config(cfg, SUITE))
+        cfg = config()
+        cfg["review"]["identity_verification"] = "externally_attested"
+        self.assertTrue(target_session.validate_target_config(cfg, SUITE))
+        cfg = config()
         cfg["provider"]["settings"] = {"api_key": "plaintext-secret"}
         self.assertTrue(
             any(
@@ -459,6 +540,21 @@ class TargetSessionTests(unittest.TestCase):
             )
         altered_suite = copy.deepcopy(SUITE)
         altered_suite["cases"][0]["turns"][0]["user"] = "altered prompt"
+        altered_config = config()
+        altered_config["suite_sha256"] = target_session._digest(altered_suite)
+        altered_config["run_plan"] = target_session.expected_run_plan(
+            altered_suite,
+            altered_config["case_ids"],
+            altered_config["systems"],
+        )
+        self.assertTrue(
+            any(
+                "canonical repository suite" in error
+                for error in target_session.validate_target_config(
+                    altered_config, altered_suite
+                )
+            )
+        )
         with self.assertRaises(target_session.TargetEvaluationError):
             target_session.TargetSession(
                 suite=altered_suite,

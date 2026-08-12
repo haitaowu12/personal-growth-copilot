@@ -4,7 +4,7 @@ Standalone clean-room development repository for an explicit-invocation Agent
 Skill supporting context-rich personal growth, reflective dialogue, practical
 behavior-change experiments, and longitudinal learning.
 
-Current version: `0.4.0-alpha.1`
+Current version: `0.4.0-alpha.2`
 
 This repository does not contain or claim byte equivalence to the unavailable
 historical `0.2.0-rc.1` candidate. See
@@ -42,6 +42,18 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   execution, a frozen suite/baseline/run matrix, resumable capture, opaque
   externally-unverified reviewer packets, quality floors, hard-failure
   preservation, and deterministic target-run replay.
+- a cumulative blinded review-request artifact covering all eleven governed
+  rubric dimensions, exact transcript/structured observations, event candidates
+  without gold polarity, and an exact review-request hash;
+- a full-suite result manifest and deterministic campaign aggregator that
+  rejects missing, duplicate, extra, tampered, symlinked, or response-ID-reused
+  submitted results and binds the suite to canonical repository bytes. It
+  cannot prove that no alternate attempts were omitted,
+  so it reports only a conditional submitted-matrix result and keeps campaign
+  completion and reviewer evidence blocked;
+- a development-only Codex CLI adapter with complete target/baseline profile
+  hashes and event-stream rejection of tool activity; it still requires a
+  dedicated restricted host and credentials.
 
 The copilot may feel conversationally similar to a thoughtful coach. It must
 not claim to be a therapist, simulate a clinical relationship, diagnose, mine
@@ -69,5 +81,5 @@ deterministic controls, authored target/baseline evaluation, independent
 holdouts, named-host privacy/security preflight, controlled pilot, independent
 release review, and owner promotion each require their own exact evidence.
 Synthetic expected-event fixtures prove only that the harness works.
-The target adapter and review-import tests prove only that the evidence path
+The target adapter, review, and campaign tests prove only that the evidence path
 fails closed; no real target-model run or human qualification is claimed yet.

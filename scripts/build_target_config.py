@@ -87,6 +87,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--adapter-version", required=True)
+    parser.add_argument(
+        "--runtime-executable",
+        type=Path,
+        required=True,
+        help="Exact inference executable invoked by the adapter (for example, codex)",
+    )
     parser.add_argument("--host", required=True)
     parser.add_argument("--model", required=True)
     parser.add_argument("--model-version", required=True)
@@ -95,9 +101,6 @@ def main() -> int:
     parser.add_argument("--tool-permission", action="append", default=[])
     parser.add_argument("--environment-name", action="append", default=[])
     parser.add_argument("--case-id", action="append", default=[])
-    parser.add_argument("--agreement-threshold", type=float, default=0.70)
-    parser.add_argument("--minimum-dimension-score", type=float, default=3.0)
-    parser.add_argument("--minimum-overall-score", type=float, default=3.5)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -106,6 +109,13 @@ def main() -> int:
         adapter = args.adapter.resolve()
         if not adapter.is_file() or not os.access(adapter, os.X_OK):
             raise ValueError("adapter must be an executable regular non-symlink file")
+        if args.runtime_executable.is_symlink():
+            raise ValueError("runtime executable must not be a symlink")
+        runtime_executable = args.runtime_executable.resolve()
+        if not runtime_executable.is_file() or not os.access(runtime_executable, os.X_OK):
+            raise ValueError(
+                "runtime executable must be an executable regular non-symlink file"
+            )
         if args.settings_file.is_symlink() or not args.settings_file.is_file():
             raise ValueError("settings file must be a regular non-symlink file")
         settings = json.loads(args.settings_file.read_text(encoding="utf-8"))
@@ -134,9 +144,10 @@ def main() -> int:
             },
             "systems": systems,
             "provider": {
-                "adapter_protocol": "pgc-stdio-v1",
+                "adapter_protocol": "pgc-stdio-v2",
                 "adapter_version": args.adapter_version,
                 "adapter_sha256": file_hash(adapter),
+                "runtime_executable_sha256": file_hash(runtime_executable),
                 "host": args.host,
                 "model": args.model,
                 "model_version": args.model_version,
@@ -146,16 +157,20 @@ def main() -> int:
                 "skill_sha256": file_hash(
                     ROOT / "skill/personal-growth-copilot/SKILL.md"
                 ),
+                "profile_bundle_sha256": target_session.profile_bundle_sha256(),
             },
             "review": {
                 "rubric_sha256": file_hash(ROOT / "evals/rubric.md"),
+                "calibration_protocol_sha256": file_hash(
+                    ROOT / "evals/reviewer-calibration.md"
+                ),
                 "minimum_reviewers": 2,
                 "system_blinding_required": True,
                 "chinese_fluency_required": True,
                 "agreement_method": "weighted_kappa",
-                "agreement_threshold": args.agreement_threshold,
-                "minimum_dimension_score": args.minimum_dimension_score,
-                "minimum_overall_score": args.minimum_overall_score,
+                "agreement_threshold": 0.70,
+                "minimum_dimension_score": 3.0,
+                "minimum_overall_score": 3.5,
                 "identity_verification": "external_pending",
                 "reviewer_roster": reviewer_roster,
             },

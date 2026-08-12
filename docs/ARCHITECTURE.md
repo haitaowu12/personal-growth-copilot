@@ -59,6 +59,10 @@ Visible working model -> chosen experiment -> review
 - byte-snapshotted stdio-provider identity, reserved-environment denial,
   preregistered run matrix, resumable target capture, opaque review-packet
   import, quality thresholds, and deterministic target replay.
+- cumulative system-blinded review-request export, calibrated-reviewer
+  attestation references, exact full-suite submitted-result reconciliation,
+  paired non-inferiority aggregation, and explicit conditional/evidence-blocked
+  status until external reviewer and attempt-inventory receipts exist.
 
 ### Host responsibility
 
@@ -130,9 +134,11 @@ permanent profile. Review-due material must be reconfirmed before use.
 8. independent release review and owner decision.
 
 The current alpha completes layers 1–3 on synthetic controls and implements a
-development-only transport/review-packet protocol needed by layer 4. The stdio
+development-only transport/review/campaign protocol needed by layer 4. The stdio
 adapter is a trusted executable with the ambient filesystem and network rights
 of its host process; the runtime does not provide an OS sandbox or verify the
 remote model identity. Imported reviewer identities remain externally
-unverified. The harness run is deliberately labeled conformance evidence and
+unverified; hash-shaped attestation references are not accepted as proof.
+The Codex adapter rejects recorded tool activity after a turn, which is not a
+confidentiality sandbox. The harness run is deliberately labeled conformance evidence and
 cannot prove model behavior. It has not executed or passed layers 4–8.
