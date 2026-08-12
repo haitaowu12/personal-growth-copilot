@@ -155,6 +155,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
             "candidate_commit": commit,
             "frozen_at": "2026-01-01T00:00:00Z",
             "attempt_campaign_id": "campaign-release-0001",
+            "qualification_plan_sha256": "0" * 64,
             "target_config_sha256": "1" * 64,
             "holdout_seal_sha256": "2" * 64,
             "privacy_host_identity_sha256": "3" * 64,

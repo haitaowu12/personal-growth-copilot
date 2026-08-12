@@ -21,7 +21,7 @@
         "privacy_host_identity": {"$ref": "#/$defs/relativePath"},
         "pilot_protocol": {"$ref": "#/$defs/relativePath"},
         "authority_roster": {"$ref": "#/$defs/relativePath"},
-        "trust_policy": {"$ref": "#/$defs/relativePath"}
+        "trust_policy": {"const": "trust-policy.json"}
       }
     },
     "plan_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
