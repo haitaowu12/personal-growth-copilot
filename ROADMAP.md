@@ -1,6 +1,6 @@
 # Roadmap
 
-## Completed through 0.4.0-alpha.9
+## Completed through 0.4.0-alpha.10
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
@@ -50,6 +50,9 @@
   permissions, no generated authority material or fake evidence, candidate
   binding, PEM private-key detection, per-input incremental validation, and
   all-or-nothing trust-policy preflight.
+- create-only external-participant intake generation with exact candidate and
+  plan binding, machine-readable role responsibilities, unresolved host-control
+  remediation, and an explicit non-evidence claim limit.
 - fail-closed read-only named-host privacy discovery with hashed command
   observations, exact private-output boundaries, incomplete sync-inventory
   handling, and a hard prohibition on persistence authorization.

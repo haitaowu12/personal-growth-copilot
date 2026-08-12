@@ -227,6 +227,57 @@ class QualificationPacketTests(unittest.TestCase):
                 )
             )
 
+    def test_external_intake_is_nonpromotional_exact_and_create_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            intake = qualification_packet.build_external_intake(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+            )
+            self.assertEqual(
+                release_evidence.schema_errors(intake, "qualification_intake"), []
+            )
+            self.assertEqual(intake["status"], "AWAITING_EXTERNAL_INPUTS")
+            self.assertEqual(
+                intake["intake_sha256"],
+                release_evidence.object_hash(intake, "intake_sha256"),
+            )
+            self.assertEqual(
+                [item["status"] for item in intake["artifact_requirements"]],
+                ["MISSING"] * 5,
+            )
+            self.assertEqual(
+                intake["host_remediation"][0]["status"], "MISSING"
+            )
+            serialized = release_evidence.canonical_bytes(intake)
+            self.assertNotIn(b"PRIVATE KEY", serialized)
+            self.assertNotIn(b"public_key_path\":null", serialized)
+            output = root / "review" / "external-intake.json"
+            exact = qualification_packet._intake_output(root.resolve(), output)
+            release_packet.write_private_new(exact, intake)
+            self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o600)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError, "create-only"
+            ):
+                qualification_packet._intake_output(root.resolve(), output)
+
+    def test_external_intake_rejects_invalid_or_stale_host_discovery(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            discovery = root / "privacy" / "host-discovery.json"
+            discovery.write_bytes(release_evidence.canonical_bytes({}))
+            os.chmod(discovery, 0o600)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError,
+                "invalid host privacy discovery",
+            ):
+                qualification_packet.build_external_intake(
+                    root,
+                    source_identity=lambda _: CANDIDATE,
+                    clock=lambda: FIXED_TIME,
+                )
+
     def test_preflight_rejects_candidate_drift_private_keys_and_existing_policy(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             root = self.initialize(Path(directory_name))
