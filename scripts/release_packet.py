@@ -660,22 +660,33 @@ def validate_qualification_preregistration_input(
     *, input_id: str, packet_root: Path, path: Path, candidate: str
 ) -> None:
     """Validate one declared input without weakening the final combined freeze."""
-    validators: dict[str, Callable[[], object]] = {
-        "target_config": lambda: load_target_preregistration(path, candidate),
-        "holdout_seal": lambda: load_holdout_preregistration(path, candidate),
-        "privacy_host_identity": lambda: load_privacy_host_preregistration(path),
-        "pilot_protocol": lambda: load_pilot_preregistration(path, candidate),
-        "authority_roster": lambda: load_authority_preregistration(
-            packet_root, path
-        ),
-    }
-    try:
-        validator = validators[input_id]
-    except KeyError as exc:
+    plan = load_qualification_plan(packet_root)
+    if input_id == "target_config":
+        config = load_target_preregistration(path, candidate)
+        if config["provider"]["host"] != plan["named_host"]:
+            raise release_evidence.ReleaseEvidenceError(
+                "target provider differs from the qualification host"
+            )
+    elif input_id == "holdout_seal":
+        load_holdout_preregistration(path, candidate)
+    elif input_id == "privacy_host_identity":
+        _, identity, _ = load_privacy_host_preregistration(path)
+        if identity["named_host"] != plan["named_host"]:
+            raise release_evidence.ReleaseEvidenceError(
+                "privacy host identity differs from the qualification host"
+            )
+        if identity["environment_id"] != plan["environment_id"]:
+            raise release_evidence.ReleaseEvidenceError(
+                "privacy host identity differs from the qualification environment"
+            )
+    elif input_id == "pilot_protocol":
+        load_pilot_preregistration(path, candidate)
+    elif input_id == "authority_roster":
+        load_authority_preregistration(packet_root, path)
+    else:
         raise release_evidence.ReleaseEvidenceError(
             "unknown qualification preregistration input"
-        ) from exc
-    validator()
+        )
 
 
 def _derived_index_status(gates: dict[str, dict[str, Any]]) -> str:
@@ -1001,6 +1012,18 @@ def prepare_trust_policy(
     pilot_protocol, pilot_protocol_record, pilot_witness_identity = (
         load_pilot_preregistration(pilot_protocol_path, candidate)
     )
+    if config["provider"]["host"] != plan["named_host"]:
+        raise release_evidence.ReleaseEvidenceError(
+            "target provider differs from the qualification host"
+        )
+    if host_identity_record["named_host"] != plan["named_host"]:
+        raise release_evidence.ReleaseEvidenceError(
+            "privacy host identity differs from the qualification host"
+        )
+    if host_identity_record["environment_id"] != plan["environment_id"]:
+        raise release_evidence.ReleaseEvidenceError(
+            "privacy host identity differs from the qualification environment"
+        )
     witness_key_identities = [
         holdout_witness_identity,
         privacy_witness_identity,

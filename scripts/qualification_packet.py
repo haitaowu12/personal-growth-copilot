@@ -184,10 +184,16 @@ def _load_plan(root: Path) -> dict[str, Any]:
 def initialize_packet(
     packet_root: Path,
     attempt_campaign_id: str,
+    named_host: str,
+    environment_id: str,
     *,
     source_identity: Callable[[Path], str] = release_evidence.source_identity,
     clock: Callable[[], datetime] = now,
 ) -> dict[str, Any]:
+    if not isinstance(named_host, str) or not named_host.strip():
+        raise release_evidence.ReleaseEvidenceError("named host is required")
+    if not isinstance(environment_id, str) or not environment_id.strip():
+        raise release_evidence.ReleaseEvidenceError("environment id is required")
     candidate = source_identity(ROOT)
     parent = packet_root.parent.resolve(strict=True)
     root = parent / packet_root.name
@@ -204,6 +210,8 @@ def initialize_packet(
         "candidate_commit": candidate,
         "initialized_at": initialized_at,
         "attempt_campaign_id": attempt_campaign_id,
+        "named_host": named_host.strip(),
+        "environment_id": environment_id.strip(),
         "paths": dict(PLAN_PATHS),
     }
     plan["plan_sha256"] = release_evidence.digest(plan)
@@ -222,6 +230,8 @@ def initialize_packet(
         "status": "initialized",
         "candidate_commit": candidate,
         "attempt_campaign_id": attempt_campaign_id,
+        "named_host": plan["named_host"],
+        "environment_id": plan["environment_id"],
         "plan_sha256": plan["plan_sha256"],
         "ready_to_freeze": False,
         "missing_inputs": list(INPUT_LABELS),
@@ -378,6 +388,7 @@ def build_external_intake(
     root = _existing_packet_root(packet_root)
     plan = _load_plan(root)
     candidate = source_identity(ROOT)
+    generated = clock()
     if candidate != plan["candidate_commit"]:
         raise release_evidence.ReleaseEvidenceError(
             "qualification plan differs from the exact clean candidate checkout"
@@ -385,7 +396,7 @@ def build_external_intake(
     preflight = preflight_packet(
         root,
         source_identity=lambda _: candidate,
-        clock=clock,
+        clock=lambda: generated,
     )
     requirements = {item["input_id"]: item for item in preflight["requirements"]}
     artifact_requirements = [
@@ -401,6 +412,7 @@ def build_external_intake(
     ]
     discovery_path = root / "privacy/host-discovery.json"
     host_remediation: list[dict[str, Any]] = []
+    host_discovery: dict[str, Any]
     if discovery_path.is_file() and not discovery_path.is_symlink():
         discovery = release_evidence.json_object(
             release_evidence.read_once(discovery_path), "host privacy discovery"
@@ -413,6 +425,31 @@ def build_external_intake(
             raise release_evidence.ReleaseEvidenceError(
                 "host privacy discovery differs from the clean candidate checkout"
             )
+        if discovery["named_host"] != plan["named_host"]:
+            raise release_evidence.ReleaseEvidenceError(
+                "host privacy discovery differs from the qualification host"
+            )
+        if discovery["environment_id"] != plan["environment_id"]:
+            raise release_evidence.ReleaseEvidenceError(
+                "host privacy discovery differs from the qualification environment"
+            )
+        discovery_time = release_evidence.parse_time(discovery["generated_at"])
+        if discovery_time < release_evidence.parse_time(plan["initialized_at"]):
+            raise release_evidence.ReleaseEvidenceError(
+                "host privacy discovery predates the qualification packet"
+            )
+        if discovery_time > generated:
+            raise release_evidence.ReleaseEvidenceError(
+                "host privacy discovery may not follow the intake generation time"
+            )
+        host_discovery = {
+            "status": "PRESENT",
+            "named_host": discovery["named_host"],
+            "environment_id": discovery["environment_id"],
+            "generated_at": discovery["generated_at"],
+            "report_sha256": discovery["report_sha256"],
+            "storage_root_sha256": discovery["storage_root_sha256"],
+        }
         host_remediation = [
             {
                 "check_id": item["check_id"],
@@ -424,6 +461,14 @@ def build_external_intake(
             if item["status"] != "PASS"
         ]
     else:
+        host_discovery = {
+            "status": "MISSING",
+            "named_host": None,
+            "environment_id": None,
+            "generated_at": None,
+            "report_sha256": None,
+            "storage_root_sha256": None,
+        }
         host_remediation = [
             {
                 "check_id": "host_privacy_discovery",
@@ -437,10 +482,11 @@ def build_external_intake(
         "evidence_class": "qualification-external-intake",
         "status": "AWAITING_EXTERNAL_INPUTS",
         "candidate_commit": candidate,
-        "generated_at": release_packet.timestamp(clock()),
+        "generated_at": release_packet.timestamp(generated),
         "plan_sha256": plan["plan_sha256"],
         "participant_requirements": list(PARTICIPANT_REQUIREMENTS),
         "artifact_requirements": artifact_requirements,
+        "host_discovery": host_discovery,
         "host_remediation": host_remediation,
         "hard_invariants": list(HARD_INVARIANTS),
         "validation_command": (
@@ -484,6 +530,8 @@ def parser() -> argparse.ArgumentParser:
     initialize = commands.add_parser("init")
     initialize.add_argument("--packet-root", type=Path, required=True)
     initialize.add_argument("--attempt-campaign-id", required=True)
+    initialize.add_argument("--named-host", required=True)
+    initialize.add_argument("--environment-id", required=True)
     preflight = commands.add_parser("preflight")
     preflight.add_argument("--packet-root", type=Path, required=True)
     intake = commands.add_parser("intake")
@@ -496,7 +544,12 @@ def main() -> int:
     args = parser().parse_args()
     try:
         if args.command == "init":
-            result = initialize_packet(args.packet_root, args.attempt_campaign_id)
+            result = initialize_packet(
+                args.packet_root,
+                args.attempt_campaign_id,
+                args.named_host,
+                args.environment_id,
+            )
         elif args.command == "preflight":
             result = preflight_packet(args.packet_root)
         else:

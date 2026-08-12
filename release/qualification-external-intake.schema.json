@@ -3,7 +3,7 @@
   "$id": "https://personal-growth-copilot.local/release/qualification-external-intake.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "evidence_class", "status", "candidate_commit", "generated_at", "plan_sha256", "participant_requirements", "artifact_requirements", "host_remediation", "hard_invariants", "validation_command", "claim_limit", "intake_sha256"],
+  "required": ["schema_version", "evidence_class", "status", "candidate_commit", "generated_at", "plan_sha256", "participant_requirements", "artifact_requirements", "host_discovery", "host_remediation", "hard_invariants", "validation_command", "claim_limit", "intake_sha256"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "evidence_class": {"const": "qualification-external-intake"},
@@ -23,6 +23,7 @@
       "maxItems": 5,
       "items": {"$ref": "#/$defs/artifact"}
     },
+    "host_discovery": {"$ref": "#/$defs/hostDiscovery"},
     "host_remediation": {
       "type": "array",
       "uniqueItems": true,
@@ -77,6 +78,36 @@
         "reason_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 200}},
         "required_outcome": {"const": "PASS_IN_SOURCE_WITNESSED_PRIVACY_PREFLIGHT"}
       }
+    },
+    "hostDiscovery": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "named_host", "environment_id", "generated_at", "report_sha256", "storage_root_sha256"],
+          "properties": {
+            "status": {"const": "MISSING"},
+            "named_host": {"type": "null"},
+            "environment_id": {"type": "null"},
+            "generated_at": {"type": "null"},
+            "report_sha256": {"type": "null"},
+            "storage_root_sha256": {"type": "null"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "named_host", "environment_id", "generated_at", "report_sha256", "storage_root_sha256"],
+          "properties": {
+            "status": {"const": "PRESENT"},
+            "named_host": {"type": "string", "minLength": 1, "maxLength": 200},
+            "environment_id": {"type": "string", "minLength": 1, "maxLength": 200},
+            "generated_at": {"type": "string", "format": "date-time"},
+            "report_sha256": {"$ref": "#/$defs/hash"},
+            "storage_root_sha256": {"$ref": "#/$defs/hash"}
+          }
+        }
+      ]
     }
   }
 }
