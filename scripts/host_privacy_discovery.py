@@ -21,7 +21,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import release_evidence  # noqa: E402
-import release_packet  # noqa: E402
 
 
 REQUIRED_CHECKS = (
@@ -55,6 +54,70 @@ class CommandResult:
 
 
 CommandRunner = Callable[[str, Sequence[str]], CommandResult]
+
+
+@dataclass
+class ReservedPrivateOutput:
+    output: Path
+    parent_fd: int
+    file_fd: int
+    parent_device: int
+    parent_inode: int
+    committed: bool = False
+
+    def require_visible_parent(self) -> None:
+        try:
+            visible_parent = self.output.parent.stat(follow_symlinks=False)
+        except OSError as exc:
+            raise HostDiscoveryError("output parent changed after reservation") from exc
+        if not stat.S_ISDIR(visible_parent.st_mode) or (
+            visible_parent.st_dev,
+            visible_parent.st_ino,
+        ) != (self.parent_device, self.parent_inode):
+            raise HostDiscoveryError("output parent changed after reservation")
+
+    def write(self, value: object) -> None:
+        if self.committed:
+            raise HostDiscoveryError("reserved output has already been committed")
+        self.require_visible_parent()
+        bound_parent = os.fstat(self.parent_fd)
+        if (bound_parent.st_dev, bound_parent.st_ino) != (
+            self.parent_device,
+            self.parent_inode,
+        ):
+            raise HostDiscoveryError("reserved output directory identity changed")
+        data = release_evidence.canonical_bytes(value)
+        remaining = memoryview(data)
+        while remaining:
+            written = os.write(self.file_fd, remaining)
+            if written <= 0:
+                raise HostDiscoveryError("reserved output write made no progress")
+            remaining = remaining[written:]
+        os.fsync(self.file_fd)
+        os.close(self.file_fd)
+        self.file_fd = -1
+        os.fsync(self.parent_fd)
+        self.require_visible_parent()
+        self.committed = True
+
+    def close(self) -> None:
+        if self.file_fd >= 0:
+            os.close(self.file_fd)
+            self.file_fd = -1
+        if not self.committed:
+            try:
+                os.unlink(self.output.name, dir_fd=self.parent_fd)
+            except FileNotFoundError:
+                pass
+        if self.parent_fd >= 0:
+            os.close(self.parent_fd)
+            self.parent_fd = -1
+
+    def __enter__(self) -> ReservedPrivateOutput:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
 
 
 def now() -> datetime:
@@ -166,13 +229,13 @@ def acl_status(
     return ("PRESENT" if has_acl_marker or has_acl_entry else "ABSENT"), result
 
 
-def validate_private_output(
+def reserve_private_output(
     output: Path,
     *,
     runner: CommandRunner = default_runner,
     system: str | None = None,
     home_root: Path | None = None,
-) -> None:
+) -> ReservedPrivateOutput:
     if output.exists() or output.is_symlink():
         raise HostDiscoveryError("output must not already exist")
     parent = output.parent
@@ -207,6 +270,49 @@ def validate_private_output(
         raise HostDiscoveryError("output parent may not have an access control list")
     if acl != "ABSENT":
         raise HostDiscoveryError("output parent access control list is unobservable")
+    open_directory_flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        open_directory_flags |= os.O_DIRECTORY
+    if hasattr(os, "O_NOFOLLOW"):
+        open_directory_flags |= os.O_NOFOLLOW
+    parent_fd = os.open(resolved_parent, open_directory_flags)
+    try:
+        bound_parent = os.fstat(parent_fd)
+        if (bound_parent.st_dev, bound_parent.st_ino) != (
+            metadata.st_dev,
+            metadata.st_ino,
+        ):
+            raise HostDiscoveryError("output parent changed during reservation")
+        file_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            file_flags |= os.O_NOFOLLOW
+        file_fd = os.open(output.name, file_flags, 0o600, dir_fd=parent_fd)
+    except Exception:
+        os.close(parent_fd)
+        raise
+    return ReservedPrivateOutput(
+        output=output,
+        parent_fd=parent_fd,
+        file_fd=file_fd,
+        parent_device=metadata.st_dev,
+        parent_inode=metadata.st_ino,
+    )
+
+
+def validate_private_output(
+    output: Path,
+    *,
+    runner: CommandRunner = default_runner,
+    system: str | None = None,
+    home_root: Path | None = None,
+) -> None:
+    with reserve_private_output(
+        output,
+        runner=runner,
+        system=system,
+        home_root=home_root,
+    ):
+        pass
 
 
 def inspect_storage(
@@ -522,15 +628,15 @@ def parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = parser().parse_args()
     try:
-        validate_private_output(args.output)
-        report = discover(
-            storage_root=args.storage_root,
-            named_host=args.named_host,
-            environment_id=args.environment_id,
-            sync_roots=args.sync_root,
-            sync_inventory_complete=args.sync_inventory_complete,
-        )
-        release_packet.write_private_new(args.output, report)
+        with reserve_private_output(args.output) as reserved_output:
+            report = discover(
+                storage_root=args.storage_root,
+                named_host=args.named_host,
+                environment_id=args.environment_id,
+                sync_roots=args.sync_root,
+                sync_inventory_complete=args.sync_inventory_complete,
+            )
+            reserved_output.write(report)
         print(
             json.dumps(
                 {
