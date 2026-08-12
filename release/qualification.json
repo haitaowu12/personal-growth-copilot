@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "release": "0.4.0-alpha.7",
+  "release": "0.4.0-alpha.8",
   "status": "blocked",
   "production_claim_allowed": false,
   "activation": "explicit-only-unregistered",
@@ -23,12 +23,14 @@
     "externally_witnessed_attempt_inventory_protocol": "pass-local-conformance-unconfigured",
     "external_gate_source_replay_protocol": "pass-local-conformance-unconfigured",
     "qualification_packet_preflight_protocol": "pass-local-conformance-unconfigured",
+    "host_privacy_discovery_protocol": "pass-local-conformance-nonpromotional",
     "deterministic_ci_definition": "pass-local",
     "hosted_exact_head_ci": "unavailable-github-account-quota-owner-approved-local-evidence-substitution",
     "behavioral_comparison": "pending",
     "independent_untouched_holdouts": "pending",
     "bilingual_human_review": "pending",
     "judge_calibration": "pending",
+    "named_host_privacy_preflight": "pending",
     "privacy_safe_controlled_pilot": "pending",
     "independent_release_review": "pending"
   },
@@ -52,6 +54,7 @@
         "unconfigured owner-epoch-bound externally witnessed provider-attempt capture, post-freeze result reconciliation, retry/omission detection, and out-of-band witness-head anchoring",
         "unconfigured source-manifest replay for reviewer, holdout, privacy, bilingual, and pilot gate evidence",
         "create-only private qualification-packet initialization plus fail-closed preregistration and authoritative trust-policy freeze validation",
+        "read-only, non-promotional named-host privacy discovery with bounded hashed observations and no persistence authorization",
         "skill structure"
       ],
       "does_not_cover": [
@@ -63,7 +66,7 @@
         "configured external trust authorities or signed release-gate receipts",
         "real external preregistration inputs or a frozen private qualification packet",
         "human bilingual review",
-        "host privacy",
+        "a passing current named-host privacy preflight",
         "controlled pilot",
         "efficacy",
         "release approval"

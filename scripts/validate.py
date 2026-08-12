@@ -205,6 +205,7 @@ def validate() -> list[str]:
         ROOT / "release/holdout-attempt.schema.json",
         ROOT / "release/holdout-access-audit.schema.json",
         ROOT / "release/privacy-host-identity.schema.json",
+        ROOT / "release/host-privacy-discovery.schema.json",
         ROOT / "release/pilot-protocol.schema.json",
         ROOT / "release/reviewer-identity-attestation.schema.json",
         ROOT / "release/qualification-packet-plan.schema.json",
@@ -213,6 +214,7 @@ def validate() -> list[str]:
         ROOT / "scripts/release_evidence.py",
         ROOT / "scripts/release_packet.py",
         ROOT / "scripts/qualification_packet.py",
+        ROOT / "scripts/host_privacy_discovery.py",
     }
     for path in sorted(required_runtime):
         if not path.exists():
@@ -242,6 +244,7 @@ def validate() -> list[str]:
         ROOT / "release/holdout-attempt.schema.json",
         ROOT / "release/holdout-access-audit.schema.json",
         ROOT / "release/privacy-host-identity.schema.json",
+        ROOT / "release/host-privacy-discovery.schema.json",
         ROOT / "release/pilot-protocol.schema.json",
         ROOT / "release/reviewer-identity-attestation.schema.json",
         ROOT / "release/qualification-packet-plan.schema.json",

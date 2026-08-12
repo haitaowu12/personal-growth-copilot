@@ -1,6 +1,6 @@
 [project]
 name = "personal-growth-copilot-skill"
-version = "0.4.0a6"
+version = "0.4.0a8"
 description = "Validation and packaging tools for Personal Growth Copilot"
 requires-python = ">=3.11,<3.15"
 license = { text = "MIT" }

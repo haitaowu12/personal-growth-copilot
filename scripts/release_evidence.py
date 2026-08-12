@@ -38,6 +38,7 @@ SCHEMAS = {
     "pilot_protocol": ROOT / "release/pilot-protocol.schema.json",
     "reviewer_identity": ROOT / "release/reviewer-identity-attestation.schema.json",
     "qualification_plan": ROOT / "release/qualification-packet-plan.schema.json",
+    "host_privacy_discovery": ROOT / "release/host-privacy-discovery.schema.json",
 }
 GATES = (
     "behavioral_qualification",
