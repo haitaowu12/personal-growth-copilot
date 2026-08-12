@@ -3,12 +3,13 @@
   "$id": "https://personal-growth-copilot.local/release/trust-policy.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "status", "candidate_commit", "frozen_at", "authorities", "policy_sha256"],
+  "required": ["schema_version", "status", "candidate_commit", "frozen_at", "attempt_campaign_id", "authorities", "policy_sha256"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "status": {"enum": ["UNCONFIGURED", "CONFIGURED"]},
     "candidate_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
     "frozen_at": {"type": ["string", "null"], "format": "date-time"},
+    "attempt_campaign_id": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9-]{15,99}$"},
     "authorities": {
       "type": "array",
       "uniqueItems": true,
@@ -34,6 +35,7 @@
         "properties": {
           "candidate_commit": {"type": "null"},
           "frozen_at": {"type": "null"},
+          "attempt_campaign_id": {"type": "null"},
           "authorities": {"maxItems": 0}
         }
       }
@@ -44,6 +46,7 @@
         "properties": {
           "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
           "frozen_at": {"type": "string", "format": "date-time"},
+          "attempt_campaign_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{15,99}$"},
           "authorities": {"minItems": 9, "maxItems": 9}
         }
       }

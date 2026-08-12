@@ -11,10 +11,12 @@ keys, private pilot content, reviewer identities, or holdout plaintext here.
 After the candidate commit is frozen, the owner prepares a trust policy in a
 restricted evidence directory. Each authority has a public Ed25519 key, a
 single role and exactly one gate that role may attest. The policy records a
-timezone-aware `frozen_at`, is bound to the candidate commit, and is
-self-hashed before any gate execution. Private keys stay with the independent
-authority. Configure exactly one authority and a distinct public key for every
-role; key aliases cannot collapse independent gates. The owner distributes the
+timezone-aware `frozen_at`, is bound to the candidate commit and one unique
+`attempt_campaign_id`, and is self-hashed before any gate execution. That
+campaign epoch is the only attempt chain accepted for the candidate; changing
+the id cannot reset a failure or retry history. Private keys stay with the
+independent authority. Configure exactly one authority and a distinct public
+key for every role; key aliases cannot collapse independent gates. The owner distributes the
 resulting `policy_sha256` and current `index_sha256` to the verifier operator
 over an independent, current-state channel. The packet is not trusted unless it
 matches both anchors. Replacing or invalidating evidence requires a new index
@@ -78,7 +80,13 @@ already verified, out-of-band-anchored prior index.
 
 ```text
 python scripts/release_packet.py build-attempt-artifact \
-  --verification /private/evidence/attempt-inventory-verification.json \
+  --config /private/evidence/target-config.json \
+  --index /private/evidence/attempt-ledger/index-FINAL.json \
+  --manifest /private/evidence/result-manifest.json \
+  --policy /private/release-packet/trust-policy.json \
+  --expected-policy-sha256 OWNER_DISTRIBUTED_POLICY_HASH \
+  --expected-head-sha256 WITNESS_DISTRIBUTED_CURRENT_HEAD \
+  --expected-event-count WITNESS_DISTRIBUTED_CURRENT_COUNT \
   --output /private/release-packet/attempt-inventory.artifact.json
 
 python scripts/release_packet.py build-receipt-payload \
@@ -139,11 +147,12 @@ verification; it does not accept a separate verifier/candidate repository pair.
 installs the skill, registers it in a catalog, or enables implicit invocation.
 Those remain separate owner-controlled actions after review.
 
-For the `attempt_inventory` gate, the artifact's primary `evidence_refs` entry
-must be the exact `inventory_sha256` emitted by
-`scripts/attempt_inventory_cli.py verify`; the remaining references include
-the provider-access control/audit hash and complete artifact-inventory hash
-reported by that verifier. The attempt authority signs only after obtaining the
+For the `attempt_inventory` gate, the specialized builder reruns full inventory
+verification directly from the ledger, exact result files/manifest, configured
+policy, and independently supplied witness head/count. Its artifact's primary
+`evidence_refs` entry is the resulting exact `inventory_sha256`; the remaining
+references include the provider-access control/audit hash and complete
+artifact-inventory hash reported by that verifier. The attempt authority signs only after obtaining the
 current witness head and count independently and confirming that all seven
 attempt assertions required by `scripts/release_evidence.py` are true. A local
 list of submitted result files, an operator-set boolean, or a stateless signer

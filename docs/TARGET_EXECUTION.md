@@ -209,6 +209,10 @@ available for development only and can never satisfy the release attempt gate.
 The witnessed workflow requires the full canonical suite, an exact clean
 candidate checkout, a configured release trust policy, and a stateful external
 witness controlled by the `attempt_log_authority`.
+The command's campaign id must equal the single `attempt_campaign_id` frozen in
+the owner-anchored policy. Every event and receipt must occur at or after that
+policy's `frozen_at`; a new campaign id or later policy cannot launder an older
+failure chain.
 
 The witness adapter receives one canonical event on standard input. Before it
 signs, it must durably enforce the exact campaign id, candidate commit,

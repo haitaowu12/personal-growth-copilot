@@ -144,6 +144,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
             "status": "CONFIGURED",
             "candidate_commit": commit,
             "frozen_at": "2026-01-01T00:00:00Z",
+            "attempt_campaign_id": "campaign-release-0001",
             "authorities": authorities,
         }
         policy["policy_sha256"] = release_evidence.digest(policy)
@@ -354,8 +355,8 @@ class ReleaseEvidenceTests(unittest.TestCase):
             ROOT / "release/evidence-index.json",
             ROOT / "release/trust-policy.json",
             "0" * 40,
-            "248b39af6fe41f4c81ff7dd44aa8d5d15ef09a27ebb137c6a21b1c5f075f179c",
-            "1d75013df930ea2b73c0400439a4a4fe7abb2262a16bfa1f766b92f13f3f8742",
+            "ce1c088d6dc3017ea6fceee212153b3d908f8c11a986fed5426ff7274c24d4c7",
+            "61af4dc78e5ddd1411eeee9801360fd6e1cb640996ed9a0fb1fb04a6cc2bbf73",
         )
         self.assertEqual(result["release_status"], "BLOCKED")
         self.assertFalse(result["qualification_update_allowed"])

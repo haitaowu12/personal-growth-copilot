@@ -59,8 +59,13 @@ def validate() -> list[str]:
         errors.append("production claim must be false")
     if trust_policy.get("status") != "UNCONFIGURED" or trust_policy.get("authorities"):
         errors.append("committed release trust policy must remain unconfigured")
-    if trust_policy.get("candidate_commit") is not None or trust_policy.get("frozen_at") is not None:
-        errors.append("committed release trust policy may not bind a candidate or freeze time")
+    if any(
+        trust_policy.get(field) is not None
+        for field in ("candidate_commit", "frozen_at", "attempt_campaign_id")
+    ):
+        errors.append(
+            "committed release trust policy may not bind a candidate, freeze time, or attempt epoch"
+        )
     policy_body = {key: value for key, value in trust_policy.items() if key != "policy_sha256"}
     if trust_policy.get("policy_sha256") != canonical_hash(policy_body):
         errors.append("release trust policy self-hash mismatch")
