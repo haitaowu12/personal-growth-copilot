@@ -15,8 +15,10 @@ timezone-aware `frozen_at`, is bound to the candidate commit, and is
 self-hashed before any gate execution. Private keys stay with the independent
 authority. Configure exactly one authority and a distinct public key for every
 role; key aliases cannot collapse independent gates. The owner distributes the
-resulting `policy_sha256` to the verifier operator over an independent channel.
-The packet is not trusted unless it matches that out-of-band anchor.
+resulting `policy_sha256` and current `index_sha256` to the verifier operator
+over an independent, current-state channel. The packet is not trusted unless it
+matches both anchors. Replacing or invalidating evidence requires a new index
+hash, and the current-state channel must replace the prior index anchor.
 
 The committed templates do not authorize anyone. Adding hash-shaped text or
 setting a status field cannot pass a gate. `scripts/release_evidence.py`
@@ -44,6 +46,11 @@ No average or soft score can waive a hard failure. A signed `FAIL` or
 `INVALIDATED` artifact must contain at least one reason in `hard_failures` and
 returns the whole release to `BLOCKED`.
 
+The independent review artifact must execute after every preceding gate receipt
+and reference those seven exact artifact hashes. Owner promotion must execute
+after the independent-review receipt and reference all eight prerequisite
+artifact hashes.
+
 ## Gate artifacts and receipts
 
 A gate artifact follows `release/gate-artifact.schema.json`. Calculate its
@@ -51,7 +58,14 @@ A gate artifact follows `release/gate-artifact.schema.json`. Calculate its
 then signs the canonical `payload` from
 `release/signed-receipt.schema.json`; the payload binds the gate, candidate,
 artifact hash, outcome, issuance time, and a packet-unique nonce. The verifier
-does not claim a global replay registry outside the packet.
+does not claim a global nonce registry; stale-packet rejection depends on the
+owner's independently distributed current `index_sha256`.
+
+For this protocol, “canonical JSON” means UTF-8 output equivalent to Python
+`json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+allow_nan=False)`, with no trailing newline. Integers and decimal values must
+retain the schema-valid JSON type used in the artifact. Producers in another
+language must reproduce those exact bytes before hashing or signing.
 
 An example signing operation, performed outside this repository, is:
 
@@ -68,9 +82,13 @@ directory. Use relative non-symlink paths and then run:
 python scripts/release_evidence.py \
   --index /private/release-packet/evidence-index.json \
   --policy /private/release-packet/trust-policy.json \
-  --expected-policy-sha256 OWNER_DISTRIBUTED_64_HEX_HASH \
-  --repository /path/to/clean/candidate-checkout
+  --expected-policy-sha256 OWNER_DISTRIBUTED_POLICY_HASH \
+  --expected-index-sha256 OWNER_DISTRIBUTED_CURRENT_INDEX_HASH
 ```
+
+Run that command from the exact candidate checkout using the verifier contained
+in that checkout. The CLI rejects a dirty checkout and rechecks the source after
+verification; it does not accept a separate verifier/candidate repository pair.
 
 `qualification_update_allowed` becomes true only for a cryptographically valid
 `PROMOTED` packet. The verifier never edits `release/qualification.json`,

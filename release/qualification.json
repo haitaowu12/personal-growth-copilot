@@ -45,7 +45,7 @@
         "branchable multi-turn harness conformance",
         "byte-snapshotted stdio provider, frozen suite/baseline/run plan, and resumable externally-unverified review-packet import protocol",
         "cumulative blinded review-request binding, exact rubric parity, full-suite submitted-run manifest reconciliation, conditional campaign aggregation, and Codex CLI runtime/profile/tool-telemetry controls",
-        "unconfigured fail-closed, role-scoped signed release-evidence verification bound to an exact clean candidate checkout",
+        "unconfigured fail-closed, role-scoped signed release-evidence verification bound to an exact clean candidate checkout and out-of-band policy/current-index anchors",
         "skill structure"
       ],
       "does_not_cover": [

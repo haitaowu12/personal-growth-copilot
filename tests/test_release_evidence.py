@@ -103,7 +103,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
         included_gates = set(included_gates or {"behavioral_qualification"})
         keys = {}
         authorities = []
-        for gate in release_evidence.GATES:
+        for gate_index, gate in enumerate(release_evidence.GATES):
             private_key = directory / f"{gate}.private.pem"
             public_key = directory / f"{gate}.public.pem"
             subprocess.run(
@@ -155,21 +155,28 @@ class ReleaseEvidenceTests(unittest.TestCase):
         gates = {gate: copy.deepcopy(pending) for gate in release_evidence.GATES}
         artifact_paths = {}
         artifacts = {}
-        for gate in release_evidence.GATES:
+        for gate_index, gate in enumerate(release_evidence.GATES):
             if gate not in included_gates:
                 continue
             evidence_refs = [hashlib.sha256(gate.encode()).hexdigest()]
-            if gate == "owner_promotion":
+            if gate == "independent_release_review":
+                evidence_refs = [
+                    artifacts[prior]["artifact_sha256"]
+                    for prior in release_evidence.GATES[:7]
+                ]
+            elif gate == "owner_promotion":
                 evidence_refs = [
                     artifacts[prior]["artifact_sha256"]
                     for prior in release_evidence.GATES[:-1]
                 ]
+            executed_minute = 1 + gate_index
+            issued_minute = executed_minute
             artifact = {
                 "schema_version": "1.0",
                 "gate": gate,
                 "candidate_commit": commit,
                 "status": "PASS",
-                "executed_at": "2026-01-01T00:01:00Z",
+                "executed_at": f"2026-01-01T00:{executed_minute:02d}:00Z",
                 "hard_failures": [],
                 "assertions": self.assertions_for(gate),
                 "evidence_refs": evidence_refs,
@@ -184,7 +191,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 "candidate_commit": commit,
                 "artifact_sha256": artifact["artifact_sha256"],
                 "outcome": "PASS",
-                "issued_at": "2026-01-01T00:02:00Z",
+                "issued_at": f"2026-01-01T00:{issued_minute:02d}:30Z",
                 "nonce": f"{gate}-receipt-00000001",
             }
             payload_path = directory / f"{gate}.payload.json"
@@ -289,12 +296,62 @@ class ReleaseEvidenceTests(unittest.TestCase):
             }
         )
 
+    def rewrite_gate_times(
+        self,
+        directory: Path,
+        gate: str,
+        artifact_path: Path,
+        index: dict,
+        executed_at: str,
+        issued_at: str,
+    ) -> None:
+        artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+        artifact["executed_at"] = executed_at
+        artifact["artifact_sha256"] = release_evidence.object_hash(
+            artifact, "artifact_sha256"
+        )
+        self.write_json(artifact_path, artifact)
+        receipt_path = directory / index["gates"][gate]["receipt_path"]
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt["payload"]["artifact_sha256"] = artifact["artifact_sha256"]
+        receipt["payload"]["issued_at"] = issued_at
+        payload_path = directory / f"{gate}.retimed.payload.json"
+        payload_path.write_bytes(release_evidence.canonical_bytes(receipt["payload"]))
+        signature_path = directory / f"{gate}.retimed.signature.bin"
+        subprocess.run(
+            [
+                "openssl",
+                "pkeyutl",
+                "-sign",
+                "-inkey",
+                str(directory / f"{gate}.private.pem"),
+                "-rawin",
+                "-in",
+                str(payload_path),
+                "-out",
+                str(signature_path),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        receipt["signature_base64"] = base64.b64encode(
+            signature_path.read_bytes()
+        ).decode()
+        receipt_bytes = self.write_json(receipt_path, receipt)
+        index["gates"][gate].update(
+            {
+                "artifact_sha256": artifact["artifact_sha256"],
+                "receipt_sha256": hashlib.sha256(receipt_bytes).hexdigest(),
+            }
+        )
+
     def test_default_policy_is_unconfigured_and_release_is_blocked(self):
         result = release_evidence.verify(
             ROOT / "release/evidence-index.json",
             ROOT / "release/trust-policy.json",
             "0" * 40,
             "248b39af6fe41f4c81ff7dd44aa8d5d15ef09a27ebb137c6a21b1c5f075f179c",
+            "1d75013df930ea2b73c0400439a4a4fe7abb2262a16bfa1f766b92f13f3f8742",
         )
         self.assertEqual(result["release_status"], "BLOCKED")
         self.assertFalse(result["qualification_update_allowed"])
@@ -305,6 +362,8 @@ class ReleaseEvidenceTests(unittest.TestCase):
             release_evidence.json_object(b'{"gate":"one","gate":"two"}', "artifact")
         with self.assertRaises(release_evidence.ReleaseEvidenceError):
             release_evidence.json_object(b'{"minimum_system_kappa":NaN}', "artifact")
+        with self.assertRaises(release_evidence.ReleaseEvidenceError):
+            release_evidence.json_object(b'{"minimum_system_kappa":1e309}', "artifact")
 
     def test_valid_role_scoped_signature_verifies_but_one_gate_cannot_promote(self):
         with tempfile.TemporaryDirectory() as directory_name:
@@ -313,7 +372,11 @@ class ReleaseEvidenceTests(unittest.TestCase):
             )
             policy = json.loads(policy_path.read_text(encoding="utf-8"))
             result = release_evidence.verify(
-                index_path, policy_path, "a" * 40, policy["policy_sha256"]
+                index_path,
+                policy_path,
+                "a" * 40,
+                policy["policy_sha256"],
+                json.loads(index_path.read_text(encoding="utf-8"))["index_sha256"],
             )
             self.assertEqual(result["verification_status"], "pass")
             self.assertEqual(result["release_status"], "BLOCKED")
@@ -340,7 +403,11 @@ class ReleaseEvidenceTests(unittest.TestCase):
             self.write_json(index_path, index)
             policy = json.loads(policy_path.read_text(encoding="utf-8"))
             result = release_evidence.verify(
-                index_path, policy_path, "a" * 40, policy["policy_sha256"]
+                index_path,
+                policy_path,
+                "a" * 40,
+                policy["policy_sha256"],
+                index["index_sha256"],
             )
             self.assertEqual(result["verification_status"], "fail")
             self.assertEqual(result["release_status"], "BLOCKED")
@@ -354,12 +421,16 @@ class ReleaseEvidenceTests(unittest.TestCase):
 
     def test_all_nine_signed_gates_are_required_before_promotion(self):
         with tempfile.TemporaryDirectory() as directory_name:
-            index_path, policy_path, _, _, _, _ = self.signed_packet(
+            index_path, policy_path, _, _, index, _ = self.signed_packet(
                 Path(directory_name), included_gates=set(release_evidence.GATES)
             )
             policy = json.loads(policy_path.read_text(encoding="utf-8"))
             result = release_evidence.verify(
-                index_path, policy_path, "a" * 40, policy["policy_sha256"]
+                index_path,
+                policy_path,
+                "a" * 40,
+                policy["policy_sha256"],
+                index["index_sha256"],
             )
             self.assertEqual(result["verification_status"], "pass")
             self.assertEqual(result["release_status"], "PROMOTED")
@@ -389,6 +460,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 policy_path,
                 "a" * 40,
                 policy["policy_sha256"],
+                index["index_sha256"],
             )
             self.assertEqual(result["verification_status"], "pass")
             self.assertEqual(result["release_status"], "BLOCKED")
@@ -418,10 +490,60 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 policy_path,
                 "a" * 40,
                 policy["policy_sha256"],
+                index["index_sha256"],
             )
             self.assertEqual(result["verification_status"], "pass")
             self.assertEqual(result["release_status"], "BLOCKED")
             self.assertFalse(result["qualification_update_allowed"])
+
+    def test_review_and_owner_must_follow_prerequisite_receipts(self):
+        with tempfile.TemporaryDirectory() as directory_name:
+            directory = Path(directory_name)
+            index_path, policy_path, artifact_paths, _, index, policy = self.signed_packet(
+                directory, included_gates=set(release_evidence.GATES)
+            )
+            self.rewrite_gate_times(
+                directory,
+                "owner_promotion",
+                artifact_paths["owner_promotion"],
+                index,
+                "2026-01-01T00:00:10Z",
+                "2026-01-01T00:00:20Z",
+            )
+            index["index_sha256"] = release_evidence.object_hash(
+                index, "index_sha256"
+            )
+            self.write_json(index_path, index)
+            result = release_evidence.verify(
+                index_path,
+                policy_path,
+                "a" * 40,
+                policy["policy_sha256"],
+                index["index_sha256"],
+            )
+            self.assertEqual(result["verification_status"], "fail")
+            self.assertEqual(result["release_status"], "BLOCKED")
+            self.assertTrue(
+                any("owner promotion predates" in error for error in result["errors"])
+            )
+
+    def test_stale_packet_fails_current_index_anchor(self):
+        with tempfile.TemporaryDirectory() as directory_name:
+            index_path, policy_path, _, _, index, policy = self.signed_packet(
+                Path(directory_name), included_gates=set(release_evidence.GATES)
+            )
+            result = release_evidence.verify(
+                index_path,
+                policy_path,
+                "a" * 40,
+                policy["policy_sha256"],
+                "f" * 64,
+            )
+            self.assertEqual(result["verification_status"], "fail")
+            self.assertEqual(result["release_status"], "BLOCKED")
+            self.assertTrue(
+                any("current-state anchor" in error for error in result["errors"])
+            )
 
     def test_authority_key_aliases_and_candidate_substitution_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory_name:
@@ -447,6 +569,7 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 policy_path,
                 "b" * 40,
                 "f" * 64,
+                "e" * 64,
             )
             self.assertEqual(result["verification_status"], "fail")
             self.assertEqual(result["release_status"], "BLOCKED")
@@ -458,6 +581,66 @@ class ReleaseEvidenceTests(unittest.TestCase):
             )
             self.assertTrue(
                 any("owner trust anchor" in error for error in result["errors"])
+            )
+
+    def test_authority_public_key_paths_may_not_alias(self):
+        with tempfile.TemporaryDirectory() as directory_name:
+            directory = Path(directory_name)
+            index_path, policy_path, _, _, index, policy = self.signed_packet(directory)
+            policy["authorities"][1]["public_key_path"] = policy["authorities"][0][
+                "public_key_path"
+            ]
+            policy["policy_sha256"] = release_evidence.object_hash(
+                policy, "policy_sha256"
+            )
+            self.write_json(policy_path, policy)
+            index["trust_policy_sha256"] = policy["policy_sha256"]
+            index["index_sha256"] = release_evidence.object_hash(
+                index, "index_sha256"
+            )
+            self.write_json(index_path, index)
+            result = release_evidence.verify(
+                index_path,
+                policy_path,
+                "a" * 40,
+                policy["policy_sha256"],
+                index["index_sha256"],
+            )
+            self.assertEqual(result["verification_status"], "fail")
+            self.assertTrue(
+                any("public-key paths must be unique" in error for error in result["errors"])
+            )
+
+    def test_distinct_pem_bytes_cannot_alias_one_ed25519_key(self):
+        with tempfile.TemporaryDirectory() as directory_name:
+            directory = Path(directory_name)
+            index_path, policy_path, _, _, index, policy = self.signed_packet(directory)
+            source_key = (directory / policy["authorities"][0]["public_key_path"]).read_bytes()
+            for offset, authority in enumerate(policy["authorities"]):
+                key_path = directory / authority["public_key_path"]
+                key_path.write_bytes(source_key + (b"\n" * offset))
+                authority["public_key_sha256"] = hashlib.sha256(
+                    key_path.read_bytes()
+                ).hexdigest()
+            policy["policy_sha256"] = release_evidence.object_hash(
+                policy, "policy_sha256"
+            )
+            self.write_json(policy_path, policy)
+            index["trust_policy_sha256"] = policy["policy_sha256"]
+            index["index_sha256"] = release_evidence.object_hash(
+                index, "index_sha256"
+            )
+            self.write_json(index_path, index)
+            result = release_evidence.verify(
+                index_path,
+                policy_path,
+                "a" * 40,
+                policy["policy_sha256"],
+                index["index_sha256"],
+            )
+            self.assertEqual(result["verification_status"], "fail")
+            self.assertTrue(
+                any("distinct Ed25519 key material" in error for error in result["errors"])
             )
 
 
