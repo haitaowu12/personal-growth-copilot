@@ -308,6 +308,46 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 reserved.close()
             self.assertEqual(output.read_text(encoding="utf-8"), "replacement")
 
+    def test_reserved_output_reasserts_private_mode_on_bound_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            output_parent = self.root(parent, "output")
+            output = output_parent / "report.json"
+            with host_privacy_discovery.reserve_private_output(
+                output,
+                runner=runner(),
+                system="Darwin",
+                home_root=parent,
+            ) as reserved:
+                os.chmod(output, 0o644)
+                reserved.write(self.discover(storage))
+            self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o600)
+            self.assertEqual(
+                json.loads(output.read_text(encoding="utf-8"))["status"],
+                "NOT_READY",
+            )
+
+    def test_reserved_output_rejects_precommit_content(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            output_parent = self.root(parent, "output")
+            output = output_parent / "report.json"
+            with host_privacy_discovery.reserve_private_output(
+                output,
+                runner=runner(),
+                system="Darwin",
+                home_root=parent,
+            ) as reserved:
+                os.write(reserved.file_fd, b"unexpected")
+                with self.assertRaisesRegex(
+                    host_privacy_discovery.HostDiscoveryError,
+                    "changed before commit",
+                ):
+                    reserved.write(self.discover(storage))
+            self.assertFalse(output.exists())
+
     def test_discovery_output_boundary_rejects_broad_or_repository_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             parent = Path(directory_name).resolve()
