@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/attempt-event.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "domain", "campaign_id", "candidate_commit", "config_sha256", "run_plan_sha256", "sequence", "previous_event_sha256", "event_type", "occurred_at", "payload", "event_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "domain": {"const": "pgc-attempt-ledger-event-v1"},
+    "campaign_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{15,99}$"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "config_sha256": {"$ref": "#/$defs/hash"},
+    "run_plan_sha256": {"$ref": "#/$defs/hash"},
+    "sequence": {"type": "integer", "minimum": 0},
+    "previous_event_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]},
+    "event_type": {"enum": ["CAMPAIGN_REGISTERED", "CAPTURE_STARTED", "CAPTURE_FINISHED", "RUN_FINALIZED", "CAMPAIGN_SEALED"]},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "payload": {
+      "oneOf": [
+        {"$ref": "#/$defs/registered"},
+        {"$ref": "#/$defs/captureStarted"},
+        {"$ref": "#/$defs/captureFinished"},
+        {"$ref": "#/$defs/runFinalized"},
+        {"$ref": "#/$defs/campaignSealed"}
+      ]
+    },
+    "event_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "attemptId": {"type": "string", "pattern": "^attempt-[0-9a-f]{32}$"},
+    "runIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "system_id", "variant_id", "repetition"],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "variant_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "repetition": {"type": "integer", "minimum": 1}
+      }
+    },
+    "registered": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "planned_run_count"],
+      "properties": {
+        "kind": {"const": "CAMPAIGN_REGISTERED"},
+        "planned_run_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "captureStarted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "attempt_id", "run_identity", "turn_id", "session_before_sha256", "request_sha256"],
+      "properties": {
+        "kind": {"const": "CAPTURE_STARTED"},
+        "attempt_id": {"$ref": "#/$defs/attemptId"},
+        "run_identity": {"$ref": "#/$defs/runIdentity"},
+        "turn_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "session_before_sha256": {"$ref": "#/$defs/hash"},
+        "request_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "captureFinished": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "attempt_id", "outcome", "completion_sha256", "provider_response_id", "failure_code"],
+      "properties": {
+        "kind": {"const": "CAPTURE_FINISHED"},
+        "attempt_id": {"$ref": "#/$defs/attemptId"},
+        "outcome": {"enum": ["SUCCESS", "FAILURE", "ABORTED"]},
+        "completion_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]},
+        "provider_response_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 300},
+        "failure_code": {"type": ["string", "null"], "enum": [null, "PROVIDER_ERROR", "TIMEOUT", "HOST_FAILURE", "OPERATOR_ABORT"]}
+      }
+    },
+    "runFinalized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "run_identity", "result_relative_path", "result_sha256"],
+      "properties": {
+        "kind": {"const": "RUN_FINALIZED"},
+        "run_identity": {"$ref": "#/$defs/runIdentity"},
+        "result_relative_path": {"type": "string", "minLength": 1, "maxLength": 500},
+        "result_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "campaignSealed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "capture_attempt_count", "finalized_run_count", "result_manifest_sha256", "provider_access_enforced", "provider_access_control_sha256", "all_artifacts_preserved", "artifact_inventory_sha256"],
+      "properties": {
+        "kind": {"const": "CAMPAIGN_SEALED"},
+        "capture_attempt_count": {"type": "integer", "minimum": 1},
+        "finalized_run_count": {"type": "integer", "minimum": 1},
+        "result_manifest_sha256": {"$ref": "#/$defs/hash"},
+        "provider_access_enforced": {"const": true},
+        "provider_access_control_sha256": {"$ref": "#/$defs/hash"},
+        "all_artifacts_preserved": {"const": true},
+        "artifact_inventory_sha256": {"$ref": "#/$defs/hash"}
+      }
+    }
+  }
+}

@@ -213,7 +213,15 @@ def assertion_errors(gate: str, assertions: dict[str, Any]) -> list[str]:
         if not isinstance(assertions.get("reviewer_count"), int) or assertions["reviewer_count"] < 2:
             errors.append("reviewer attestation requires at least two reviewers")
     elif gate == "attempt_inventory":
-        require_true("immutable_inventory", "all_attempts_accounted_for", "submitted_results_complete")
+        require_true(
+            "immutable_inventory",
+            "all_attempts_accounted_for",
+            "submitted_results_complete",
+            "provider_access_enforced",
+            "preregistered_run_plan_bound",
+            "external_witness_receipts_verified",
+            "all_artifacts_preserved",
+        )
         require_zero("omitted_attempt_count")
         attempts = assertions.get("attempt_count")
         results = assertions.get("submitted_result_count")

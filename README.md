@@ -4,7 +4,7 @@ Standalone clean-room development repository for an explicit-invocation Agent
 Skill supporting context-rich personal growth, reflective dialogue, practical
 behavior-change experiments, and longitudinal learning.
 
-Current version: `0.4.0-alpha.3`
+Current version: `0.4.0-alpha.4`
 
 This repository does not contain or claim byte equivalence to the unavailable
 historical `0.2.0-rc.1` candidate. See
@@ -51,10 +51,15 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   cannot prove that no alternate attempts were omitted,
   so it reports only a conditional submitted-matrix result and keeps campaign
   completion and reviewer evidence blocked;
+- an unconfigured release-only attempt wrapper that records provider starts,
+  completions, failures, final results, and campaign sealing in a stateful
+  external Ed25519 witness chain, then reconciles every signed event against
+  the exact verified result files and an out-of-band current head/count;
 - a development-only Codex CLI adapter with complete target/baseline profile
   hashes and event-stream rejection of tool activity; it still requires a
   dedicated restricted host and credentials;
-- a role-scoped Ed25519 receipt verifier for behavioral, reviewer, attempt,
+- a create-only canonical release-packet builder and role-scoped Ed25519 receipt
+  verifier for behavioral, reviewer, attempt,
   holdout, privacy, bilingual, pilot, independent-review, and owner-promotion
   evidence, bound to owner-distributed out-of-band policy and current-index
   hashes. Its committed trust policy is deliberately unconfigured and cannot
