@@ -8,15 +8,18 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evals"))
 sys.path.insert(0, str(ROOT / "tests"))
+sys.path.insert(0, str(ROOT / "scripts"))
 
 import attempt_inventory  # noqa: E402
 import campaign  # noqa: E402
+import release_packet  # noqa: E402
 import target_session  # noqa: E402
 from test_target_session import (  # noqa: E402
     ADAPTER,
@@ -99,6 +102,7 @@ class AttemptInventoryTests(unittest.TestCase):
             "status": "CONFIGURED",
             "candidate_commit": cls.cfg["source_commit"],
             "frozen_at": "2026-08-12T12:00:00Z",
+            "attempt_campaign_id": CAMPAIGN_ID,
             "authorities": authorities,
         }
         policy["policy_sha256"] = attempt_inventory.digest(policy)
@@ -276,12 +280,82 @@ class AttemptInventoryTests(unittest.TestCase):
         self.assertTrue(result["assertions"]["external_witness_receipts_verified"])
         self.assertEqual(result["provider_access_control_sha256"], "b" * 64)
         self.assertEqual(result["artifact_inventory_sha256"], "c" * 64)
+        with patch.object(campaign, "_require_full_suite_scope", return_value=None):
+            artifact = release_packet.attempt_artifact(
+                index_path=self.index_path,
+                config=self.cfg,
+                suite=SUITE,
+                result_manifest_path=self.manifest_path,
+                policy_path=self.policy_path,
+                expected_policy_sha256=self.policy["policy_sha256"],
+                expected_head_sha256=self.index["entries"][-1]["event_sha256"],
+                expected_event_count=len(self.index["entries"]),
+                candidate_commit=self.cfg["source_commit"],
+                executed_at=NOW,
+                verification_clock=FakeClock(),
+            )
+        self.assertEqual(artifact["status"], "PASS")
+        self.assertEqual(artifact["evidence_refs"][0], result["inventory_sha256"])
 
     def test_external_head_and_count_are_mandatory_current_state_anchors(self):
         result = self.verify(head="0" * 64, count=len(self.index["entries"]) - 1)
         self.assertFalse(result["qualification_ready"])
         self.assertTrue(
             any("external witness head/count" in error for error in result["errors"])
+        )
+
+    def test_owner_anchored_campaign_epoch_cannot_be_reset(self):
+        policy = dict(self.policy)
+        policy["attempt_campaign_id"] = "campaign-other-0001"
+        policy["policy_sha256"] = attempt_inventory.object_hash(
+            policy, "policy_sha256"
+        )
+        policy_path = self.directory / "policy-other-campaign.json"
+        policy_path.write_bytes(attempt_inventory.canonical_bytes(policy))
+        with patch.object(campaign, "_require_full_suite_scope", return_value=None):
+            result = attempt_inventory.verify_inventory(
+                index_path=self.index_path,
+                config=self.cfg,
+                suite=SUITE,
+                result_manifest_path=self.manifest_path,
+                policy_path=policy_path,
+                expected_policy_sha256=policy["policy_sha256"],
+                expected_head_sha256=self.index["entries"][-1]["event_sha256"],
+                expected_event_count=len(self.index["entries"]),
+                clock=FakeClock(),
+            )
+        self.assertFalse(result["qualification_ready"])
+        self.assertTrue(
+            any("owner-anchored attempt epoch" in error for error in result["errors"])
+        )
+
+    def test_attempt_chain_must_follow_the_owner_anchored_policy_freeze(self):
+        policy = dict(self.policy)
+        policy["frozen_at"] = "2026-08-12T13:00:00Z"
+        policy["policy_sha256"] = attempt_inventory.object_hash(
+            policy, "policy_sha256"
+        )
+        policy_path = self.directory / "policy-after-events.json"
+        policy_path.write_bytes(attempt_inventory.canonical_bytes(policy))
+
+        def later_clock():
+            return datetime(2026, 8, 12, 14, 0, tzinfo=timezone.utc)
+
+        with patch.object(campaign, "_require_full_suite_scope", return_value=None):
+            result = attempt_inventory.verify_inventory(
+                index_path=self.index_path,
+                config=self.cfg,
+                suite=SUITE,
+                result_manifest_path=self.manifest_path,
+                policy_path=policy_path,
+                expected_policy_sha256=policy["policy_sha256"],
+                expected_head_sha256=self.index["entries"][-1]["event_sha256"],
+                expected_event_count=len(self.index["entries"]),
+                clock=later_clock,
+            )
+        self.assertFalse(result["qualification_ready"])
+        self.assertTrue(
+            any("predates the owner-anchored policy freeze" in error for error in result["errors"])
         )
 
     def test_manifested_result_tampering_fails_closed(self):
@@ -310,7 +384,7 @@ class AttemptInventoryTests(unittest.TestCase):
             index_path = ledger / f"index-{sequence:06d}.json"
             attempt_inventory.append_witnessed_event(
                 config=self.cfg,
-                campaign_id="campaign-retry-000001",
+                campaign_id=CAMPAIGN_ID,
                 prior_index_path=prior,
                 event_type=event_type,
                 payload=payload,

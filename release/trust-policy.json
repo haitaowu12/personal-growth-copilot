@@ -3,6 +3,7 @@
   "status": "UNCONFIGURED",
   "candidate_commit": null,
   "frozen_at": null,
+  "attempt_campaign_id": null,
   "authorities": [],
-  "policy_sha256": "248b39af6fe41f4c81ff7dd44aa8d5d15ef09a27ebb137c6a21b1c5f075f179c"
+  "policy_sha256": "ce1c088d6dc3017ea6fceee212153b3d908f8c11a986fed5426ff7274c24d4c7"
 }

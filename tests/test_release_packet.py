@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -18,7 +19,7 @@ import test_release_evidence  # noqa: E402
 
 
 class ReleasePacketTests(unittest.TestCase):
-    def test_attempt_artifact_is_derived_from_exact_self_hashed_verification(self):
+    def test_attempt_artifact_invokes_source_verification_and_missing_sources_fail(self):
         candidate = "a" * 40
         verification = {
             "schema_version": "1.0",
@@ -52,11 +53,24 @@ class ReleasePacketTests(unittest.TestCase):
             "errors": [],
         }
         verification["inventory_sha256"] = release_evidence.digest(verification)
-        artifact = release_packet.attempt_artifact(
-            verification,
-            candidate_commit=candidate,
-            executed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        )
+        with patch.object(
+            release_packet.attempt_inventory,
+            "verify_inventory",
+            return_value=verification,
+        ) as verifier:
+            artifact = release_packet.attempt_artifact(
+                index_path=Path("ledger.json"),
+                config={"source_commit": candidate},
+                suite={},
+                result_manifest_path=Path("manifest.json"),
+                policy_path=Path("policy.json"),
+                expected_policy_sha256="7" * 64,
+                expected_head_sha256="4" * 64,
+                expected_event_count=100,
+                candidate_commit=candidate,
+                executed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            )
+        verifier.assert_called_once()
         self.assertEqual(artifact["gate"], "attempt_inventory")
         self.assertEqual(artifact["status"], "PASS")
         self.assertEqual(artifact["evidence_refs"][0], verification["inventory_sha256"])
@@ -64,11 +78,16 @@ class ReleasePacketTests(unittest.TestCase):
             artifact["artifact_sha256"],
             release_evidence.object_hash(artifact, "artifact_sha256"),
         )
-        tampered = dict(verification)
-        tampered["event_count"] += 1
         with self.assertRaises(release_evidence.ReleaseEvidenceError):
             release_packet.attempt_artifact(
-                tampered,
+                index_path=Path("missing-ledger.json"),
+                config={"source_commit": candidate},
+                suite={},
+                result_manifest_path=Path("missing-manifest.json"),
+                policy_path=Path("missing-policy.json"),
+                expected_policy_sha256="7" * 64,
+                expected_head_sha256="4" * 64,
+                expected_event_count=100,
                 candidate_commit=candidate,
                 executed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
             )

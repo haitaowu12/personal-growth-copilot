@@ -239,7 +239,7 @@ def load_attempt_authority(
     policy_path: Path,
     expected_policy_sha256: str,
     candidate_commit: str,
-) -> tuple[dict[str, Any], bytes]:
+) -> tuple[dict[str, Any], bytes, datetime, str]:
     policy_root = policy_path.resolve().parent
     policy = _json_object(_read_once(policy_path), "attempt trust policy")
     if errors := _schema_errors(policy, TRUST_POLICY_SCHEMA):
@@ -250,6 +250,8 @@ def load_attempt_authority(
         raise AttemptInventoryError("attempt trust policy differs from its external anchor")
     if policy["status"] != "CONFIGURED" or policy["candidate_commit"] != candidate_commit:
         raise AttemptInventoryError("attempt trust policy is not configured for the candidate")
+    frozen_at = _parse_time(policy["frozen_at"])
+    campaign_id = policy["attempt_campaign_id"]
     selected = [
         authority
         for authority in policy["authorities"]
@@ -263,7 +265,7 @@ def load_attempt_authority(
     if hashlib.sha256(key_bytes).hexdigest() != authority["public_key_sha256"]:
         raise AttemptInventoryError("attempt witness public-key hash mismatch")
     key_bytes, _ = _canonical_public_key(key_bytes)
-    return authority, key_bytes
+    return authority, key_bytes, frozen_at, campaign_id
 
 
 def build_event(
@@ -342,11 +344,15 @@ def append_witnessed_event(
     index_output: Path,
     clock: Callable[[], datetime],
 ) -> dict[str, Any]:
-    authority, public_key = load_attempt_authority(
+    authority, public_key, policy_frozen_at, policy_campaign_id = load_attempt_authority(
         policy_path=policy_path,
         expected_policy_sha256=expected_policy_sha256,
         candidate_commit=config["source_commit"],
     )
+    if campaign_id != policy_campaign_id:
+        raise AttemptInventoryError(
+            "campaign id differs from the owner-anchored attempt epoch"
+        )
     if witness_adapter.is_symlink() or not witness_adapter.is_file() or not os.access(
         witness_adapter, os.X_OK
     ):
@@ -376,6 +382,13 @@ def append_witnessed_event(
         entries = deepcopy(prior["entries"])
     sequence = len(entries)
     previous_hash = entries[-1]["event_sha256"] if entries else None
+    occurred_at = clock()
+    if not isinstance(occurred_at, datetime):
+        raise AttemptInventoryError("attempt event clock must return a datetime")
+    if occurred_at.tzinfo is None or occurred_at.utcoffset() is None:
+        raise AttemptInventoryError("attempt event clock must be timezone aware")
+    if occurred_at.astimezone(timezone.utc) < policy_frozen_at:
+        raise AttemptInventoryError("attempt event predates the owner-anchored policy freeze")
     event = build_event(
         campaign_id=campaign_id,
         config=config,
@@ -383,7 +396,7 @@ def append_witnessed_event(
         previous_event_sha256=previous_hash,
         event_type=event_type,
         payload=payload,
-        occurred_at=clock(),
+        occurred_at=occurred_at,
     )
     result = subprocess.run(
         [str(witness_adapter.resolve())],
@@ -459,7 +472,7 @@ def verify_inventory(
     errors: list[str] = []
     hard_failures: set[str] = set()
     try:
-        authority, public_key = load_attempt_authority(
+        authority, public_key, policy_frozen_at, policy_campaign_id = load_attempt_authority(
             policy_path=policy_path,
             expected_policy_sha256=expected_policy_sha256,
             candidate_commit=config["source_commit"],
@@ -516,6 +529,8 @@ def verify_inventory(
         }
     if object_hash(index, "index_sha256") != index["index_sha256"]:
         errors.append("attempt inventory index self-hash mismatch")
+    if index["campaign_id"] != policy_campaign_id:
+        errors.append("attempt inventory differs from the owner-anchored attempt epoch")
     if (
         index["candidate_commit"] != config["source_commit"]
         or index["config_sha256"] != target_session._digest(config)
@@ -608,6 +623,10 @@ def verify_inventory(
             ):
                 raise AttemptInventoryError("attempt event chain or campaign binding mismatch")
             event_time = _parse_time(event["occurred_at"])
+            if event_time < policy_frozen_at:
+                raise AttemptInventoryError(
+                    "attempt event predates the owner-anchored policy freeze"
+                )
             if event_time > verification_time + timedelta(minutes=5):
                 raise AttemptInventoryError(
                     "attempt event is implausibly in the future"
@@ -623,6 +642,10 @@ def verify_inventory(
             if witnessed > verification_time + timedelta(minutes=5):
                 raise AttemptInventoryError(
                     "attempt witness receipt is implausibly in the future"
+                )
+            if witnessed < policy_frozen_at:
+                raise AttemptInventoryError(
+                    "attempt witness receipt predates the owner-anchored policy freeze"
                 )
             nonce = receipt["payload"]["nonce"]
             if nonce in nonces:

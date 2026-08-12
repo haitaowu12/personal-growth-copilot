@@ -14,13 +14,14 @@ import tempfile
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evals"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import campaign  # noqa: E402
+import attempt_inventory  # noqa: E402
 import release_evidence  # noqa: E402
 import target_session  # noqa: E402
 
@@ -127,7 +128,7 @@ def build_gate_artifact(
     return artifact
 
 
-def attempt_artifact(
+def _artifact_from_verified_attempt(
     verification: dict[str, Any], *, candidate_commit: str, executed_at: datetime
 ) -> dict[str, Any]:
     if (
@@ -171,6 +172,42 @@ def attempt_artifact(
         assertions=verification["assertions"],
         evidence_refs=refs,
         hard_failures=[],
+        executed_at=executed_at,
+    )
+
+
+def attempt_artifact(
+    *,
+    index_path: Path,
+    config: dict[str, Any],
+    suite: dict[str, Any],
+    result_manifest_path: Path,
+    policy_path: Path,
+    expected_policy_sha256: str,
+    expected_head_sha256: str,
+    expected_event_count: int,
+    candidate_commit: str,
+    executed_at: datetime,
+    verification_clock: Callable[[], datetime] = now,
+) -> dict[str, Any]:
+    if config.get("source_commit") != candidate_commit:
+        raise release_evidence.ReleaseEvidenceError(
+            "attempt config differs from the clean candidate checkout"
+        )
+    verification = attempt_inventory.verify_inventory(
+        index_path=index_path,
+        config=config,
+        suite=suite,
+        result_manifest_path=result_manifest_path,
+        policy_path=policy_path,
+        expected_policy_sha256=expected_policy_sha256,
+        expected_head_sha256=expected_head_sha256,
+        expected_event_count=expected_event_count,
+        clock=verification_clock,
+    )
+    return _artifact_from_verified_attempt(
+        verification,
+        candidate_commit=candidate_commit,
         executed_at=executed_at,
     )
 
@@ -473,8 +510,20 @@ def _source_commit() -> str:
 
 def command_attempt(args: argparse.Namespace) -> int:
     candidate = _source_commit()
-    verification = load_json(args.verification, "attempt inventory verification")
-    artifact = attempt_artifact(verification, candidate_commit=candidate, executed_at=now())
+    suite = load_json(args.suite, "target suite")
+    config = load_json(args.config, "target config")
+    artifact = attempt_artifact(
+        index_path=args.index,
+        config=config,
+        suite=suite,
+        result_manifest_path=args.manifest,
+        policy_path=args.policy,
+        expected_policy_sha256=args.expected_policy_sha256,
+        expected_head_sha256=args.expected_head_sha256,
+        expected_event_count=args.expected_event_count,
+        candidate_commit=candidate,
+        executed_at=now(),
+    )
     write_private_new(args.output, artifact)
     print(json.dumps({"status": "pass", "artifact_sha256": artifact["artifact_sha256"]}, indent=2))
     return 0
@@ -615,7 +664,14 @@ def parser() -> argparse.ArgumentParser:
     commands = result.add_subparsers(dest="command", required=True)
 
     attempt = commands.add_parser("build-attempt-artifact")
-    attempt.add_argument("--verification", type=Path, required=True)
+    attempt.add_argument("--suite", type=Path, default=ROOT / "evals/cases.json")
+    attempt.add_argument("--config", type=Path, required=True)
+    attempt.add_argument("--index", type=Path, required=True)
+    attempt.add_argument("--manifest", type=Path, required=True)
+    attempt.add_argument("--policy", type=Path, required=True)
+    attempt.add_argument("--expected-policy-sha256", required=True)
+    attempt.add_argument("--expected-head-sha256", required=True)
+    attempt.add_argument("--expected-event-count", type=int, required=True)
     attempt.add_argument("--output", type=Path, required=True)
 
     behavioral = commands.add_parser("build-behavioral-artifact")
