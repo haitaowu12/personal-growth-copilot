@@ -63,6 +63,8 @@ class ReservedPrivateOutput:
     file_fd: int
     parent_device: int
     parent_inode: int
+    file_device: int
+    file_inode: int
     committed: bool = False
 
     def require_visible_parent(self) -> None:
@@ -76,16 +78,41 @@ class ReservedPrivateOutput:
         ) != (self.parent_device, self.parent_inode):
             raise HostDiscoveryError("output parent changed after reservation")
 
+    def reserved_name_matches(self) -> bool:
+        try:
+            visible_file = os.stat(
+                self.output.name,
+                dir_fd=self.parent_fd,
+                follow_symlinks=False,
+            )
+        except OSError:
+            return False
+        return stat.S_ISREG(visible_file.st_mode) and (
+            visible_file.st_dev,
+            visible_file.st_ino,
+        ) == (self.file_device, self.file_inode)
+
+    def require_reserved_name(self) -> None:
+        if not self.reserved_name_matches():
+            raise HostDiscoveryError("reserved output file changed after reservation")
+
     def write(self, value: object) -> None:
         if self.committed:
             raise HostDiscoveryError("reserved output has already been committed")
         self.require_visible_parent()
+        self.require_reserved_name()
         bound_parent = os.fstat(self.parent_fd)
         if (bound_parent.st_dev, bound_parent.st_ino) != (
             self.parent_device,
             self.parent_inode,
         ):
             raise HostDiscoveryError("reserved output directory identity changed")
+        bound_file = os.fstat(self.file_fd)
+        if (bound_file.st_dev, bound_file.st_ino) != (
+            self.file_device,
+            self.file_inode,
+        ):
+            raise HostDiscoveryError("reserved output file identity changed")
         data = release_evidence.canonical_bytes(value)
         remaining = memoryview(data)
         while remaining:
@@ -98,13 +125,14 @@ class ReservedPrivateOutput:
         self.file_fd = -1
         os.fsync(self.parent_fd)
         self.require_visible_parent()
+        self.require_reserved_name()
         self.committed = True
 
     def close(self) -> None:
         if self.file_fd >= 0:
             os.close(self.file_fd)
             self.file_fd = -1
-        if not self.committed:
+        if not self.committed and self.reserved_name_matches():
             try:
                 os.unlink(self.output.name, dir_fd=self.parent_fd)
             except FileNotFoundError:
@@ -276,6 +304,7 @@ def reserve_private_output(
     if hasattr(os, "O_NOFOLLOW"):
         open_directory_flags |= os.O_NOFOLLOW
     parent_fd = os.open(resolved_parent, open_directory_flags)
+    file_fd = -1
     try:
         bound_parent = os.fstat(parent_fd)
         if (bound_parent.st_dev, bound_parent.st_ino) != (
@@ -287,7 +316,14 @@ def reserve_private_output(
         if hasattr(os, "O_NOFOLLOW"):
             file_flags |= os.O_NOFOLLOW
         file_fd = os.open(output.name, file_flags, 0o600, dir_fd=parent_fd)
+        file_metadata = os.fstat(file_fd)
     except Exception:
+        if file_fd >= 0:
+            os.close(file_fd)
+            try:
+                os.unlink(output.name, dir_fd=parent_fd)
+            except FileNotFoundError:
+                pass
         os.close(parent_fd)
         raise
     return ReservedPrivateOutput(
@@ -296,6 +332,8 @@ def reserve_private_output(
         file_fd=file_fd,
         parent_device=metadata.st_dev,
         parent_inode=metadata.st_ino,
+        file_device=file_metadata.st_dev,
+        file_inode=file_metadata.st_ino,
     )
 
 
