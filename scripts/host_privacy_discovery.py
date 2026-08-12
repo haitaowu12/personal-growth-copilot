@@ -170,6 +170,15 @@ class ReservedPrivateOutput:
             raise HostDiscoveryError("output parent changed after reservation")
         if any(not binding.visible_matches() for binding in self.sync_bindings):
             raise HostDiscoveryError("declared sync root changed after reservation")
+        parent_acl = self.file_acl_probe(self.parent_fd, self.system)
+        if parent_acl == "PRESENT":
+            raise HostDiscoveryError(
+                "output parent may not have an access control list"
+            )
+        if parent_acl != "ABSENT":
+            raise HostDiscoveryError(
+                "output parent access control list is unobservable"
+            )
 
     def reserved_name_matches(self) -> bool:
         try:
@@ -455,8 +464,12 @@ def reserve_private_output(
         system=effective_system,
     )
     if acl == "PRESENT":
+        for binding in output_sync_bindings:
+            binding.close()
         raise HostDiscoveryError("output parent may not have an access control list")
     if acl != "ABSENT":
+        for binding in output_sync_bindings:
+            binding.close()
         raise HostDiscoveryError("output parent access control list is unobservable")
     open_directory_flags = os.O_RDONLY
     if hasattr(os, "O_DIRECTORY"):
@@ -478,6 +491,15 @@ def reserve_private_output(
             metadata.st_ino,
         ):
             raise HostDiscoveryError("output parent changed during reservation")
+        parent_acl = file_acl_probe(parent_fd, effective_system)
+        if parent_acl == "PRESENT":
+            raise HostDiscoveryError(
+                "output parent may not have an access control list"
+            )
+        if parent_acl != "ABSENT":
+            raise HostDiscoveryError(
+                "output parent access control list is unobservable"
+            )
         file_flags = os.O_RDWR | os.O_CREAT | os.O_EXCL
         if hasattr(os, "O_NOFOLLOW"):
             file_flags |= os.O_NOFOLLOW
@@ -798,6 +820,22 @@ def discover(
             observed_at,
         )
         backup = inspect_backup(observed_at, system=system, runner=runner)
+        final_storage_acl = (
+            directory_acl_probe(storage_binding.descriptor, system)
+            if storage_binding is not None
+            else "UNKNOWN"
+        )
+        if storage_binding is not None and final_storage_acl != "ABSENT":
+            storage["status"] = "FAIL"
+            acl_reason = (
+                "STORAGE_ROOT_ACL_PRESENT"
+                if final_storage_acl == "PRESENT"
+                else "STORAGE_ROOT_ACL_UNOBSERVABLE"
+            )
+            storage["reason_codes"] = list(
+                dict.fromkeys([*storage["reason_codes"], acl_reason])
+            )
+            storage["facts"]["acl_absent"] = False
         if storage_binding is not None and not storage_binding.visible_matches():
             storage["status"] = "FAIL"
             storage["reason_codes"] = list(

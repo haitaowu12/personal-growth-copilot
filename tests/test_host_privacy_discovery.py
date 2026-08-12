@@ -397,7 +397,9 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             for final_status in ("PRESENT", "UNKNOWN"):
                 output_parent = self.root(parent, f"output-{final_status.lower()}")
                 output = output_parent / "report.json"
-                observations = iter(("ABSENT", final_status))
+                observations = iter(
+                    ("ABSENT", "ABSENT", "ABSENT", final_status)
+                )
 
                 def probe(_: int, __: str) -> str:
                     return next(observations)
@@ -416,13 +418,44 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                         reserved.write(self.discover(storage))
                 self.assertFalse(output.exists())
 
+    def test_reserved_output_rejects_parent_acl_added_after_reservation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            output_parent = self.root(parent, "output")
+            output = output_parent / "report.json"
+            observations = iter(("ABSENT", "ABSENT", "PRESENT"))
+
+            def probe(_: int, __: str) -> str:
+                return next(observations)
+
+            with host_privacy_discovery.reserve_private_output(
+                output,
+                runner=runner(),
+                system="Darwin",
+                home_root=parent,
+                file_acl_probe=probe,
+            ) as reserved:
+                with self.assertRaisesRegex(
+                    host_privacy_discovery.HostDiscoveryError,
+                    "output parent may not have an access control list",
+                ):
+                    reserved.write(self.discover(storage))
+            self.assertFalse(output.exists())
+
     def test_reservation_failure_does_not_delete_replacement(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             parent = Path(directory_name).resolve()
             output_parent = self.root(parent, "output")
             output = output_parent / "report.json"
 
+            calls = 0
+
             def replacing_probe(_: int, __: str) -> str:
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    return "ABSENT"
                 output.unlink()
                 output.write_text("replacement", encoding="utf-8")
                 return "UNKNOWN"
