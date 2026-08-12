@@ -96,6 +96,20 @@ class ReservedPrivateOutput:
         if not self.reserved_name_matches():
             raise HostDiscoveryError("reserved output file changed after reservation")
 
+    def secure_bound_file(self, *, require_empty: bool) -> None:
+        if self.file_fd < 0:
+            raise HostDiscoveryError("reserved output file is closed")
+        os.fchmod(self.file_fd, 0o600)
+        metadata = os.fstat(self.file_fd)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise HostDiscoveryError("reserved output must remain a regular file")
+        if metadata.st_uid != os.geteuid():
+            raise HostDiscoveryError("reserved output owner changed")
+        if stat.S_IMODE(metadata.st_mode) != 0o600:
+            raise HostDiscoveryError("reserved output mode is not 0600")
+        if require_empty and metadata.st_size != 0:
+            raise HostDiscoveryError("reserved output changed before commit")
+
     def write(self, value: object) -> None:
         if self.committed:
             raise HostDiscoveryError("reserved output has already been committed")
@@ -113,6 +127,7 @@ class ReservedPrivateOutput:
             self.file_inode,
         ):
             raise HostDiscoveryError("reserved output file identity changed")
+        self.secure_bound_file(require_empty=True)
         data = release_evidence.canonical_bytes(value)
         remaining = memoryview(data)
         while remaining:
@@ -120,6 +135,7 @@ class ReservedPrivateOutput:
             if written <= 0:
                 raise HostDiscoveryError("reserved output write made no progress")
             remaining = remaining[written:]
+        self.secure_bound_file(require_empty=False)
         os.fsync(self.file_fd)
         os.close(self.file_fd)
         self.file_fd = -1
@@ -317,6 +333,13 @@ def reserve_private_output(
             file_flags |= os.O_NOFOLLOW
         file_fd = os.open(output.name, file_flags, 0o600, dir_fd=parent_fd)
         file_metadata = os.fstat(file_fd)
+        if (
+            not stat.S_ISREG(file_metadata.st_mode)
+            or file_metadata.st_uid != os.geteuid()
+            or stat.S_IMODE(file_metadata.st_mode) != 0o600
+            or file_metadata.st_size != 0
+        ):
+            raise HostDiscoveryError("reserved output is not a private empty file")
     except Exception:
         if file_fd >= 0:
             os.close(file_fd)
