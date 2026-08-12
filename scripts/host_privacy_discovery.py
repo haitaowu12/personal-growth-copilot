@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import stat
 import subprocess
 import sys
@@ -77,7 +78,11 @@ def default_runner(command_id: str, command: Sequence[str]) -> CommandResult:
             capture_output=True,
             check=False,
             timeout=30,
-            env={"PATH": "/usr/bin:/bin:/usr/sbin:/sbin"},
+            env={
+                "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+                "LANG": "C",
+                "LC_ALL": "C",
+            },
         )
     except (OSError, subprocess.SubprocessError) as exc:
         return CommandResult(
@@ -141,7 +146,33 @@ def path_has_symlink_component(path: Path) -> bool:
     return False
 
 
-def validate_private_output(output: Path) -> None:
+def acl_status(
+    path: Path,
+    *,
+    runner: CommandRunner,
+    command_id: str,
+    system: str,
+) -> tuple[str, CommandResult | None]:
+    if system != "Darwin":
+        return "UNKNOWN", None
+    result = runner(command_id, ["/bin/ls", "-lde", str(path)])
+    if result.exit_code != 0:
+        return "UNKNOWN", result
+    output = result.stdout.decode("utf-8", errors="replace")
+    lines = output.splitlines()
+    first_token = lines[0].split(maxsplit=1)[0] if lines else ""
+    has_acl_marker = first_token.endswith("+")
+    has_acl_entry = any(re.match(r"^\s*\d+:\s", line) for line in lines[1:])
+    return ("PRESENT" if has_acl_marker or has_acl_entry else "ABSENT"), result
+
+
+def validate_private_output(
+    output: Path,
+    *,
+    runner: CommandRunner = default_runner,
+    system: str | None = None,
+    home_root: Path | None = None,
+) -> None:
     if output.exists() or output.is_symlink():
         raise HostDiscoveryError("output must not already exist")
     parent = output.parent
@@ -158,12 +189,33 @@ def validate_private_output(output: Path) -> None:
         raise HostDiscoveryError("output parent must have mode 0700")
     if metadata.st_uid != os.geteuid():
         raise HostDiscoveryError("output parent owner must match the current user")
+    try:
+        home_device = (home_root or Path.home()).resolve(strict=True).stat().st_dev
+    except OSError as exc:
+        raise HostDiscoveryError("home filesystem is unavailable") from exc
+    if metadata.st_dev != home_device:
+        raise HostDiscoveryError("output parent must be on the home filesystem")
     if path_within(resolved_parent, ROOT.resolve(strict=True)):
         raise HostDiscoveryError("output must remain outside the source repository")
+    acl, _ = acl_status(
+        resolved_parent,
+        runner=runner,
+        command_id="output_parent_acl",
+        system=system or platform.system(),
+    )
+    if acl == "PRESENT":
+        raise HostDiscoveryError("output parent may not have an access control list")
+    if acl != "ABSENT":
+        raise HostDiscoveryError("output parent access control list is unobservable")
 
 
 def inspect_storage(
-    root: Path, observed_at: str, *, home_root: Path
+    root: Path,
+    observed_at: str,
+    *,
+    home_root: Path,
+    runner: CommandRunner,
+    system: str,
 ) -> dict[str, object]:
     if path_has_symlink_component(root):
         return check("storage_map", "FAIL", observed_at, ["STORAGE_ROOT_SYMLINK"])
@@ -188,6 +240,16 @@ def inspect_storage(
         reasons.append("HOME_FILESYSTEM_UNAVAILABLE")
     if home_device is not None and metadata.st_dev != home_device:
         reasons.append("STORAGE_ROOT_NOT_ON_HOME_FILESYSTEM")
+    acl, acl_evidence = acl_status(
+        resolved,
+        runner=runner,
+        command_id="storage_acl",
+        system=system,
+    )
+    if acl == "PRESENT":
+        reasons.append("STORAGE_ROOT_ACL_PRESENT")
+    elif acl != "ABSENT":
+        reasons.append("STORAGE_ROOT_ACL_UNOBSERVABLE")
     repository = ROOT.resolve(strict=True)
     if path_within(resolved, repository):
         reasons.append("STORAGE_ROOT_INSIDE_SOURCE_REPOSITORY")
@@ -202,8 +264,10 @@ def inspect_storage(
             "on_home_filesystem": home_device is not None
             and metadata.st_dev == home_device,
             "outside_source_repository": not path_within(resolved, repository),
+            "acl_absent": acl == "ABSENT",
             "device_identity_sha256": digest_bytes(str(metadata.st_dev).encode()),
         },
+        command=acl_evidence,
     )
 
 
@@ -350,7 +414,13 @@ def discover(
     candidate = source_identity(ROOT)
     observed_at = timestamp(clock())
     system = platform_system()
-    storage = inspect_storage(storage_root, observed_at, home_root=home_root())
+    storage = inspect_storage(
+        storage_root,
+        observed_at,
+        home_root=home_root(),
+        runner=runner,
+        system=system,
+    )
     encryption = inspect_encryption(observed_at, system=system, runner=runner)
     no_sync = inspect_no_sync(
         storage_root, sync_roots, sync_inventory_complete, observed_at

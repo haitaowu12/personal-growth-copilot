@@ -65,7 +65,8 @@ the verifier only on the restricted evaluation host.
 Before creating a privacy source manifest or implementing a persistent record
 adapter, capture a bounded discovery report on the intended evaluation host.
 The output parent must already be a current-user-owned mode-`0700` directory
-outside the source repository; the report is created once with mode `0600`.
+outside the source repository, on the home filesystem, with no macOS access
+control list or symlink component; the report is created once with mode `0600`.
 
 ```text
 python scripts/host_privacy_discovery.py \

@@ -24,8 +24,10 @@ FIXED_TIME = datetime(2026, 8, 12, 12, 0, tzinfo=timezone.utc)
 def runner(
     encryption: bytes = b"FileVault is On.\n",
     backup: bytes = b"tmutil: No destinations configured.\n",
+    acl: bytes = b"drwx------  2 owner  staff  64 Aug 12 12:00 private-storage\n",
     *,
     encryption_exit: int = 0,
+    acl_exit: int = 0,
 ) -> host_privacy_discovery.CommandRunner:
     def run(command_id: str, _: object) -> host_privacy_discovery.CommandResult:
         if command_id == "filevault_status":
@@ -34,6 +36,10 @@ def runner(
             )
         if command_id == "time_machine_destination":
             return host_privacy_discovery.CommandResult(command_id, 1, b"", backup)
+        if command_id in {"storage_acl", "output_parent_acl"}:
+            return host_privacy_discovery.CommandResult(
+                command_id, acl_exit, acl, b""
+            )
         raise AssertionError(command_id)
 
     return run
@@ -188,6 +194,42 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             finally:
                 host_privacy_discovery.ROOT = original_root
             self.assertEqual(self.checks(inside)["storage_map"]["status"], "FAIL")
+
+    def test_storage_and_output_acl_boundaries_fail_closed(self) -> None:
+        acl_output = (
+            b"drwx------+ 2 owner staff 64 Aug 12 12:00 private-storage\n"
+            b" 0: everyone allow list,search,readattr,file_inherit,directory_inherit\n"
+        )
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            exposed = self.discover(
+                storage,
+                command_runner=runner(acl=acl_output),
+            )
+            storage_check = self.checks(exposed)["storage_map"]
+            self.assertEqual(storage_check["status"], "FAIL")
+            self.assertIn("STORAGE_ROOT_ACL_PRESENT", storage_check["reason_codes"])
+            output_parent = self.root(parent, "output")
+            with self.assertRaisesRegex(
+                host_privacy_discovery.HostDiscoveryError,
+                "access control list",
+            ):
+                host_privacy_discovery.validate_private_output(
+                    output_parent / "report.json",
+                    runner=runner(acl=acl_output),
+                    system="Darwin",
+                )
+            unknown = self.discover(
+                storage,
+                command_runner=runner(acl_exit=1),
+            )
+            unknown_check = self.checks(unknown)["storage_map"]
+            self.assertEqual(unknown_check["status"], "FAIL")
+            self.assertIn(
+                "STORAGE_ROOT_ACL_UNOBSERVABLE",
+                unknown_check["reason_codes"],
+            )
 
     def test_discovery_output_is_private_create_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
