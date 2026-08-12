@@ -29,20 +29,31 @@ import run as harness
 ROOT = Path(__file__).resolve().parents[1]
 TARGET_CONFIG_SCHEMA = ROOT / "evals/target-config.schema.json"
 HUMAN_REVIEW_SCHEMA = ROOT / "evals/human-review.schema.json"
+REVIEW_REQUEST_SCHEMA = ROOT / "evals/review-request.schema.json"
 TARGET_RESULT_SCHEMA = ROOT / "evals/results/TARGET_RUN_SCHEMA.json"
+CANONICAL_SUITE_PATH = ROOT / "evals/cases.json"
 RUBRIC_DIMENSIONS = (
-    "collaborative_inquiry",
+    "contract_and_focus",
+    "reflective_accuracy",
+    "inquiry_quality",
     "context_model_integrity",
-    "action_fit",
+    "recommendation_fit",
+    "experiment_quality",
     "agency_and_challenge",
     "continuity_and_privacy",
     "language_and_specificity",
+    "anti_dependence",
     "safety_and_scope",
 )
+HUMAN_HARD_FAILURE_CODES = {"HUMAN_OBSERVED_HARM"}
 BASELINES = {
     "direct_assistant": ROOT / "evals/baselines/direct_assistant.yaml",
     "structured_reflection": ROOT / "evals/baselines/structured_reflection.yaml",
 }
+SAFETY_PROFILE_FILES = (
+    ROOT / "skill/personal-growth-copilot/references/safety-and-scope.md",
+    ROOT / "safety/resource-resolver-interface.md",
+)
 RESERVED_ENVIRONMENT_NAMES = {"PATH", "LANG", "LC_ALL", "ENV", "BASH_ENV", "IFS"}
 RESERVED_ENVIRONMENT_PREFIXES = (
     "PYTHON",
@@ -96,6 +107,34 @@ def _digest(value: object) -> str:
 
 def _file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def profile_bundle_sha256() -> dict[str, str]:
+    skill_path = ROOT / "skill/personal-growth-copilot/SKILL.md"
+    target_paths = [
+        skill_path,
+        *sorted((ROOT / "skill/personal-growth-copilot/references").glob("*.md")),
+    ]
+    bundles = {
+        "target": target_paths,
+        "direct_assistant": [BASELINES["direct_assistant"], *SAFETY_PROFILE_FILES],
+        "structured_reflection": [
+            BASELINES["structured_reflection"],
+            *SAFETY_PROFILE_FILES,
+        ],
+    }
+    return {
+        name: _digest(
+            [
+                {
+                    "path": path.relative_to(ROOT).as_posix(),
+                    "sha256": _file_sha256(path),
+                }
+                for path in paths
+            ]
+        )
+        for name, paths in bundles.items()
+    }
 
 
 def _timestamp(value: datetime) -> str:
@@ -162,6 +201,9 @@ def validate_target_config(config: dict[str, Any], suite: dict[str, Any]) -> lis
     errors = _schema_errors(config, TARGET_CONFIG_SCHEMA)
     if errors:
         return errors
+    canonical_suite = json.loads(CANONICAL_SUITE_PATH.read_text(encoding="utf-8"))
+    if _digest(suite) != _digest(canonical_suite):
+        errors.append("supplied suite does not match the canonical repository suite")
     if config["suite_sha256"] != _digest(suite):
         errors.append("suite_sha256 does not match the supplied suite")
     if set(config["systems"]) != set(suite["required_systems"]):
@@ -183,9 +225,16 @@ def validate_target_config(config: dict[str, Any], suite: dict[str, Any]) -> lis
     expected_skill_hash = _file_sha256(ROOT / "skill/personal-growth-copilot/SKILL.md")
     if config["provider"]["skill_sha256"] != expected_skill_hash:
         errors.append("skill_sha256 does not match the current skill")
+    if config["provider"]["profile_bundle_sha256"] != profile_bundle_sha256():
+        errors.append("profile_bundle_sha256 does not match governed profile files")
     expected_rubric_hash = _file_sha256(ROOT / "evals/rubric.md")
     if config["review"]["rubric_sha256"] != expected_rubric_hash:
         errors.append("rubric_sha256 does not match the current rubric")
+    expected_calibration_hash = _file_sha256(ROOT / "evals/reviewer-calibration.md")
+    if config["review"]["calibration_protocol_sha256"] != expected_calibration_hash:
+        errors.append(
+            "calibration_protocol_sha256 does not match the current protocol"
+        )
     if _contains_sensitive_key(config["provider"]["settings"]):
         errors.append("provider settings contain a secret-like key")
     environment_names = set(config["provider"]["environment_allowlist"])
@@ -312,11 +361,26 @@ class FrozenStdioProvider:
 
     @staticmethod
     def request_payload(
-        request: harness.CompletionRequest, identity_sha256: str
+        request: harness.CompletionRequest, config: dict[str, Any]
     ) -> dict[str, Any]:
         return {
-            "protocol": "pgc-stdio-v1",
-            "provider_identity_sha256": identity_sha256,
+            "protocol": "pgc-stdio-v2",
+            "provider_identity_sha256": provider_identity(config),
+            "provider_execution": {
+                "host": config["provider"]["host"],
+                "model": config["provider"]["model"],
+                "model_version": config["provider"]["model_version"],
+                "runtime_executable_sha256": config["provider"][
+                    "runtime_executable_sha256"
+                ],
+                "settings": deepcopy(config["provider"]["settings"]),
+                "tool_permissions": list(config["provider"]["tool_permissions"]),
+                "skill_sha256": config["provider"]["skill_sha256"],
+                "baseline_sha256": deepcopy(config["baseline_sha256"]),
+                "profile_bundle_sha256": deepcopy(
+                    config["provider"]["profile_bundle_sha256"]
+                ),
+            },
             "request": {
                 "system_id": request.system_id,
                 "case_id": request.case_id,
@@ -337,7 +401,7 @@ class FrozenStdioProvider:
             raise ProviderProtocolError("frozen adapter snapshot is unavailable")
         if _file_sha256(self._adapter_path) != self._expected_adapter_sha256:
             raise ProviderProtocolError("frozen adapter snapshot changed before invocation")
-        payload = self.request_payload(request, self.identity_sha256)
+        payload = self.request_payload(request, self._config)
         request_sha256 = _digest(payload)
         try:
             result = subprocess.run(
@@ -371,7 +435,7 @@ class FrozenStdioProvider:
         }
         if not isinstance(response, dict) or set(response) != allowed_keys:
             raise ProviderProtocolError("adapter response fields do not match the protocol")
-        if response["protocol"] != "pgc-stdio-v1":
+        if response["protocol"] != "pgc-stdio-v2":
             raise ProviderProtocolError("adapter protocol mismatch")
         if response["request_sha256"] != request_sha256:
             raise ProviderProtocolError("adapter did not bind the request")
@@ -451,7 +515,7 @@ def validate_review_packet(
     }
     if unknown_reviewers := sorted(set(reviewer_ids) - set(roster)):
         errors.append(f"reviewer ids are absent from the frozen roster: {unknown_reviewers}")
-    if language.lower().startswith("zh") and config["review"][
+    if language.lower() in {"zh", "mixed"} and config["review"][
         "chinese_fluency_required"
     ]:
         if any(not reviewer["language_fluent"] for reviewer in reviewers):
@@ -654,6 +718,18 @@ class TargetSession:
             config=self._config,
         ):
             raise ReviewImportError("; ".join(errors))
+        review_request = self.review_request()
+        if packet["review_request_sha256"] != review_request["review_request_sha256"]:
+            raise ReviewImportError("review packet is bound to another review request")
+        allowed_events = set(review_request["event_candidates"])
+        allowed_hard_failures = set(review_request["hard_failure_codebook"])
+        for label_set in [*packet["reviewers"], packet["adjudication"]]:
+            if set(label_set["events"]) - allowed_events:
+                raise ReviewImportError("review contains an event outside the blinded codebook")
+            if set(label_set["hard_failure_codes"]) - allowed_hard_failures:
+                raise ReviewImportError(
+                    "review contains a hard failure outside the blinded codebook"
+                )
         turn = next(item for item in self._case["turns"] if item["id"] == request.turn_id)
         events = set(packet["adjudication"]["events"])
         next_turn: str | None = None
@@ -720,6 +796,63 @@ class TargetSession:
             user,
             tuple(history),
         )
+
+    def review_request(self) -> dict[str, Any]:
+        if self.status != "AWAITING_HUMAN_REVIEW" or self.pending_completion is None:
+            raise ReviewImportError("session has no completion awaiting review")
+        request = self.pending_request_for_review()
+        turn = next(item for item in self._case["turns"] if item["id"] == request.turn_id)
+        event_candidates = set(turn["expected_events"]) | set(turn["forbidden_events"])
+        for branch in turn.get("branches", []):
+            event_candidates.update(branch["when_all"])
+            event_candidates.update(branch.get("when_none", []))
+        transcript = [
+            {
+                "turn_id": captured["request"]["turn_id"],
+                "user": captured["request"]["user"],
+                "assistant": captured["completion"]["text"],
+            }
+            for captured in self.transcript
+        ]
+        transcript.append(
+            {
+                "turn_id": request.turn_id,
+                "user": request.user,
+                "assistant": self.pending_completion.text,
+            }
+        )
+        payload = {
+            "schema_version": "1.0",
+            "evidence_class": "blinded-human-review-request",
+            "qualification_claim_allowed": False,
+            "blinded_run_id": blinded_run_id(
+                self.pending_completion.completion_sha256
+            ),
+            "completion_sha256": self.pending_completion.completion_sha256,
+            "rubric_sha256": self._config["review"]["rubric_sha256"],
+            "language": self._case["language"],
+            "risk": self._case["risk"],
+            "category": self._case["category"],
+            "review_scope": "cumulative-through-current-turn",
+            "current_turn_id": request.turn_id,
+            "transcript": transcript,
+            "current_observations": {
+                "memory_write_attempted": self.pending_completion.memory_write_attempted,
+                "resource_claims": [
+                    dict(claim) for claim in self.pending_completion.resource_claims
+                ],
+            },
+            "rubric_dimensions": list(RUBRIC_DIMENSIONS),
+            "event_candidates": sorted(event_candidates),
+            "hard_failure_codebook": sorted(
+                set(self._suite["hard_gate_events"]) | HUMAN_HARD_FAILURE_CODES
+            ),
+            "system_identity_omitted": True,
+        }
+        payload["review_request_sha256"] = _digest(payload)
+        if errors := _schema_errors(payload, REVIEW_REQUEST_SCHEMA):
+            raise ReviewImportError("review-request schema failure: " + "; ".join(errors))
+        return payload
 
     def to_artifact(self) -> dict[str, Any]:
         payload = {
@@ -872,7 +1005,7 @@ def _validated_captured_completion(
     if set(value) != expected_keys:
         raise TargetEvaluationError("captured completion fields mismatch")
     identity = provider_identity(config)
-    request_payload = FrozenStdioProvider.request_payload(request, identity)
+    request_payload = FrozenStdioProvider.request_payload(request, config)
     if value["request_sha256"] != _digest(request_payload):
         raise TargetEvaluationError("captured request hash mismatch")
     if value["provider_identity_sha256"] != identity:
@@ -960,7 +1093,7 @@ class _ImportedGrader:
         )
 
 
-def _quadratic_weighted_kappa(left: list[int], right: list[int]) -> float:
+def _quadratic_weighted_kappa(left: list[int], right: list[int]) -> float | None:
     if len(left) != len(right) or not left:
         raise TargetEvaluationError("weighted kappa requires paired non-empty ratings")
     ratings = range(1, 6)
@@ -985,7 +1118,7 @@ def _quadratic_weighted_kappa(left: list[int], right: list[int]) -> float:
         for j in ratings
     )
     if weighted_expected == 0:
-        return 1.0 if weighted_observed == 0 else 0.0
+        return None
     return max(-1.0, min(1.0, 1.0 - weighted_observed / weighted_expected))
 
 
@@ -1014,7 +1147,8 @@ def _quality_summary(
     overall_mean = round(
         sum(dimension_means.values()) / len(dimension_means), 6
     )
-    agreement = round(_quadratic_weighted_kappa(left, right), 6)
+    measured_agreement = _quadratic_weighted_kappa(left, right)
+    agreement = None if measured_agreement is None else round(measured_agreement, 6)
     review = config["review"]
     failures = [
         f"DIMENSION_BELOW_MINIMUM:{name}"
@@ -1023,7 +1157,9 @@ def _quality_summary(
     ]
     if overall_mean < review["minimum_overall_score"]:
         failures.append("OVERALL_SCORE_BELOW_MINIMUM")
-    if agreement < review["agreement_threshold"]:
+    if agreement is None:
+        failures.append("REVIEWER_AGREEMENT_NOT_ESTIMABLE")
+    elif agreement < review["agreement_threshold"]:
         failures.append("REVIEWER_AGREEMENT_BELOW_THRESHOLD")
     return {
         "development_status": "pass" if not failures else "fail",
@@ -1033,6 +1169,7 @@ def _quality_summary(
         "dimension_means": dimension_means,
         "overall_mean": overall_mean,
         "agreement_method": review["agreement_method"],
+        "agreement_estimable": agreement is not None,
         "agreement": agreement,
         "agreement_threshold": review["agreement_threshold"],
         "failures": failures,
@@ -1078,6 +1215,7 @@ def finalize_session(session: TargetSession) -> dict[str, Any]:
         {
             "turn_id": captured["request"]["turn_id"],
             "completion_sha256": captured["completion"]["completion_sha256"],
+            "review_request_sha256": captured["review"]["review_request_sha256"],
             "review_sha256": captured["review_sha256"],
             "blinded_run_id": captured["review"]["blinded_run_id"],
             "identity_verification": captured["review"]["identity_verification"],
@@ -1218,6 +1356,7 @@ def target_result_errors(
             review_packet = {
                 "schema_version": "1.0",
                 "completion_sha256": review["completion_sha256"],
+                "review_request_sha256": review["review_request_sha256"],
                 "blinded_run_id": review["blinded_run_id"],
                 "identity_verification": review["identity_verification"],
                 "reviewers": deepcopy(review["reviewers"]),

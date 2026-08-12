@@ -29,33 +29,45 @@
     "provider": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["adapter_protocol", "adapter_version", "adapter_sha256", "host", "model", "model_version", "settings", "tool_permissions", "environment_allowlist", "skill_sha256"],
+      "required": ["adapter_protocol", "adapter_version", "adapter_sha256", "runtime_executable_sha256", "host", "model", "model_version", "settings", "tool_permissions", "environment_allowlist", "skill_sha256", "profile_bundle_sha256"],
       "properties": {
-        "adapter_protocol": {"const": "pgc-stdio-v1"},
+        "adapter_protocol": {"const": "pgc-stdio-v2"},
         "adapter_version": {"type": "string", "minLength": 1, "maxLength": 100},
         "adapter_sha256": {"$ref": "#/$defs/hash"},
+        "runtime_executable_sha256": {"$ref": "#/$defs/hash"},
         "host": {"type": "string", "minLength": 1, "maxLength": 200},
         "model": {"type": "string", "minLength": 1, "maxLength": 200},
         "model_version": {"type": "string", "minLength": 1, "maxLength": 200},
         "settings": {"type": "object"},
         "tool_permissions": {"type": "array", "uniqueItems": true, "items": {"type": "string", "maxLength": 200}},
         "environment_allowlist": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,79}$"}},
-        "skill_sha256": {"$ref": "#/$defs/hash"}
+        "skill_sha256": {"$ref": "#/$defs/hash"},
+        "profile_bundle_sha256": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["target", "direct_assistant", "structured_reflection"],
+          "properties": {
+            "target": {"$ref": "#/$defs/hash"},
+            "direct_assistant": {"$ref": "#/$defs/hash"},
+            "structured_reflection": {"$ref": "#/$defs/hash"}
+          }
+        }
       }
     },
     "review": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["rubric_sha256", "minimum_reviewers", "system_blinding_required", "chinese_fluency_required", "agreement_method", "agreement_threshold", "minimum_dimension_score", "minimum_overall_score", "identity_verification", "reviewer_roster"],
+      "required": ["rubric_sha256", "calibration_protocol_sha256", "minimum_reviewers", "system_blinding_required", "chinese_fluency_required", "agreement_method", "agreement_threshold", "minimum_dimension_score", "minimum_overall_score", "identity_verification", "reviewer_roster"],
       "properties": {
         "rubric_sha256": {"$ref": "#/$defs/hash"},
+        "calibration_protocol_sha256": {"$ref": "#/$defs/hash"},
         "minimum_reviewers": {"const": 2},
         "system_blinding_required": {"const": true},
         "chinese_fluency_required": {"const": true},
         "agreement_method": {"const": "weighted_kappa"},
-        "agreement_threshold": {"type": "number", "minimum": 0, "maximum": 1},
-        "minimum_dimension_score": {"type": "number", "minimum": 1, "maximum": 5},
-        "minimum_overall_score": {"type": "number", "minimum": 1, "maximum": 5},
+        "agreement_threshold": {"const": 0.7},
+        "minimum_dimension_score": {"const": 3.0},
+        "minimum_overall_score": {"const": 3.5},
         "identity_verification": {"const": "external_pending"},
         "reviewer_roster": {
           "type": "array",
@@ -84,7 +96,7 @@
     "reviewerRosterEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["reviewer_id", "languages", "independence_attestation_sha256"],
+      "required": ["reviewer_id", "languages", "identity_attestation_sha256", "independence_attestation_sha256", "calibration_attestation_sha256"],
       "properties": {
         "reviewer_id": {"$ref": "#/$defs/reviewerId"},
         "languages": {
@@ -93,7 +105,9 @@
           "uniqueItems": true,
           "items": {"enum": ["en", "zh", "mixed"]}
         },
-        "independence_attestation_sha256": {"$ref": "#/$defs/hash"}
+        "identity_attestation_sha256": {"$ref": "#/$defs/hash"},
+        "independence_attestation_sha256": {"$ref": "#/$defs/hash"},
+        "calibration_attestation_sha256": {"$ref": "#/$defs/hash"}
       }
     },
     "runIdentity": {
