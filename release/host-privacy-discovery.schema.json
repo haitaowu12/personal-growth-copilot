@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/host-privacy-discovery.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "candidate_commit", "generated_at", "named_host", "environment_id", "platform", "storage_root_sha256", "sync_inventory_complete", "checks", "privacy_gate_ready", "persistent_adapter_authorized", "status", "claim_limit", "report_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "host-privacy-discovery"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "named_host": {"type": "string", "minLength": 1, "maxLength": 200},
+    "environment_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{7,99}$"},
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "release", "machine"],
+      "properties": {
+        "system": {"type": "string", "minLength": 1, "maxLength": 100},
+        "release": {"type": "string", "minLength": 1, "maxLength": 100},
+        "machine": {"type": "string", "minLength": 1, "maxLength": 100}
+      }
+    },
+    "storage_root_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sync_inventory_complete": {"type": "boolean"},
+    "checks": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/check"}, {"properties": {"check_id": {"const": "storage_map"}}}]},
+        {"allOf": [{"$ref": "#/$defs/check"}, {"properties": {"check_id": {"const": "encryption"}}}]},
+        {"allOf": [{"$ref": "#/$defs/check"}, {"properties": {"check_id": {"const": "no_sync"}}}]},
+        {"allOf": [{"$ref": "#/$defs/check"}, {"properties": {"check_id": {"const": "backup_restore"}}}]},
+        {"allOf": [{"$ref": "#/$defs/check"}, {"properties": {"check_id": {"const": "correction_export_deletion"}}}]},
+        {"allOf": [{"$ref": "#/$defs/check"}, {"properties": {"check_id": {"const": "bounded_retention"}}}]},
+        {"allOf": [{"$ref": "#/$defs/check"}, {"properties": {"check_id": {"const": "incident_response"}}}]}
+      ],
+      "items": false
+    },
+    "privacy_gate_ready": {"const": false},
+    "persistent_adapter_authorized": {"const": false},
+    "status": {"const": "NOT_READY"},
+    "claim_limit": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_id", "status", "observed_at", "reason_codes", "facts", "command_evidence"],
+      "properties": {
+        "check_id": {"enum": ["storage_map", "encryption", "no_sync", "backup_restore", "correction_export_deletion", "bounded_retention", "incident_response"]},
+        "status": {"enum": ["PASS", "FAIL", "UNKNOWN"]},
+        "observed_at": {"type": "string", "format": "date-time"},
+        "reason_codes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}
+        },
+        "facts": {
+          "type": "object",
+          "additionalProperties": {"type": ["boolean", "integer", "string"]}
+        },
+        "command_evidence": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["command_id", "exit_code", "stdout_sha256", "stderr_sha256"],
+          "properties": {
+            "command_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,79}$"},
+            "exit_code": {"type": "integer", "minimum": -1, "maximum": 255},
+            "stdout_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "stderr_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Roadmap
 
-## Completed through 0.4.0-alpha.7
+## Completed through 0.4.0-alpha.8
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
@@ -49,6 +49,9 @@
 - create-only private qualification-packet initialization with restrictive
   permissions, no generated authority material or fake evidence, candidate
   binding, PEM private-key detection, and trust-policy input preflight.
+- fail-closed read-only named-host privacy discovery with hashed command
+  observations, exact private-output boundaries, incomplete sync-inventory
+  handling, and a hard prohibition on persistence authorization.
 
 ## Next evidence slice
 
@@ -63,7 +66,8 @@
 5. produce signed reviewer-attestation and
    immutable attempt-inventory evidence using the implemented receipt protocol;
 6. calibrate any auxiliary model judge to human labels;
-7. execute the implemented host privacy/security and incident evidence contract;
+7. resolve every `FAIL` or `UNKNOWN` from named-host discovery, then execute the
+   source-witnessed host privacy/security and incident evidence contract;
 8. implement a persistent adapter only if host discovery proves correct storage,
    encryption, no-sync path, backup, correction, export, and deletion behavior;
 9. run a 10–20 episode consented private pilot over 4–8 weeks;
