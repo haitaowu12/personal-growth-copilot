@@ -137,7 +137,7 @@ class ExternalGateSourceTests(unittest.TestCase):
             "evidence_class": "privacy-host-identity",
             "named_host": "restricted-evaluation-host-1",
             "environment_id": "pgc-private-evaluation-001",
-            "storage_root_sha256": "0" * 64,
+            "storage_root_sha256": release_evidence.filesystem_object_identity(directory),
             "audit_id": "privacy-audit-0000000000000001",
             "audit_public_key_path": public_key_path,
             "audit_public_key_sha256": public_key_sha256,
@@ -888,7 +888,7 @@ class ExternalGateSourceTests(unittest.TestCase):
                 "attempt_campaign_id": "campaign-release-0001",
                 "named_host": "restricted-evaluation-host-1",
                 "environment_id": "pgc-private-evaluation-001",
-                "storage_root_sha256": "0" * 64,
+                "storage_root_sha256": release_evidence.filesystem_object_identity(directory),
                 "paths": {
                     "target_config": config_path.name,
                     "holdout_seal": seal_path.name,

@@ -379,11 +379,9 @@ def path_identity(path: Path) -> str:
     """Hash the existing object identity, or a normalized unavailable path."""
     expanded = path.expanduser().absolute()
     try:
-        metadata = os.stat(expanded, follow_symlinks=False)
-    except OSError:
+        return release_evidence.filesystem_object_identity(expanded)
+    except release_evidence.ReleaseEvidenceError:
         payload = f"unavailable-path:{os.path.realpath(expanded)}"
-    else:
-        payload = f"filesystem-object:{metadata.st_dev}:{metadata.st_ino}"
     return digest_bytes(payload.encode("utf-8"))
 
 

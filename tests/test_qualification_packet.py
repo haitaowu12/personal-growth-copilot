@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import stat
 import sys
 import tempfile
@@ -539,6 +540,26 @@ class QualificationPacketTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 release_evidence.ReleaseEvidenceError,
                 "invalid qualification packet plan",
+            ):
+                qualification_packet.preflight_packet(
+                    root,
+                    source_identity=lambda _: CANDIDATE,
+                    clock=lambda: FIXED_TIME,
+                )
+
+    def test_copied_or_replaced_packet_root_invalidates_the_frozen_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name)
+            root = self.initialize(parent)
+            original = parent / "original-packet-object"
+            root.rename(original)
+            shutil.copytree(original, root)
+            for path in root.rglob("*"):
+                os.chmod(path, 0o700 if path.is_dir() else 0o600)
+            os.chmod(root, 0o700)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError,
+                "storage root differs from the frozen plan",
             ):
                 qualification_packet.preflight_packet(
                     root,

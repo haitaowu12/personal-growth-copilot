@@ -494,6 +494,10 @@ def load_qualification_plan(packet_root: Path) -> dict[str, Any]:
         raise release_evidence.ReleaseEvidenceError(
             "qualification packet plan paths must be unique"
         )
+    if plan["storage_root_sha256"] != release_evidence.filesystem_object_identity(root):
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification packet storage root differs from the frozen plan"
+        )
     return plan
 
 
