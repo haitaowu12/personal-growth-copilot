@@ -4,7 +4,7 @@ Standalone clean-room development repository for an explicit-invocation Agent
 Skill supporting context-rich personal growth, reflective dialogue, practical
 behavior-change experiments, and longitudinal learning.
 
-Current version: `0.4.0-alpha.9`
+Current version: `0.4.0-alpha.10`
 
 This repository does not contain or claim byte equivalence to the unavailable
 historical `0.2.0-rc.1` candidate. See
@@ -76,6 +76,9 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   holdout cases, or pilot records; it reports each real input as `MISSING`,
   `INVALID`, or `VALID`, validates available inputs immediately, and reuses the
   trust-policy validator before a candidate can be frozen.
+- a create-only, schema-bound external-participant intake artifact that names
+  the real reviewer, holdout, witness, authority, owner, and host-remediation
+  work without creating identities, keys, cases, pilot episodes, or evidence.
 - a read-only named-host privacy discovery that records bounded storage,
   encryption, declared-sync, and backup observations without retaining raw
   command output. It cannot generate a privacy PASS, authorize persistence, or

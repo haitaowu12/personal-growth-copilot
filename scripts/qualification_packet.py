@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import release_evidence  # noqa: E402
 import release_packet  # noqa: E402
+import host_privacy_discovery  # noqa: E402
 
 
 PLAN_NAME = release_packet.QUALIFICATION_PLAN_NAME
@@ -45,6 +46,87 @@ INPUT_LABELS = {
     "pilot_protocol": "preregistered pilot schedule and witness key",
     "authority_roster": "nine independently controlled release authority public keys",
 }
+INPUT_OWNERS = {
+    "target_config": (
+        "evaluation owner with the real calibrated reviewer roster",
+        "evals/target-config.schema.json plus the exact-source target validator",
+    ),
+    "holdout_seal": (
+        "independent holdout author and holdout witness",
+        "release/holdout-seal.schema.json plus ciphertext, schema, authorship, and witness-key replay",
+    ),
+    "privacy_host_identity": (
+        "named-host privacy audit witness",
+        "release/privacy-host-identity.schema.json plus audit-key replay",
+    ),
+    "pilot_protocol": (
+        "pilot owner and independently controlled pilot witness",
+        "release/pilot-protocol.schema.json plus candidate and witness-key replay",
+    ),
+    "authority_roster": (
+        "nine independently controlled release authorities",
+        "exact role roster plus unique Ed25519 path, id, and key-material validation",
+    ),
+}
+
+PARTICIPANT_REQUIREMENTS = (
+    {
+        "participant_id": "calibrated_reviewers",
+        "minimum_count": 3,
+        "responsibility": (
+            "Review every governed run while blinded to system identity; the roster "
+            "must include at least three reviewers fluent in Chinese or mixed-language review."
+        ),
+        "independence": (
+            "Identity, independence, language fluency, and calibration require external evidence."
+        ),
+    },
+    {
+        "participant_id": "holdout_authors",
+        "minimum_count": 1,
+        "responsibility": "Author and seal untouched cases only after the candidate freeze.",
+        "independence": "Candidate authors may not inspect holdout plaintext or author evidence.",
+    },
+    {
+        "participant_id": "holdout_witness",
+        "minimum_count": 1,
+        "responsibility": "Control the holdout seal and access-audit witness key.",
+        "independence": "Key material must be distinct from every other witness and release authority.",
+    },
+    {
+        "participant_id": "privacy_audit_witness",
+        "minimum_count": 1,
+        "responsibility": "Witness named-host control inventory, findings, and audit completeness.",
+        "independence": "Key material must be outside the packet and candidate-author control.",
+    },
+    {
+        "participant_id": "pilot_witness",
+        "minimum_count": 1,
+        "responsibility": "Preregister and witness the complete 10-20 episode, 28-56 day pilot ledger.",
+        "independence": "Key material must be distinct and the episode ledger must be complete.",
+    },
+    {
+        "participant_id": "release_authority_controllers",
+        "minimum_count": 9,
+        "responsibility": "Control exactly one role-scoped public key for each release gate.",
+        "independence": "All nine Ed25519 key identities must be distinct and private keys remain off-packet.",
+    },
+    {
+        "participant_id": "owner",
+        "minimum_count": 1,
+        "responsibility": "Record the final promotion or decline only after every prerequisite receipt.",
+        "independence": "Owner promotion cannot substitute for or precede any other release gate.",
+    },
+)
+
+HARD_INVARIANTS = (
+    "Do not generate, copy, or retain private keys inside the qualification packet.",
+    "Do not use model agents or candidate authors as substitutes for required external people or witnesses.",
+    "Do not reveal holdout plaintext to candidate authors before execution and access-audit freeze.",
+    "Do not retry and retain only favorable target, baseline, holdout, privacy, bilingual, or pilot results.",
+    "Do not enable persistence, installation, catalog registration, implicit invocation, or production claims before promotion.",
+    "Do not interpret READY_TO_FREEZE, local tests, or this intake contract as release evidence.",
+)
 def now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -286,6 +368,116 @@ def preflight_packet(
     return result
 
 
+def build_external_intake(
+    packet_root: Path,
+    *,
+    source_identity: Callable[[Path], str] = release_evidence.source_identity,
+    clock: Callable[[], datetime] = now,
+) -> dict[str, Any]:
+    """Build a non-evidentiary handoff for the real external qualification roles."""
+    root = _existing_packet_root(packet_root)
+    plan = _load_plan(root)
+    candidate = source_identity(ROOT)
+    if candidate != plan["candidate_commit"]:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification plan differs from the exact clean candidate checkout"
+        )
+    preflight = preflight_packet(
+        root,
+        source_identity=lambda _: candidate,
+        clock=clock,
+    )
+    requirements = {item["input_id"]: item for item in preflight["requirements"]}
+    artifact_requirements = [
+        {
+            "input_id": input_id,
+            "path": plan["paths"][input_id],
+            "external_owner": INPUT_OWNERS[input_id][0],
+            "authority": INPUT_OWNERS[input_id][1],
+            "status": requirements[input_id]["status"],
+            "validation_errors": requirements[input_id]["validation_errors"],
+        }
+        for input_id in INPUT_LABELS
+    ]
+    discovery_path = root / "privacy/host-discovery.json"
+    host_remediation: list[dict[str, Any]] = []
+    if discovery_path.is_file() and not discovery_path.is_symlink():
+        discovery = release_evidence.json_object(
+            release_evidence.read_once(discovery_path), "host privacy discovery"
+        )
+        if errors := host_privacy_discovery.verify_report(discovery):
+            raise release_evidence.ReleaseEvidenceError(
+                "invalid host privacy discovery: " + "; ".join(errors)
+            )
+        if discovery["candidate_commit"] != candidate:
+            raise release_evidence.ReleaseEvidenceError(
+                "host privacy discovery differs from the clean candidate checkout"
+            )
+        host_remediation = [
+            {
+                "check_id": item["check_id"],
+                "status": item["status"],
+                "reason_codes": item["reason_codes"],
+                "required_outcome": "PASS_IN_SOURCE_WITNESSED_PRIVACY_PREFLIGHT",
+            }
+            for item in discovery["checks"]
+            if item["status"] != "PASS"
+        ]
+    else:
+        host_remediation = [
+            {
+                "check_id": "host_privacy_discovery",
+                "status": "MISSING",
+                "reason_codes": ["NO_EXACT_CANDIDATE_HOST_DISCOVERY"],
+                "required_outcome": "PASS_IN_SOURCE_WITNESSED_PRIVACY_PREFLIGHT",
+            }
+        ]
+    intake = {
+        "schema_version": "1.0",
+        "evidence_class": "qualification-external-intake",
+        "status": "AWAITING_EXTERNAL_INPUTS",
+        "candidate_commit": candidate,
+        "generated_at": release_packet.timestamp(clock()),
+        "plan_sha256": plan["plan_sha256"],
+        "participant_requirements": list(PARTICIPANT_REQUIREMENTS),
+        "artifact_requirements": artifact_requirements,
+        "host_remediation": host_remediation,
+        "hard_invariants": list(HARD_INVARIANTS),
+        "validation_command": (
+            f"python scripts/qualification_packet.py preflight --packet-root {root}"
+        ),
+        "claim_limit": (
+            "This is a non-promotional external-participant intake contract. It is "
+            "not identity, independence, holdout, host, pilot, gate, or release evidence."
+        ),
+    }
+    intake["intake_sha256"] = release_evidence.digest(intake)
+    if errors := release_evidence.schema_errors(intake, "qualification_intake"):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid qualification external intake: " + "; ".join(errors)
+        )
+    return intake
+
+
+def _intake_output(root: Path, output: Path) -> Path:
+    if output.exists() or output.is_symlink():
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification intake output is create-only"
+        )
+    try:
+        parent = output.parent.resolve(strict=True)
+        parent.relative_to(root)
+    except (OSError, ValueError) as exc:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification intake output must remain inside the packet"
+        ) from exc
+    if output.name in {"", ".", ".."} or Path(output.name).name != output.name:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification intake output path is not exact"
+        )
+    return parent / output.name
+
+
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     commands = result.add_subparsers(dest="command", required=True)
@@ -294,6 +486,9 @@ def parser() -> argparse.ArgumentParser:
     initialize.add_argument("--attempt-campaign-id", required=True)
     preflight = commands.add_parser("preflight")
     preflight.add_argument("--packet-root", type=Path, required=True)
+    intake = commands.add_parser("intake")
+    intake.add_argument("--packet-root", type=Path, required=True)
+    intake.add_argument("--output", type=Path, required=True)
     return result
 
 
@@ -302,8 +497,14 @@ def main() -> int:
     try:
         if args.command == "init":
             result = initialize_packet(args.packet_root, args.attempt_campaign_id)
-        else:
+        elif args.command == "preflight":
             result = preflight_packet(args.packet_root)
+        else:
+            root = _existing_packet_root(args.packet_root)
+            result = build_external_intake(root)
+            release_packet.write_private_new(
+                _intake_output(root, args.output), result
+            )
         print(json.dumps(result, indent=2))
         return 0 if result.get("status") != "NOT_READY" else 1
     except (

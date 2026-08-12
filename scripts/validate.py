@@ -209,6 +209,7 @@ def validate() -> list[str]:
         ROOT / "release/pilot-protocol.schema.json",
         ROOT / "release/reviewer-identity-attestation.schema.json",
         ROOT / "release/qualification-packet-plan.schema.json",
+        ROOT / "release/qualification-external-intake.schema.json",
         ROOT / "release/trust-policy.json",
         ROOT / "release/evidence-index.json",
         ROOT / "scripts/release_evidence.py",
@@ -248,6 +249,7 @@ def validate() -> list[str]:
         ROOT / "release/pilot-protocol.schema.json",
         ROOT / "release/reviewer-identity-attestation.schema.json",
         ROOT / "release/qualification-packet-plan.schema.json",
+        ROOT / "release/qualification-external-intake.schema.json",
     ):
         try:
             Draft202012Validator.check_schema(

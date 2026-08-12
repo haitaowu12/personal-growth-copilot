@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/qualification-external-intake.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "status", "candidate_commit", "generated_at", "plan_sha256", "participant_requirements", "artifact_requirements", "host_remediation", "hard_invariants", "validation_command", "claim_limit", "intake_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "qualification-external-intake"},
+    "status": {"const": "AWAITING_EXTERNAL_INPUTS"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "plan_sha256": {"$ref": "#/$defs/hash"},
+    "participant_requirements": {
+      "type": "array",
+      "minItems": 7,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/participant"}
+    },
+    "artifact_requirements": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "host_remediation": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/remediation"}
+    },
+    "hard_invariants": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 500}
+    },
+    "validation_command": {"type": "string", "minLength": 1, "maxLength": 500},
+    "claim_limit": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "intake_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["participant_id", "minimum_count", "responsibility", "independence"],
+      "properties": {
+        "participant_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,79}$"},
+        "minimum_count": {"type": "integer", "minimum": 1, "maximum": 20},
+        "responsibility": {"type": "string", "minLength": 1, "maxLength": 500},
+        "independence": {"type": "string", "minLength": 1, "maxLength": 500}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_id", "path", "external_owner", "authority", "status", "validation_errors"],
+      "properties": {
+        "input_id": {"enum": ["target_config", "holdout_seal", "privacy_host_identity", "pilot_protocol", "authority_roster"]},
+        "path": {"type": "string", "minLength": 1, "maxLength": 300},
+        "external_owner": {"type": "string", "minLength": 1, "maxLength": 200},
+        "authority": {"type": "string", "minLength": 1, "maxLength": 500},
+        "status": {"enum": ["MISSING", "INVALID", "VALID"]},
+        "validation_errors": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1, "maxLength": 1000}
+        }
+      }
+    },
+    "remediation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_id", "status", "reason_codes", "required_outcome"],
+      "properties": {
+        "check_id": {"type": "string", "minLength": 1, "maxLength": 100},
+        "status": {"enum": ["MISSING", "FAIL", "UNKNOWN"]},
+        "reason_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 200}},
+        "required_outcome": {"const": "PASS_IN_SOURCE_WITNESSED_PRIVACY_PREFLIGHT"}
+      }
+    }
+  }
+}

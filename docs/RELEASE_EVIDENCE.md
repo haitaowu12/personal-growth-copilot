@@ -101,7 +101,20 @@ python scripts/qualification_packet.py init \
 
 Place the real externally controlled inputs at the packet-relative locations
 recorded in `qualification-plan.json`, keeping every private key outside the
-packet and candidate-author access. Then run:
+packet and candidate-author access. Generate the create-only handoff contract
+for those external roles with:
+
+```text
+python scripts/qualification_packet.py intake \
+  --packet-root /private/release-packet \
+  --output /private/release-packet/review/external-intake.json
+```
+
+The intake is schema-bound and exact-candidate-bound, but explicitly
+non-promotional. It enumerates real participant responsibilities, current
+`MISSING` / `INVALID` / `VALID` input status, and unresolved host discovery
+checks. It never generates a person, identity claim, key, holdout case, pilot
+episode, or release artifact. Then run:
 
 ```text
 python scripts/qualification_packet.py preflight \
