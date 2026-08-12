@@ -348,6 +348,64 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                     reserved.write(self.discover(storage))
             self.assertFalse(output.exists())
 
+    def test_reserved_output_resets_offset_and_commits_exact_json(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            output_parent = self.root(parent, "output")
+            output = output_parent / "report.json"
+            report = self.discover(storage)
+            with host_privacy_discovery.reserve_private_output(
+                output,
+                runner=runner(),
+                system="Darwin",
+                home_root=parent,
+            ) as reserved:
+                os.lseek(reserved.file_fd, 4096, os.SEEK_SET)
+                reserved.write(report)
+            self.assertEqual(output.read_bytes(), release_evidence.canonical_bytes(report))
+            self.assertEqual(json.loads(output.read_text(encoding="utf-8")), report)
+
+    def test_reserved_output_rejects_same_length_content_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            output_parent = self.root(parent, "output")
+            output = output_parent / "report.json"
+            report = self.discover(storage)
+            reserved = host_privacy_discovery.reserve_private_output(
+                output,
+                runner=runner(),
+                system="Darwin",
+                home_root=parent,
+            )
+            original_read = host_privacy_discovery.os.read
+            injected = False
+
+            def mutating_read(descriptor: int, size: int) -> bytes:
+                nonlocal injected
+                if not injected:
+                    injected = True
+                    replacement_fd = os.open(output, os.O_WRONLY)
+                    try:
+                        os.write(replacement_fd, b"X")
+                        os.fsync(replacement_fd)
+                    finally:
+                        os.close(replacement_fd)
+                return original_read(descriptor, size)
+
+            try:
+                host_privacy_discovery.os.read = mutating_read
+                with self.assertRaisesRegex(
+                    host_privacy_discovery.HostDiscoveryError,
+                    "differs from canonical report",
+                ):
+                    reserved.write(report)
+            finally:
+                host_privacy_discovery.os.read = original_read
+                reserved.close()
+            self.assertFalse(output.exists())
+
     def test_discovery_output_boundary_rejects_broad_or_repository_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             parent = Path(directory_name).resolve()
