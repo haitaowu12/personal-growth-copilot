@@ -136,6 +136,12 @@ def command_import_review(args) -> int:
     return 0
 
 
+def command_export_review_request(args) -> int:
+    _, _, session = restore(args)
+    write_private_new(args.output, session.review_request())
+    return 0
+
+
 def command_finalize(args) -> int:
     suite, config, session = restore(args)
     result = target_session.finalize_session(session)
@@ -195,6 +201,11 @@ def parser() -> argparse.ArgumentParser:
     import_review.add_argument("--review", type=Path, required=True)
     import_review.add_argument("--output", type=Path, required=True)
 
+    export_review = subcommands.add_parser("export-review-request")
+    common(export_review)
+    export_review.add_argument("--session", type=Path, required=True)
+    export_review.add_argument("--output", type=Path, required=True)
+
     finalize = subcommands.add_parser("finalize")
     common(finalize)
     finalize.add_argument("--session", type=Path, required=True)
@@ -215,6 +226,8 @@ def main() -> int:
             return command_capture(args)
         if args.command == "import-review":
             return command_import_review(args)
+        if args.command == "export-review-request":
+            return command_export_review_request(args)
         if args.command == "finalize":
             return command_finalize(args)
         if args.command == "verify":

@@ -134,9 +134,14 @@ def validate() -> list[str]:
         ROOT / "evals/config.schema.json",
         ROOT / "evals/results/RESULT_SCHEMA.json",
         ROOT / "evals/target_session.py",
+        ROOT / "evals/campaign.py",
         ROOT / "evals/target-config.schema.json",
         ROOT / "evals/human-review.schema.json",
+        ROOT / "evals/review-request.schema.json",
+        ROOT / "evals/reviewer-calibration.md",
+        ROOT / "evals/result-manifest.schema.json",
         ROOT / "evals/results/TARGET_RUN_SCHEMA.json",
+        ROOT / "evals/results/CAMPAIGN_RESULT_SCHEMA.json",
         ROOT / "evals/configs/conformance.json",
         ROOT / "evals/baselines/direct_assistant.yaml",
         ROOT / "evals/baselines/structured_reflection.yaml",
@@ -146,6 +151,10 @@ def validate() -> list[str]:
         ROOT / "scripts/run_deterministic_qualification.py",
         ROOT / "scripts/build_target_config.py",
         ROOT / "scripts/target_session_cli.py",
+        ROOT / "scripts/campaign_cli.py",
+        ROOT / "providers/codex_cli_adapter.py",
+        ROOT / "providers/codex-output.schema.json",
+        ROOT / "providers/README.md",
         ROOT / "docs/TARGET_EXECUTION.md",
     }
     for path in sorted(required_runtime):
@@ -158,7 +167,11 @@ def validate() -> list[str]:
         ROOT / "evals/results/RESULT_SCHEMA.json",
         ROOT / "evals/target-config.schema.json",
         ROOT / "evals/human-review.schema.json",
+        ROOT / "evals/review-request.schema.json",
+        ROOT / "evals/result-manifest.schema.json",
         ROOT / "evals/results/TARGET_RUN_SCHEMA.json",
+        ROOT / "evals/results/CAMPAIGN_RESULT_SCHEMA.json",
+        ROOT / "providers/codex-output.schema.json",
     ):
         try:
             Draft202012Validator.check_schema(
