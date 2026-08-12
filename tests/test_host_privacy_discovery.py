@@ -58,6 +58,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
         sync_roots: list[Path] | None = None,
         sync_inventory_complete: bool = True,
         command_runner: host_privacy_discovery.CommandRunner | None = None,
+        directory_acl_probe: host_privacy_discovery.FileAclProbe | None = None,
     ) -> dict[str, object]:
         return host_privacy_discovery.discover(
             storage_root=storage_root,
@@ -72,6 +73,8 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             platform_release=lambda: "25.6.0",
             platform_machine=lambda: "arm64",
             home_root=lambda: storage_root.parent,
+            directory_acl_probe=directory_acl_probe
+            or (lambda _descriptor, _system: "ABSENT"),
         )
 
     def checks(self, report: dict[str, object]) -> dict[str, dict[str, object]]:
@@ -194,6 +197,63 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 host_privacy_discovery.ROOT = original_root
             self.assertEqual(self.checks(inside)["storage_map"]["status"], "FAIL")
 
+    def test_storage_directory_swap_invalidates_storage_and_sync_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            moved = parent / "moved-storage"
+            swapped = False
+
+            def swapping_acl(_: int, __: str) -> str:
+                nonlocal swapped
+                if not swapped:
+                    swapped = True
+                    storage.rename(moved)
+                    storage.mkdir(mode=0o755)
+                    os.chmod(storage, 0o755)
+                return "ABSENT"
+
+            report = self.discover(
+                storage,
+                directory_acl_probe=swapping_acl,
+            )
+            checks = self.checks(report)
+            self.assertEqual(checks["storage_map"]["status"], "FAIL")
+            self.assertIn(
+                "STORAGE_ROOT_CHANGED", checks["storage_map"]["reason_codes"]
+            )
+            self.assertEqual(checks["no_sync"]["status"], "FAIL")
+            self.assertIn("STORAGE_ROOT_CHANGED", checks["no_sync"]["reason_codes"])
+
+    def test_declared_sync_root_swap_cannot_report_no_sync_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            sync_root = self.root(parent, "sync")
+            moved = parent / "moved-sync"
+            base_runner = runner()
+            swapped = False
+
+            def swapping_runner(
+                command_id: str, command: object
+            ) -> host_privacy_discovery.CommandResult:
+                nonlocal swapped
+                if command_id == "filevault_status" and not swapped:
+                    swapped = True
+                    sync_root.rename(moved)
+                    sync_root.mkdir(mode=0o700)
+                    os.chmod(sync_root, 0o700)
+                return base_runner(command_id, command)
+
+            report = self.discover(
+                storage,
+                sync_roots=[sync_root],
+                command_runner=swapping_runner,
+            )
+            no_sync = self.checks(report)["no_sync"]
+            self.assertEqual(no_sync["status"], "UNKNOWN")
+            self.assertIn("DECLARED_SYNC_ROOT_CHANGED", no_sync["reason_codes"])
+
     def test_storage_and_output_acl_boundaries_fail_closed(self) -> None:
         acl_output = (
             b"drwx------+ 2 owner staff 64 Aug 12 12:00 private-storage\n"
@@ -205,6 +265,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             exposed = self.discover(
                 storage,
                 command_runner=runner(acl=acl_output),
+                directory_acl_probe=lambda _descriptor, _system: "PRESENT",
             )
             storage_check = self.checks(exposed)["storage_map"]
             self.assertEqual(storage_check["status"], "FAIL")
@@ -222,6 +283,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             unknown = self.discover(
                 storage,
                 command_runner=runner(acl_exit=1),
+                directory_acl_probe=lambda _descriptor, _system: "UNKNOWN",
             )
             unknown_check = self.checks(unknown)["storage_map"]
             self.assertEqual(unknown_check["status"], "FAIL")
@@ -512,6 +574,23 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             ):
                 host_privacy_discovery.validate_private_output(
                     repository_parent / "host-discovery-should-not-exist.json"
+                )
+
+    def test_discovery_output_rejects_declared_sync_overlap(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            sync_root = self.root(parent, "sync")
+            output_parent = self.root(sync_root, "private-looking-output")
+            with self.assertRaisesRegex(
+                host_privacy_discovery.HostDiscoveryError,
+                "overlaps a declared sync root",
+            ):
+                host_privacy_discovery.reserve_private_output(
+                    output_parent / "report.json",
+                    runner=runner(),
+                    system="Darwin",
+                    home_root=parent,
+                    declared_sync_roots=[sync_root],
                 )
 
     def test_missing_storage_root_produces_not_ready_report(self) -> None:
