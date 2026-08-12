@@ -84,6 +84,67 @@ def native_file_acl_status(descriptor: int, system: str) -> str:
 
 
 @dataclass
+class BoundDirectory:
+    requested: Path
+    resolved: Path
+    descriptor: int
+    device: int
+    inode: int
+
+    def visible_matches(self) -> bool:
+        if path_has_symlink_component(self.requested):
+            return False
+        try:
+            visible = self.requested.resolve(strict=True).stat()
+            bound = os.fstat(self.descriptor)
+        except OSError:
+            return False
+        return (
+            stat.S_ISDIR(visible.st_mode)
+            and (visible.st_dev, visible.st_ino) == (self.device, self.inode)
+            and (bound.st_dev, bound.st_ino) == (self.device, self.inode)
+        )
+
+    def close(self) -> None:
+        if self.descriptor >= 0:
+            os.close(self.descriptor)
+            self.descriptor = -1
+
+
+def bind_directory(path: Path) -> tuple[BoundDirectory | None, str | None]:
+    if path_has_symlink_component(path):
+        return None, "SYMLINK"
+    try:
+        resolved = path.resolve(strict=True)
+        metadata = resolved.stat()
+    except OSError:
+        return None, "UNAVAILABLE"
+    if not stat.S_ISDIR(metadata.st_mode):
+        return None, "NOT_DIRECTORY"
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(resolved, flags)
+        bound = os.fstat(descriptor)
+    except OSError:
+        return None, "UNAVAILABLE"
+    binding = BoundDirectory(
+        requested=path,
+        resolved=resolved,
+        descriptor=descriptor,
+        device=bound.st_dev,
+        inode=bound.st_ino,
+    )
+    if (bound.st_dev, bound.st_ino) != (metadata.st_dev, metadata.st_ino) or not binding.visible_matches():
+        binding.close()
+        return None, "CHANGED"
+    return binding, None
+
+
+@dataclass
 class ReservedPrivateOutput:
     output: Path
     parent_fd: int
@@ -94,6 +155,7 @@ class ReservedPrivateOutput:
     file_inode: int
     system: str
     file_acl_probe: FileAclProbe
+    sync_bindings: list[BoundDirectory]
     committed: bool = False
 
     def require_visible_parent(self) -> None:
@@ -106,6 +168,8 @@ class ReservedPrivateOutput:
             visible_parent.st_ino,
         ) != (self.parent_device, self.parent_inode):
             raise HostDiscoveryError("output parent changed after reservation")
+        if any(not binding.visible_matches() for binding in self.sync_bindings):
+            raise HostDiscoveryError("declared sync root changed after reservation")
 
     def reserved_name_matches(self) -> bool:
         try:
@@ -210,6 +274,9 @@ class ReservedPrivateOutput:
         if self.parent_fd >= 0:
             os.close(self.parent_fd)
             self.parent_fd = -1
+        for binding in self.sync_bindings:
+            binding.close()
+        self.sync_bindings.clear()
 
     def __enter__(self) -> ReservedPrivateOutput:
         return self
@@ -334,6 +401,7 @@ def reserve_private_output(
     system: str | None = None,
     home_root: Path | None = None,
     file_acl_probe: FileAclProbe = native_file_acl_status,
+    declared_sync_roots: Sequence[Path] = (),
 ) -> ReservedPrivateOutput:
     if output.exists() or output.is_symlink():
         raise HostDiscoveryError("output must not already exist")
@@ -359,6 +427,26 @@ def reserve_private_output(
         raise HostDiscoveryError("output parent must be on the home filesystem")
     if path_within(resolved_parent, ROOT.resolve(strict=True)):
         raise HostDiscoveryError("output must remain outside the source repository")
+    output_sync_bindings: list[BoundDirectory] = []
+    try:
+        for sync_root in declared_sync_roots:
+            sync_binding, sync_error = bind_directory(sync_root)
+            if sync_binding is None:
+                raise HostDiscoveryError(
+                    "declared sync root is unsafe or unavailable: "
+                    + str(sync_error or "UNKNOWN")
+                )
+            output_sync_bindings.append(sync_binding)
+            if path_within(resolved_parent, sync_binding.resolved) or path_within(
+                sync_binding.resolved, resolved_parent
+            ):
+                raise HostDiscoveryError(
+                    "output parent overlaps a declared sync root"
+                )
+    except Exception:
+        for binding in output_sync_bindings:
+            binding.close()
+        raise
     effective_system = system or platform.system()
     acl, _ = acl_status(
         resolved_parent,
@@ -375,7 +463,12 @@ def reserve_private_output(
         open_directory_flags |= os.O_DIRECTORY
     if hasattr(os, "O_NOFOLLOW"):
         open_directory_flags |= os.O_NOFOLLOW
-    parent_fd = os.open(resolved_parent, open_directory_flags)
+    try:
+        parent_fd = os.open(resolved_parent, open_directory_flags)
+    except Exception:
+        for binding in output_sync_bindings:
+            binding.close()
+        raise
     file_fd = -1
     file_metadata: os.stat_result | None = None
     try:
@@ -423,6 +516,8 @@ def reserve_private_output(
                     except FileNotFoundError:
                         pass
         os.close(parent_fd)
+        for binding in output_sync_bindings:
+            binding.close()
         raise
     return ReservedPrivateOutput(
         output=output,
@@ -434,6 +529,7 @@ def reserve_private_output(
         file_inode=file_metadata.st_ino,
         system=effective_system,
         file_acl_probe=file_acl_probe,
+        sync_bindings=output_sync_bindings,
     )
 
 
@@ -444,6 +540,7 @@ def validate_private_output(
     system: str | None = None,
     home_root: Path | None = None,
     file_acl_probe: FileAclProbe = native_file_acl_status,
+    declared_sync_roots: Sequence[Path] = (),
 ) -> None:
     with reserve_private_output(
         output,
@@ -451,27 +548,31 @@ def validate_private_output(
         system=system,
         home_root=home_root,
         file_acl_probe=file_acl_probe,
+        declared_sync_roots=declared_sync_roots,
     ):
         pass
 
 
 def inspect_storage(
-    root: Path,
+    binding: BoundDirectory | None,
+    binding_error: str | None,
     observed_at: str,
     *,
     home_root: Path,
-    runner: CommandRunner,
     system: str,
+    acl_probe: FileAclProbe,
 ) -> dict[str, object]:
-    if path_has_symlink_component(root):
-        return check("storage_map", "FAIL", observed_at, ["STORAGE_ROOT_SYMLINK"])
-    try:
-        resolved = root.resolve(strict=True)
-        metadata = resolved.stat()
-    except OSError:
+    if binding is None:
+        reason = {
+            "SYMLINK": "STORAGE_ROOT_SYMLINK",
+            "NOT_DIRECTORY": "STORAGE_ROOT_NOT_DIRECTORY",
+            "CHANGED": "STORAGE_ROOT_CHANGED",
+        }.get(binding_error, "STORAGE_ROOT_UNAVAILABLE")
         return check(
-            "storage_map", "FAIL", observed_at, ["STORAGE_ROOT_UNAVAILABLE"]
+            "storage_map", "FAIL", observed_at, [reason]
         )
+    resolved = binding.resolved
+    metadata = os.fstat(binding.descriptor)
     reasons: list[str] = []
     if not stat.S_ISDIR(metadata.st_mode):
         reasons.append("STORAGE_ROOT_NOT_DIRECTORY")
@@ -486,16 +587,13 @@ def inspect_storage(
         reasons.append("HOME_FILESYSTEM_UNAVAILABLE")
     if home_device is not None and metadata.st_dev != home_device:
         reasons.append("STORAGE_ROOT_NOT_ON_HOME_FILESYSTEM")
-    acl, acl_evidence = acl_status(
-        resolved,
-        runner=runner,
-        command_id="storage_acl",
-        system=system,
-    )
+    acl = acl_probe(binding.descriptor, system)
     if acl == "PRESENT":
         reasons.append("STORAGE_ROOT_ACL_PRESENT")
     elif acl != "ABSENT":
         reasons.append("STORAGE_ROOT_ACL_UNOBSERVABLE")
+    if not binding.visible_matches():
+        reasons.append("STORAGE_ROOT_CHANGED")
     repository = ROOT.resolve(strict=True)
     if path_within(resolved, repository):
         reasons.append("STORAGE_ROOT_INSIDE_SOURCE_REPOSITORY")
@@ -511,9 +609,9 @@ def inspect_storage(
             and metadata.st_dev == home_device,
             "outside_source_repository": not path_within(resolved, repository),
             "acl_absent": acl == "ABSENT",
+            "visible_identity_matches": binding.visible_matches(),
             "device_identity_sha256": digest_bytes(str(metadata.st_dev).encode()),
         },
-        command=acl_evidence,
     )
 
 
@@ -548,35 +646,45 @@ def inspect_encryption(
 
 
 def inspect_no_sync(
-    root: Path,
-    sync_roots: Sequence[Path],
+    storage: BoundDirectory | None,
+    sync_roots: Sequence[BoundDirectory],
+    declared_sync_root_count: int,
+    unavailable_sync_roots: int,
+    sync_root_symlink: bool,
     inventory_complete: bool,
     observed_at: str,
 ) -> dict[str, object]:
-    try:
-        resolved = root.resolve(strict=True)
-    except OSError:
+    if storage is None:
         return check(
             "no_sync", "FAIL", observed_at, ["STORAGE_ROOT_UNAVAILABLE"]
         )
-    resolved_sync_roots: list[Path] = []
-    unavailable_sync_roots = 0
-    for item in sync_roots:
-        if path_has_symlink_component(item):
-            return check("no_sync", "FAIL", observed_at, ["SYNC_ROOT_SYMLINK"])
-        try:
-            resolved_sync_roots.append(item.resolve(strict=True))
-        except OSError:
-            unavailable_sync_roots += 1
+    resolved = storage.resolved
+    resolved_sync_roots = [item.resolved for item in sync_roots]
     overlap = any(
         path_within(resolved, item) or path_within(item, resolved)
         for item in resolved_sync_roots
     )
     facts: dict[str, bool | int | str] = {
-        "declared_sync_root_count": len(sync_roots),
+        "declared_sync_root_count": declared_sync_root_count,
         "resolved_sync_root_count": len(resolved_sync_roots),
         "storage_root_outside_declared_sync_roots": not overlap,
     }
+    if sync_root_symlink:
+        return check(
+            "no_sync", "FAIL", observed_at, ["SYNC_ROOT_SYMLINK"], facts=facts
+        )
+    if not storage.visible_matches():
+        return check(
+            "no_sync", "FAIL", observed_at, ["STORAGE_ROOT_CHANGED"], facts=facts
+        )
+    if any(not item.visible_matches() for item in sync_roots):
+        return check(
+            "no_sync",
+            "UNKNOWN",
+            observed_at,
+            ["DECLARED_SYNC_ROOT_CHANGED"],
+            facts=facts,
+        )
     if overlap:
         return check(
             "no_sync",
@@ -652,6 +760,7 @@ def discover(
     platform_release: Callable[[], str] = platform.release,
     platform_machine: Callable[[], str] = platform.machine,
     home_root: Callable[[], Path] = Path.home,
+    directory_acl_probe: FileAclProbe = native_file_acl_status,
 ) -> dict[str, object]:
     if not isinstance(named_host, str) or not named_host.strip():
         raise HostDiscoveryError("named_host is required")
@@ -660,68 +769,110 @@ def discover(
     candidate = source_identity(ROOT)
     observed_at = timestamp(clock())
     system = platform_system()
-    storage = inspect_storage(
-        storage_root,
-        observed_at,
-        home_root=home_root(),
-        runner=runner,
-        system=system,
-    )
-    encryption = inspect_encryption(observed_at, system=system, runner=runner)
-    no_sync = inspect_no_sync(
-        storage_root, sync_roots, sync_inventory_complete, observed_at
-    )
-    backup = inspect_backup(observed_at, system=system, runner=runner)
-    checks = [
-        storage,
-        encryption,
-        no_sync,
-        backup,
-        check(
-            "correction_export_deletion",
-            "UNKNOWN",
+    storage_binding, storage_error = bind_directory(storage_root)
+    sync_bindings: list[BoundDirectory] = []
+    sync_errors: list[str] = []
+    for root in sync_roots:
+        binding, binding_error = bind_directory(root)
+        if binding is None:
+            sync_errors.append(binding_error or "UNAVAILABLE")
+        else:
+            sync_bindings.append(binding)
+    try:
+        storage = inspect_storage(
+            storage_binding,
+            storage_error,
             observed_at,
-            ["PERSISTENT_ADAPTER_NOT_PRESENT"],
-        ),
-        check(
-            "bounded_retention",
-            "UNKNOWN",
+            home_root=home_root(),
+            system=system,
+            acl_probe=directory_acl_probe,
+        )
+        encryption = inspect_encryption(observed_at, system=system, runner=runner)
+        no_sync = inspect_no_sync(
+            storage_binding,
+            sync_bindings,
+            len(sync_roots),
+            len(sync_errors),
+            "SYMLINK" in sync_errors,
+            sync_inventory_complete,
             observed_at,
-            ["PERSISTENT_ADAPTER_NOT_PRESENT"],
-        ),
-        check(
-            "incident_response",
-            "UNKNOWN",
-            observed_at,
-            ["INCIDENT_DRILL_NOT_EXECUTED"],
-        ),
-    ]
-    if tuple(item["check_id"] for item in checks) != REQUIRED_CHECKS:
-        raise HostDiscoveryError("host discovery check catalog is incomplete")
-    report: dict[str, object] = {
-        "schema_version": "1.0",
-        "evidence_class": "host-privacy-discovery",
-        "candidate_commit": candidate,
-        "generated_at": observed_at,
-        "named_host": named_host.strip(),
-        "environment_id": environment_id.strip(),
-        "platform": {
-            "system": system,
-            "release": platform_release(),
-            "machine": platform_machine(),
-        },
-        "storage_root_sha256": path_identity(storage_root),
-        "sync_inventory_complete": sync_inventory_complete,
-        "checks": checks,
-        "privacy_gate_ready": False,
-        "persistent_adapter_authorized": False,
-        "status": "NOT_READY",
-        "claim_limit": CLAIM_LIMIT,
-    }
-    report["report_sha256"] = release_evidence.digest(report)
-    if errors := verify_report(report):
-        raise HostDiscoveryError("invalid host discovery report: " + "; ".join(errors))
-    return report
+        )
+        backup = inspect_backup(observed_at, system=system, runner=runner)
+        if storage_binding is not None and not storage_binding.visible_matches():
+            storage["status"] = "FAIL"
+            storage["reason_codes"] = list(
+                dict.fromkeys([*storage["reason_codes"], "STORAGE_ROOT_CHANGED"])
+            )
+            storage["facts"]["visible_identity_matches"] = False
+            no_sync["status"] = "FAIL"
+            no_sync["reason_codes"] = list(
+                dict.fromkeys([*no_sync["reason_codes"], "STORAGE_ROOT_CHANGED"])
+            )
+        if any(not binding.visible_matches() for binding in sync_bindings):
+            if no_sync["status"] != "FAIL":
+                no_sync["status"] = "UNKNOWN"
+            no_sync["reason_codes"] = list(
+                dict.fromkeys(
+                    [*no_sync["reason_codes"], "DECLARED_SYNC_ROOT_CHANGED"]
+                )
+            )
+        checks = [
+            storage,
+            encryption,
+            no_sync,
+            backup,
+            check(
+                "correction_export_deletion",
+                "UNKNOWN",
+                observed_at,
+                ["PERSISTENT_ADAPTER_NOT_PRESENT"],
+            ),
+            check(
+                "bounded_retention",
+                "UNKNOWN",
+                observed_at,
+                ["PERSISTENT_ADAPTER_NOT_PRESENT"],
+            ),
+            check(
+                "incident_response",
+                "UNKNOWN",
+                observed_at,
+                ["INCIDENT_DRILL_NOT_EXECUTED"],
+            ),
+        ]
+        if tuple(item["check_id"] for item in checks) != REQUIRED_CHECKS:
+            raise HostDiscoveryError("host discovery check catalog is incomplete")
+        report: dict[str, object] = {
+            "schema_version": "1.0",
+            "evidence_class": "host-privacy-discovery",
+            "candidate_commit": candidate,
+            "generated_at": observed_at,
+            "named_host": named_host.strip(),
+            "environment_id": environment_id.strip(),
+            "platform": {
+                "system": system,
+                "release": platform_release(),
+                "machine": platform_machine(),
+            },
+            "storage_root_sha256": path_identity(storage_root),
+            "sync_inventory_complete": sync_inventory_complete,
+            "checks": checks,
+            "privacy_gate_ready": False,
+            "persistent_adapter_authorized": False,
+            "status": "NOT_READY",
+            "claim_limit": CLAIM_LIMIT,
+        }
+        report["report_sha256"] = release_evidence.digest(report)
+        if errors := verify_report(report):
+            raise HostDiscoveryError(
+                "invalid host discovery report: " + "; ".join(errors)
+            )
+        return report
+    finally:
+        if storage_binding is not None:
+            storage_binding.close()
+        for binding in sync_bindings:
+            binding.close()
 
 
 def verify_report(report: object) -> list[str]:
@@ -768,7 +919,9 @@ def parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = parser().parse_args()
     try:
-        with reserve_private_output(args.output) as reserved_output:
+        with reserve_private_output(
+            args.output, declared_sync_roots=args.sync_root
+        ) as reserved_output:
             report = discover(
                 storage_root=args.storage_root,
                 named_host=args.named_host,
