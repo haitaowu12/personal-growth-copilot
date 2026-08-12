@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/trust-policy.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "candidate_commit", "frozen_at", "authorities", "policy_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "status": {"enum": ["UNCONFIGURED", "CONFIGURED"]},
+    "candidate_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+    "frozen_at": {"type": ["string", "null"], "format": "date-time"},
+    "authorities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key_id", "role", "public_key_path", "public_key_sha256", "allowed_gates"],
+        "properties": {
+          "key_id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{2,79}$"},
+          "role": {"enum": ["behavioral_evidence_authority", "reviewer_authority", "attempt_log_authority", "holdout_authority", "privacy_authority", "bilingual_review_authority", "pilot_authority", "independent_release_reviewer", "owner"]},
+          "public_key_path": {"type": "string", "minLength": 1, "maxLength": 500},
+          "public_key_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "allowed_gates": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["behavioral_qualification", "reviewer_attestation", "attempt_inventory", "holdout", "privacy_preflight", "bilingual_review", "pilot", "independent_release_review", "owner_promotion"]}}
+        }
+      }
+    },
+    "policy_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "UNCONFIGURED"}}},
+      "then": {
+        "properties": {
+          "candidate_commit": {"type": "null"},
+          "frozen_at": {"type": "null"},
+          "authorities": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "CONFIGURED"}}},
+      "then": {
+        "properties": {
+          "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "frozen_at": {"type": "string", "format": "date-time"},
+          "authorities": {"minItems": 9, "maxItems": 9}
+        }
+      }
+    }
+  ]
+}

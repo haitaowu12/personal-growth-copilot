@@ -133,6 +133,12 @@ permanent profile. Review-due material must be reconfirmed before use.
 7. consented privacy-safe pilot;
 8. independent release review and owner decision.
 
+External gate claims cross a cryptographic trust boundary defined in
+`docs/RELEASE_EVIDENCE.md`. Role-scoped Ed25519 receipts bind every gate artifact
+to the exact candidate; every role requires a distinct trusted key, and the
+configured policy must match an owner-distributed out-of-band hash. The default
+trust policy is unconfigured, so local code cannot self-promote.
+
 The current alpha completes layers 1–3 on synthetic controls and implements a
 development-only transport/review/campaign protocol needed by layer 4. The stdio
 adapter is a trusted executable with the ambient filesystem and network rights

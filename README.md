@@ -4,7 +4,7 @@ Standalone clean-room development repository for an explicit-invocation Agent
 Skill supporting context-rich personal growth, reflective dialogue, practical
 behavior-change experiments, and longitudinal learning.
 
-Current version: `0.4.0-alpha.2`
+Current version: `0.4.0-alpha.3`
 
 This repository does not contain or claim byte equivalence to the unavailable
 historical `0.2.0-rc.1` candidate. See
@@ -34,14 +34,14 @@ interaction decisions. Overlap is allowed; activation remains explicit.
 - an executable five-state safety control, sticky crisis memory freeze, and a
   current-resource resolver interface that fails without fabricating contacts;
 - a deterministic 309-run harness-conformance artifact with complete synthetic
-  transcripts and result hashes.
+  transcripts and result hashes;
 - an executable context control for host-attested inquiry consent and
   materiality, one-question flow, saturation, exact user-approved scale and
   score actions, and user-owned choice;
 - a development-only, secret-free provider protocol with byte-snapshotted
   execution, a frozen suite/baseline/run matrix, resumable capture, opaque
   externally-unverified reviewer packets, quality floors, hard-failure
-  preservation, and deterministic target-run replay.
+  preservation, and deterministic target-run replay;
 - a cumulative blinded review-request artifact covering all eleven governed
   rubric dimensions, exact transcript/structured observations, event candidates
   without gold polarity, and an exact review-request hash;
@@ -53,7 +53,11 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   completion and reviewer evidence blocked;
 - a development-only Codex CLI adapter with complete target/baseline profile
   hashes and event-stream rejection of tool activity; it still requires a
-  dedicated restricted host and credentials.
+  dedicated restricted host and credentials;
+- a role-scoped Ed25519 receipt verifier for behavioral, reviewer, attempt,
+  holdout, privacy, bilingual, pilot, independent-review, and owner-promotion
+  evidence, bound to an owner-distributed out-of-band policy hash. Its committed
+  trust policy is deliberately unconfigured and cannot promote the release.
 
 The copilot may feel conversationally similar to a thoughtful coach. It must
 not claim to be a therapist, simulate a clinical relationship, diagnose, mine
@@ -83,3 +87,4 @@ release review, and owner promotion each require their own exact evidence.
 Synthetic expected-event fixtures prove only that the harness works.
 The target adapter, review, and campaign tests prove only that the evidence path
 fails closed; no real target-model run or human qualification is claimed yet.
+See `docs/RELEASE_EVIDENCE.md` for the signed external-evidence contract.

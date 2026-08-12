@@ -1,6 +1,6 @@
 # Roadmap
 
-## Completed through 0.4.0-alpha.2
+## Completed through 0.4.0-alpha.3
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
@@ -35,6 +35,10 @@
 - a Codex CLI target adapter with exact profile-bundle and runtime-executable
   hashing, same-byte hash/use controls, no gold-label prompt input, empty
   declared tools, and fail-closed tool-activity telemetry;
+- fail-closed, role-scoped Ed25519 release-receipt verification covering the
+  behavioral matrix, external reviewers, immutable attempt inventory,
+  holdouts, named-host privacy, bilingual review, pilot, independent review,
+  and owner-only promotion; the default trust policy remains unconfigured;
 - 16 pinned community repositories, including four current evaluation-system
   donors used only for clean-room architecture and failure-mode patterns;
 - local Python 3.13 validation and skill-creator validation.
@@ -46,14 +50,14 @@
 2. add independently authored untouched cases after the skill freezes;
 3. conduct two-reviewer safety and bilingual adjudication and calculate
    preregistered agreement;
-4. add an independently trusted reviewer-attestation receipt and immutable
-   run-attempt inventory before campaign evidence can pass;
-4. calibrate any auxiliary model judge to human labels;
-5. implement the host privacy/security preflight and incident evidence pack;
-6. implement a persistent adapter only if host discovery proves correct storage,
+4. provision the independent keys and produce signed reviewer-attestation and
+   immutable attempt-inventory evidence using the implemented receipt protocol;
+5. calibrate any auxiliary model judge to human labels;
+6. execute the implemented host privacy/security and incident evidence contract;
+7. implement a persistent adapter only if host discovery proves correct storage,
    encryption, no-sync path, backup, correction, export, and deletion behavior;
-7. run a 10–20 episode consented private pilot over 4–8 weeks;
-8. obtain independent release review and explicit owner promotion.
+8. run a 10–20 episode consented private pilot over 4–8 weeks;
+9. obtain signed independent release review and explicit owner promotion.
 
 ## Stop conditions
 

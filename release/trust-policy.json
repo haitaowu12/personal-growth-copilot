@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "status": "UNCONFIGURED",
+  "candidate_commit": null,
+  "frozen_at": null,
+  "authorities": [],
+  "policy_sha256": "248b39af6fe41f4c81ff7dd44aa8d5d15ef09a27ebb137c6a21b1c5f075f179c"
+}
