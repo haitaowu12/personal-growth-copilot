@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/gate-artifact.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "gate", "candidate_commit", "status", "executed_at", "hard_failures", "assertions", "evidence_refs", "artifact_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "gate": {"$ref": "#/$defs/gate"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "status": {"enum": ["PASS", "FAIL", "INVALIDATED"]},
+    "executed_at": {"type": "string", "format": "date-time"},
+    "hard_failures": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 300}},
+    "assertions": {"type": "object", "minProperties": 1},
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    },
+    "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "gate": {"enum": ["behavioral_qualification", "reviewer_attestation", "attempt_inventory", "holdout", "privacy_preflight", "bilingual_review", "pilot", "independent_release_review", "owner_promotion"]}
+  }
+}

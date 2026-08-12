@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/evidence-index.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "candidate_commit", "trust_policy_sha256", "overall_status", "gates", "index_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "candidate_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+    "trust_policy_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "overall_status": {"enum": ["BLOCKED", "ELIGIBLE", "PROMOTED"]},
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["behavioral_qualification", "reviewer_attestation", "attempt_inventory", "holdout", "privacy_preflight", "bilingual_review", "pilot", "independent_release_review", "owner_promotion"],
+      "properties": {
+        "behavioral_qualification": {"$ref": "#/$defs/evidenceRef"},
+        "reviewer_attestation": {"$ref": "#/$defs/evidenceRef"},
+        "attempt_inventory": {"$ref": "#/$defs/evidenceRef"},
+        "holdout": {"$ref": "#/$defs/evidenceRef"},
+        "privacy_preflight": {"$ref": "#/$defs/evidenceRef"},
+        "bilingual_review": {"$ref": "#/$defs/evidenceRef"},
+        "pilot": {"$ref": "#/$defs/evidenceRef"},
+        "independent_release_review": {"$ref": "#/$defs/evidenceRef"},
+        "owner_promotion": {"$ref": "#/$defs/evidenceRef"}
+      }
+    },
+    "index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "artifact_path", "artifact_sha256", "receipt_path", "receipt_sha256"],
+      "properties": {
+        "status": {"enum": ["PENDING", "PASS", "FAIL", "INVALIDATED"]},
+        "artifact_path": {"type": ["string", "null"], "minLength": 1, "maxLength": 500},
+        "artifact_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "receipt_path": {"type": ["string", "null"], "minLength": 1, "maxLength": 500},
+        "receipt_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "release": "0.4.0-alpha.2",
+  "release": "0.4.0-alpha.3",
   "status": "blocked",
   "production_claim_allowed": false,
   "activation": "explicit-only-unregistered",
@@ -19,6 +19,7 @@
     "blinded_review_request_protocol": "pass-local-conformance",
     "campaign_aggregation_protocol": "pass-local-conformance",
     "codex_cli_target_adapter": "pass-local-conformance",
+    "signed_release_evidence_protocol": "pass-local-conformance-unconfigured",
     "deterministic_ci_definition": "pass-local",
     "hosted_exact_head_ci": "blocked-external-billing",
     "behavioral_comparison": "pending",
@@ -44,6 +45,7 @@
         "branchable multi-turn harness conformance",
         "byte-snapshotted stdio provider, frozen suite/baseline/run plan, and resumable externally-unverified review-packet import protocol",
         "cumulative blinded review-request binding, exact rubric parity, full-suite submitted-run manifest reconciliation, conditional campaign aggregation, and Codex CLI runtime/profile/tool-telemetry controls",
+        "unconfigured fail-closed, role-scoped signed release-evidence verification bound to an exact clean candidate checkout",
         "skill structure"
       ],
       "does_not_cover": [
@@ -52,6 +54,7 @@
         "protection from tool access before a Codex adapter turn is rejected",
         "cryptographic reviewer identity or independence",
         "immutable inventory of every target execution attempt",
+        "configured external trust authorities or signed release-gate receipts",
         "human bilingual review",
         "host privacy",
         "controlled pilot",

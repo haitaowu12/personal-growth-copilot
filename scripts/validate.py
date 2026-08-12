@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -10,6 +11,13 @@ import yaml
 from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def canonical_hash(value: object) -> str:
+    data = json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+    return hashlib.sha256(data).hexdigest()
 
 
 def validate() -> list[str]:
@@ -23,6 +31,12 @@ def validate() -> list[str]:
     ).read_text(encoding="utf-8")
     qualification = json.loads(
         (ROOT / "release/qualification.json").read_text(encoding="utf-8")
+    )
+    trust_policy = json.loads(
+        (ROOT / "release/trust-policy.json").read_text(encoding="utf-8")
+    )
+    evidence_index = json.loads(
+        (ROOT / "release/evidence-index.json").read_text(encoding="utf-8")
     )
     evidence = json.loads(
         (ROOT / "provenance/evidence-sources.json").read_text(encoding="utf-8")
@@ -43,6 +57,20 @@ def validate() -> list[str]:
         errors.append("qualification must remain blocked")
     if qualification.get("production_claim_allowed") is not False:
         errors.append("production claim must be false")
+    if trust_policy.get("status") != "UNCONFIGURED" or trust_policy.get("authorities"):
+        errors.append("committed release trust policy must remain unconfigured")
+    if trust_policy.get("candidate_commit") is not None or trust_policy.get("frozen_at") is not None:
+        errors.append("committed release trust policy may not bind a candidate or freeze time")
+    policy_body = {key: value for key, value in trust_policy.items() if key != "policy_sha256"}
+    if trust_policy.get("policy_sha256") != canonical_hash(policy_body):
+        errors.append("release trust policy self-hash mismatch")
+    if evidence_index.get("overall_status") != "BLOCKED":
+        errors.append("committed release evidence index must remain blocked")
+    index_body = {key: value for key, value in evidence_index.items() if key != "index_sha256"}
+    if evidence_index.get("index_sha256") != canonical_hash(index_body):
+        errors.append("release evidence index self-hash mismatch")
+    if evidence_index.get("trust_policy_sha256") != trust_policy.get("policy_sha256"):
+        errors.append("release evidence index does not bind the committed trust policy")
     if len(evidence.get("sources", [])) < 17:
         errors.append("at least 17 evidence sources required")
     evidence_ids: set[str] = set()
@@ -156,6 +184,14 @@ def validate() -> list[str]:
         ROOT / "providers/codex-output.schema.json",
         ROOT / "providers/README.md",
         ROOT / "docs/TARGET_EXECUTION.md",
+        ROOT / "docs/RELEASE_EVIDENCE.md",
+        ROOT / "release/gate-artifact.schema.json",
+        ROOT / "release/signed-receipt.schema.json",
+        ROOT / "release/trust-policy.schema.json",
+        ROOT / "release/evidence-index.schema.json",
+        ROOT / "release/trust-policy.json",
+        ROOT / "release/evidence-index.json",
+        ROOT / "scripts/release_evidence.py",
     }
     for path in sorted(required_runtime):
         if not path.exists():
@@ -172,6 +208,10 @@ def validate() -> list[str]:
         ROOT / "evals/results/TARGET_RUN_SCHEMA.json",
         ROOT / "evals/results/CAMPAIGN_RESULT_SCHEMA.json",
         ROOT / "providers/codex-output.schema.json",
+        ROOT / "release/gate-artifact.schema.json",
+        ROOT / "release/signed-receipt.schema.json",
+        ROOT / "release/trust-policy.schema.json",
+        ROOT / "release/evidence-index.schema.json",
     ):
         try:
             Draft202012Validator.check_schema(
