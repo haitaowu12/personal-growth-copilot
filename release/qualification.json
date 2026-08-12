@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "release": "0.4.0-alpha.4",
+  "release": "0.4.0-alpha.6",
   "status": "blocked",
   "production_claim_allowed": false,
   "activation": "explicit-only-unregistered",
@@ -21,6 +21,7 @@
     "codex_cli_target_adapter": "pass-local-conformance",
     "signed_release_evidence_protocol": "pass-local-conformance-unconfigured",
     "externally_witnessed_attempt_inventory_protocol": "pass-local-conformance-unconfigured",
+    "external_gate_source_replay_protocol": "pass-local-conformance-unconfigured",
     "deterministic_ci_definition": "pass-local",
     "hosted_exact_head_ci": "blocked-external-runner-start-no-steps",
     "behavioral_comparison": "pending",
@@ -48,6 +49,7 @@
         "cumulative blinded review-request binding, exact rubric parity, full-suite submitted-run manifest reconciliation, conditional campaign aggregation, and Codex CLI runtime/profile/tool-telemetry controls",
         "unconfigured fail-closed, role-scoped signed release-evidence construction and verification bound to an exact clean candidate checkout and out-of-band policy/current-index anchors",
         "unconfigured owner-epoch-bound externally witnessed provider-attempt capture, post-freeze result reconciliation, retry/omission detection, and out-of-band witness-head anchoring",
+        "unconfigured source-manifest replay for reviewer, holdout, privacy, bilingual, and pilot gate evidence",
         "skill structure"
       ],
       "does_not_cover": [

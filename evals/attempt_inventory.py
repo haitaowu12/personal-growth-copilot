@@ -239,7 +239,7 @@ def load_attempt_authority(
     policy_path: Path,
     expected_policy_sha256: str,
     candidate_commit: str,
-) -> tuple[dict[str, Any], bytes, datetime, str]:
+) -> tuple[dict[str, Any], bytes, datetime, str, str]:
     policy_root = policy_path.resolve().parent
     policy = _json_object(_read_once(policy_path), "attempt trust policy")
     if errors := _schema_errors(policy, TRUST_POLICY_SCHEMA):
@@ -265,7 +265,7 @@ def load_attempt_authority(
     if hashlib.sha256(key_bytes).hexdigest() != authority["public_key_sha256"]:
         raise AttemptInventoryError("attempt witness public-key hash mismatch")
     key_bytes, _ = _canonical_public_key(key_bytes)
-    return authority, key_bytes, frozen_at, campaign_id
+    return authority, key_bytes, frozen_at, campaign_id, policy["target_config_sha256"]
 
 
 def build_event(
@@ -344,7 +344,13 @@ def append_witnessed_event(
     index_output: Path,
     clock: Callable[[], datetime],
 ) -> dict[str, Any]:
-    authority, public_key, policy_frozen_at, policy_campaign_id = load_attempt_authority(
+    (
+        authority,
+        public_key,
+        policy_frozen_at,
+        policy_campaign_id,
+        policy_config_sha256,
+    ) = load_attempt_authority(
         policy_path=policy_path,
         expected_policy_sha256=expected_policy_sha256,
         candidate_commit=config["source_commit"],
@@ -352,6 +358,10 @@ def append_witnessed_event(
     if campaign_id != policy_campaign_id:
         raise AttemptInventoryError(
             "campaign id differs from the owner-anchored attempt epoch"
+        )
+    if target_session._digest(config) != policy_config_sha256:
+        raise AttemptInventoryError(
+            "target config differs from the owner-frozen release policy"
         )
     if witness_adapter.is_symlink() or not witness_adapter.is_file() or not os.access(
         witness_adapter, os.X_OK
@@ -472,7 +482,13 @@ def verify_inventory(
     errors: list[str] = []
     hard_failures: set[str] = set()
     try:
-        authority, public_key, policy_frozen_at, policy_campaign_id = load_attempt_authority(
+        (
+            authority,
+            public_key,
+            policy_frozen_at,
+            policy_campaign_id,
+            policy_config_sha256,
+        ) = load_attempt_authority(
             policy_path=policy_path,
             expected_policy_sha256=expected_policy_sha256,
             candidate_commit=config["source_commit"],
@@ -531,6 +547,8 @@ def verify_inventory(
         errors.append("attempt inventory index self-hash mismatch")
     if index["campaign_id"] != policy_campaign_id:
         errors.append("attempt inventory differs from the owner-anchored attempt epoch")
+    if target_session._digest(config) != policy_config_sha256:
+        errors.append("target config differs from the owner-frozen release policy")
     if (
         index["candidate_commit"] != config["source_commit"]
         or index["config_sha256"] != target_session._digest(config)

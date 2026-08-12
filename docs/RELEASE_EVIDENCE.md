@@ -12,7 +12,11 @@ After the candidate commit is frozen, the owner prepares a trust policy in a
 restricted evidence directory. Each authority has a public Ed25519 key, a
 single role and exactly one gate that role may attest. The policy records a
 timezone-aware `frozen_at`, is bound to the candidate commit and one unique
-`attempt_campaign_id`, and is self-hashed before any gate execution. That
+`attempt_campaign_id`, and is self-hashed before any gate execution. It also
+freezes the exact target-config hash, the independently prepared holdout-seal
+hash, the named privacy-host identity hash, and the preregistered pilot-protocol
+hash. A later config, holdout set, host, or pilot plan cannot be substituted
+under the same release epoch. That
 campaign epoch is the only attempt chain accepted for the candidate; changing
 the id cannot reset a failure or retry history. Private keys stay with the
 independent authority. Configure exactly one authority and a distinct public
@@ -21,6 +25,29 @@ resulting `policy_sha256` and current `index_sha256` to the verifier operator
 over an independent, current-state channel. The packet is not trusted unless it
 matches both anchors. Replacing or invalidating evidence requires a new index
 hash, and the current-state channel must replace the prior index anchor.
+
+Build the configured policy from its actual preregistered sources rather than
+typing their hashes into JSON. `holdout-seal.json` must already be prepared by
+the independent holdout author before this freeze and conform to
+`release/holdout-seal.schema.json`; its self-hash is what the policy binds.
+
+```text
+python scripts/release_packet.py build-trust-policy \
+  --packet-root /private/release-packet \
+  --config /private/release-packet/target-config.json \
+  --holdout-seal /private/release-packet/holdout/holdout-seal.json \
+  --privacy-host-identity /private/release-packet/privacy/host-identity.json \
+  --pilot-protocol /private/release-packet/pilot/protocol.json \
+  --authorities /private/release-packet/authority-roster.json \
+  --attempt-campaign-id campaign-2026-08-12-001 \
+  --output /private/release-packet/trust-policy.json
+```
+
+The authority roster contains only `authorities`; each entry supplies a unique
+`key_id`, one release role, and a packet-relative Ed25519 public-key path. The
+builder reads, canonicalizes, and hashes the exact config, seal, host identity,
+pilot protocol, and nine distinct public keys before emitting a create-only
+policy. The owner distributes that exact policy hash out of band.
 
 The committed templates do not authorize anyone. Adding hash-shaped text or
 setting a status field cannot pass a gate. `scripts/release_evidence.py`
@@ -70,13 +97,80 @@ retain the schema-valid JSON type used in the artifact. Producers in another
 language must reproduce those exact bytes before hashing or signing.
 
 Use `scripts/release_packet.py` to construct create-only canonical artifacts,
-receipt payloads, signed-receipt envelopes, and evidence-index versions. It has
-specialized builders for the deterministic behavioral and attempt gates; these
-replay their source evidence rather than accepting copied PASS booleans. Other
-external gates accept an authority-authored assertions file but still reject a
-passing artifact that does not meet the executable minimum above. Independent
-review and owner artifacts derive their prerequisite references from an
-already verified, out-of-band-anchored prior index.
+receipt payloads, signed-receipt envelopes, and evidence-index versions. The
+behavioral and attempt builders replay their exact campaign and witnessed
+inventory sources. A passing reviewer, holdout, privacy, bilingual, or pilot
+gate must use `build-source-artifact`; its derived assertions, source-manifest
+path, source hash, and every bounded retained evidence file are replayed again
+by the final release verifier. The generic external builder cannot emit PASS
+for those five gates. It remains available for their signed FAIL/INVALIDATED
+records and for independent-review and owner decisions. Independent review and
+owner artifacts derive their prerequisite references from an already verified,
+out-of-band-anchored prior index.
+
+## Replayable external source packs
+
+All source packs conform to `release/external-gate-source.schema.json`, live in
+the restricted packet directory, bind the exact candidate commit, and complete
+no earlier than the owner-frozen trust policy. Preregistered inputs—the holdout
+seal, reviewer calibration, named-host identity, and pilot protocol—may and in
+the applicable cases must predate the policy; their exact hashes are frozen by
+it before qualification execution. The holdout seal, privacy-host identity,
+and pilot protocol each bind a distinct Ed25519 witness public key. Keep every
+corresponding private key outside the packet and candidate-author access.
+Referenced paths are relative,
+bounded regular files; absolute paths, symlinks, traversal, missing files, and
+hash changes fail closed. Private identity, holdout, host, and pilot evidence
+belongs in this restricted directory, never in the repository.
+
+- Reviewer packs bind the exact target config and result manifest, reconcile
+  every reviewer actually used, reject two pseudonyms for one stable subject,
+  require calibration before the first submitted qualification label, and
+  bind a structured, self-hashed identity attestation plus independence and
+  calibration evidence to the frozen roster and calibration set.
+- Holdout packs derive the holdout fraction from the public and sealed case
+  counts, require exact result coverage of the sealed case IDs, preserve access
+  audit, encrypted case, schema, author, raw transcript, result, and chained
+  attempt-event files, verify the preregistered holdout-witness signature over
+  every attempt head and count, and fail on candidate-author access, an omitted
+  or failed attempt, transcript tampering, or any hard-gate code.
+- Privacy packs require the named-host identity plus the fixed storage-map,
+  encryption, no-sync, backup/restore, correction/export/deletion, bounded-
+  retention, and incident-response evidence files. The exact catalog and full
+  findings ledger are hash/count bound by the preregistered host-audit key;
+  check results and open or accepted high/critical findings determine the
+  assertions. Extra controls cannot hide a failure.
+- Bilingual packs replay the reviewer pack and its exact target results,
+  enumerate every Chinese or mixed-language turn review, require verified
+  fluent reviewers, reproduce both primary score vectors and translation
+  failure codes, and recalculate per-system weighted kappa. Missing runs,
+  altered labels, degenerate agreement, or kappa below `0.70` fail.
+- Pilot packs bind an owner-frozen protocol and exact 10–20 episode schedule,
+  preserve consent and episode records, verify a preregistered witness signature
+  over the complete episode/incident ledger, derive elapsed days from the first
+  scheduled episode through the last closed episode, reconcile every scheduled
+  episode, and derive withdrawal, deletion, privacy, safety, dependence, and
+  fabricated-persistence outcomes from that ledger. Out-of-window actions and
+  high/critical uncategorized incidents fail closed.
+
+After the authority prepares a complete source pack, build its artifact from
+that source rather than from a hand-written assertion file:
+
+```text
+python scripts/release_packet.py build-source-artifact \
+  --gate privacy_preflight \
+  --source /private/release-packet/privacy/source.json \
+  --packet-root /private/release-packet \
+  --policy /private/release-packet/trust-policy.json \
+  --expected-policy-sha256 OWNER_DISTRIBUTED_POLICY_HASH \
+  --output /private/release-packet/privacy-preflight.artifact.json
+```
+
+Use the same command for `reviewer_attestation`, `holdout`,
+`bilingual_review`, and `pilot`. The relevant external authority must still
+inspect the semantic quality of the retained evidence and sign the resulting
+artifact; source replay does not turn machine-readable files into proof of
+real-world identity, independence, host control, or consent without that role.
 
 ```text
 python scripts/release_packet.py build-attempt-artifact \

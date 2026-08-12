@@ -1,6 +1,6 @@
 # Roadmap
 
-## Completed through 0.4.0-alpha.3
+## Completed through 0.4.0-alpha.6
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
@@ -42,6 +42,10 @@
 - 16 pinned community repositories, including four current evaluation-system
   donors used only for clean-room architecture and failure-mode patterns;
 - local Python 3.13 validation and skill-creator validation.
+- fail-closed source manifests for reviewer, holdout, named-host privacy,
+  bilingual, and pilot release gates, including bounded evidence-file replay,
+  exact reviewer/result reconciliation, derived holdout/pilot completeness,
+  and rejection of signed assertion-only promotion packets.
 
 ## Next evidence slice
 

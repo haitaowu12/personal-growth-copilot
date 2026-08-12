@@ -18,8 +18,30 @@
       "uniqueItems": true,
       "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
     },
+    "source_manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 500},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
     "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "gate": {"enum": ["reviewer_attestation", "holdout", "privacy_preflight", "bilingual_review", "pilot"]},
+          "status": {"const": "PASS"}
+        },
+        "required": ["gate", "status"]
+      },
+      "then": {"required": ["source_manifest"]},
+      "else": {"not": {"required": ["source_manifest"]}}
+    }
+  ],
   "$defs": {
     "gate": {"enum": ["behavioral_qualification", "reviewer_attestation", "attempt_inventory", "holdout", "privacy_preflight", "bilingual_review", "pilot", "independent_release_review", "owner_promotion"]}
   }
