@@ -44,9 +44,10 @@ python scripts/release_packet.py build-trust-policy \
 ```
 
 The resulting policy also binds the exact self-hashed qualification plan, so
-the candidate, campaign epoch, named host, environment, preregistration input
-paths, and fixed policy destination cannot be changed after freeze. The target
-provider host and privacy-host identity must match that plan. The authority roster contains only
+the candidate, campaign epoch, named host, environment, bound storage-root
+filesystem identity, preregistration input paths, and fixed policy destination cannot be
+changed after freeze. The target provider host, host discovery, and privacy-host
+identity must match that plan. The authority roster contains only
 `authorities`; each entry supplies a unique
 `key_id`, one release role, and a packet-relative Ed25519 public-key path. The
 builder reads, canonicalizes, and hashes the exact config, seal, host identity,

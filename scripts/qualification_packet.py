@@ -202,36 +202,46 @@ def initialize_packet(
         raise release_evidence.ReleaseEvidenceError(
             "qualification packet initialization is create-only"
         )
-    initialized_at = release_packet.timestamp(clock())
-    plan = {
-        "schema_version": "1.0",
-        "evidence_class": "qualification-packet-plan",
-        "status": "DRAFT",
-        "candidate_commit": candidate,
-        "initialized_at": initialized_at,
-        "attempt_campaign_id": attempt_campaign_id,
-        "named_host": named_host.strip(),
-        "environment_id": environment_id.strip(),
-        "paths": dict(PLAN_PATHS),
-    }
-    plan["plan_sha256"] = release_evidence.digest(plan)
-    if errors := release_evidence.schema_errors(plan, "qualification_plan"):
-        raise release_evidence.ReleaseEvidenceError(
-            "invalid qualification packet plan: " + "; ".join(errors)
-        )
     os.mkdir(root, 0o700)
-    os.chmod(root, 0o700)
-    for name in PACKET_DIRECTORIES:
-        path = root / name
-        os.mkdir(path, 0o700)
-        os.chmod(path, 0o700)
-    release_packet.write_private_new(root / PLAN_NAME, plan)
+    created_directories: list[Path] = []
+    try:
+        os.chmod(root, 0o700)
+        initialized_at = release_packet.timestamp(clock())
+        plan = {
+            "schema_version": "1.0",
+            "evidence_class": "qualification-packet-plan",
+            "status": "DRAFT",
+            "candidate_commit": candidate,
+            "initialized_at": initialized_at,
+            "attempt_campaign_id": attempt_campaign_id,
+            "named_host": named_host.strip(),
+            "environment_id": environment_id.strip(),
+            "storage_root_sha256": host_privacy_discovery.path_identity(root),
+            "paths": dict(PLAN_PATHS),
+        }
+        plan["plan_sha256"] = release_evidence.digest(plan)
+        if errors := release_evidence.schema_errors(plan, "qualification_plan"):
+            raise release_evidence.ReleaseEvidenceError(
+                "invalid qualification packet plan: " + "; ".join(errors)
+            )
+        for name in PACKET_DIRECTORIES:
+            path = root / name
+            os.mkdir(path, 0o700)
+            os.chmod(path, 0o700)
+            created_directories.append(path)
+        release_packet.write_private_new(root / PLAN_NAME, plan)
+    except Exception:
+        for path in reversed(created_directories):
+            path.rmdir()
+        root.rmdir()
+        raise
     return {
         "status": "initialized",
         "candidate_commit": candidate,
         "attempt_campaign_id": attempt_campaign_id,
         "named_host": plan["named_host"],
         "environment_id": plan["environment_id"],
+        "storage_root_sha256": plan["storage_root_sha256"],
         "plan_sha256": plan["plan_sha256"],
         "ready_to_freeze": False,
         "missing_inputs": list(INPUT_LABELS),
@@ -432,6 +442,10 @@ def build_external_intake(
         if discovery["environment_id"] != plan["environment_id"]:
             raise release_evidence.ReleaseEvidenceError(
                 "host privacy discovery differs from the qualification environment"
+            )
+        if discovery["storage_root_sha256"] != plan["storage_root_sha256"]:
+            raise release_evidence.ReleaseEvidenceError(
+                "host privacy discovery differs from the qualification storage root"
             )
         discovery_time = release_evidence.parse_time(discovery["generated_at"])
         if discovery_time < release_evidence.parse_time(plan["initialized_at"]):

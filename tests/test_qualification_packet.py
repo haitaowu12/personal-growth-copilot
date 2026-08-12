@@ -6,6 +6,7 @@ import stat
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -59,6 +60,10 @@ class QualificationPacketTests(unittest.TestCase):
             plan = json.loads(plan_bytes)
             self.assertEqual(plan["named_host"], "restricted-local-host")
             self.assertEqual(plan["environment_id"], "pgc-private-evaluation-001")
+            self.assertEqual(
+                plan["storage_root_sha256"],
+                qualification_packet.host_privacy_discovery.path_identity(root),
+            )
             self.assertEqual(plan_bytes, release_evidence.canonical_bytes(plan))
             self.assertEqual(release_evidence.schema_errors(plan, "qualification_plan"), [])
             self.assertEqual(
@@ -357,6 +362,62 @@ class QualificationPacketTests(unittest.TestCase):
                     source_identity=lambda _: CANDIDATE,
                     clock=lambda: FIXED_TIME,
                 )
+
+    def test_storage_root_identity_is_reconciled_across_intake_and_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name)
+            root = self.initialize(parent)
+            other_storage = parent / "other-storage"
+            other_storage.mkdir(mode=0o700)
+            os.chmod(other_storage, 0o700)
+            discovery_record = qualification_packet.host_privacy_discovery.discover(
+                storage_root=other_storage,
+                named_host="restricted-local-host",
+                environment_id="pgc-private-evaluation-001",
+                sync_roots=[],
+                sync_inventory_complete=False,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                runner=lambda *_: self.fail("Linux discovery must not run host commands"),
+                platform_system=lambda: "Linux",
+                platform_release=lambda: "test",
+                platform_machine=lambda: "test",
+                home_root=lambda: parent,
+                directory_acl_probe=lambda *_: "ABSENT",
+            )
+            discovery = root / "privacy" / "host-discovery.json"
+            discovery.write_bytes(release_evidence.canonical_bytes(discovery_record))
+            os.chmod(discovery, 0o600)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError,
+                "differs from the qualification storage root",
+            ):
+                qualification_packet.build_external_intake(
+                    root,
+                    source_identity=lambda _: CANDIDATE,
+                    clock=lambda: FIXED_TIME,
+                )
+
+            identity = {
+                "named_host": "restricted-local-host",
+                "environment_id": "pgc-private-evaluation-001",
+                "storage_root_sha256": "f" * 64,
+            }
+            with mock.patch.object(
+                release_packet,
+                "load_privacy_host_preregistration",
+                return_value=(b"{}", identity, "1" * 64),
+            ):
+                with self.assertRaisesRegex(
+                    release_evidence.ReleaseEvidenceError,
+                    "differs from the qualification storage root",
+                ):
+                    release_packet.validate_qualification_preregistration_input(
+                        input_id="privacy_host_identity",
+                        packet_root=root.resolve(),
+                        path=root / "privacy" / "host-identity.json",
+                        candidate=CANDIDATE,
+                    )
 
     def test_preflight_rejects_candidate_drift_private_keys_and_existing_policy(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
