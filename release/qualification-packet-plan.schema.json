@@ -3,7 +3,7 @@
   "$id": "https://personal-growth-copilot.local/release/qualification-packet-plan.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "evidence_class", "status", "candidate_commit", "initialized_at", "attempt_campaign_id", "named_host", "environment_id", "paths", "plan_sha256"],
+  "required": ["schema_version", "evidence_class", "status", "candidate_commit", "initialized_at", "attempt_campaign_id", "named_host", "environment_id", "storage_root_sha256", "paths", "plan_sha256"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "evidence_class": {"const": "qualification-packet-plan"},
@@ -13,6 +13,7 @@
     "attempt_campaign_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{15,99}$"},
     "named_host": {"type": "string", "minLength": 1, "maxLength": 200},
     "environment_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "storage_root_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "paths": {
       "type": "object",
       "additionalProperties": false,

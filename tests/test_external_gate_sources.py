@@ -888,6 +888,7 @@ class ExternalGateSourceTests(unittest.TestCase):
                 "attempt_campaign_id": "campaign-release-0001",
                 "named_host": "restricted-evaluation-host-1",
                 "environment_id": "pgc-private-evaluation-001",
+                "storage_root_sha256": "0" * 64,
                 "paths": {
                     "target_config": config_path.name,
                     "holdout_seal": seal_path.name,

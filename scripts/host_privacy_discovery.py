@@ -376,8 +376,15 @@ def path_within(path: Path, parent: Path) -> bool:
 
 
 def path_identity(path: Path) -> str:
-    """Hash a normalized path without requiring the target to exist."""
-    return digest_bytes(str(path.expanduser().absolute()).encode("utf-8"))
+    """Hash the existing object identity, or a normalized unavailable path."""
+    expanded = path.expanduser().absolute()
+    try:
+        metadata = os.stat(expanded, follow_symlinks=False)
+    except OSError:
+        payload = f"unavailable-path:{os.path.realpath(expanded)}"
+    else:
+        payload = f"filesystem-object:{metadata.st_dev}:{metadata.st_ino}"
+    return digest_bytes(payload.encode("utf-8"))
 
 
 def path_has_symlink_component(path: Path) -> bool:

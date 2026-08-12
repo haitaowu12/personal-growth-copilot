@@ -679,6 +679,10 @@ def validate_qualification_preregistration_input(
             raise release_evidence.ReleaseEvidenceError(
                 "privacy host identity differs from the qualification environment"
             )
+        if identity["storage_root_sha256"] != plan["storage_root_sha256"]:
+            raise release_evidence.ReleaseEvidenceError(
+                "privacy host identity differs from the qualification storage root"
+            )
     elif input_id == "pilot_protocol":
         load_pilot_preregistration(path, candidate)
     elif input_id == "authority_roster":
@@ -1023,6 +1027,10 @@ def prepare_trust_policy(
     if host_identity_record["environment_id"] != plan["environment_id"]:
         raise release_evidence.ReleaseEvidenceError(
             "privacy host identity differs from the qualification environment"
+        )
+    if host_identity_record["storage_root_sha256"] != plan["storage_root_sha256"]:
+        raise release_evidence.ReleaseEvidenceError(
+            "privacy host identity differs from the qualification storage root"
         )
     witness_key_identities = [
         holdout_witness_identity,

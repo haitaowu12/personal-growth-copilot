@@ -633,6 +633,10 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             alias = parent / "syncroot"
             if not alias.exists() or not os.path.samefile(alias, sync_root):
                 self.skipTest("filesystem is case sensitive")
+            self.assertEqual(
+                host_privacy_discovery.path_identity(alias),
+                host_privacy_discovery.path_identity(sync_root),
+            )
             storage = self.root(sync_root, "Storage")
             storage_alias = alias / "storage"
             report = self.discover(
