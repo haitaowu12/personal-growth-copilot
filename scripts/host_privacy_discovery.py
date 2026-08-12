@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
+import errno
 import hashlib
 import json
 import os
@@ -54,6 +56,31 @@ class CommandResult:
 
 
 CommandRunner = Callable[[str, Sequence[str]], CommandResult]
+FileAclProbe = Callable[[int, str], str]
+
+
+def native_file_acl_status(descriptor: int, system: str) -> str:
+    if system != "Darwin":
+        return "UNKNOWN"
+    try:
+        libc = ctypes.CDLL(None, use_errno=True)
+        get_acl = libc.acl_get_fd_np
+        get_acl.argtypes = [ctypes.c_int, ctypes.c_int]
+        get_acl.restype = ctypes.c_void_p
+        free_acl = libc.acl_free
+        free_acl.argtypes = [ctypes.c_void_p]
+        free_acl.restype = ctypes.c_int
+        ctypes.set_errno(0)
+        acl = get_acl(descriptor, 0x00000100)
+        acl_errno = ctypes.get_errno()
+    except (AttributeError, OSError, TypeError, ValueError):
+        return "UNKNOWN"
+    if not acl:
+        return "ABSENT" if acl_errno == errno.ENOENT else "UNKNOWN"
+    try:
+        return "PRESENT"
+    finally:
+        free_acl(acl)
 
 
 @dataclass
@@ -65,6 +92,8 @@ class ReservedPrivateOutput:
     parent_inode: int
     file_device: int
     file_inode: int
+    system: str
+    file_acl_probe: FileAclProbe
     committed: bool = False
 
     def require_visible_parent(self) -> None:
@@ -109,6 +138,11 @@ class ReservedPrivateOutput:
             raise HostDiscoveryError("reserved output mode is not 0600")
         if require_empty and metadata.st_size != 0:
             raise HostDiscoveryError("reserved output changed before commit")
+        acl = self.file_acl_probe(self.file_fd, self.system)
+        if acl == "PRESENT":
+            raise HostDiscoveryError("reserved output may not have an access control list")
+        if acl != "ABSENT":
+            raise HostDiscoveryError("reserved output access control list is unobservable")
 
     def write(self, value: object) -> None:
         if self.committed:
@@ -147,7 +181,13 @@ class ReservedPrivateOutput:
             if not block:
                 break
             captured.extend(block)
-        if bytes(captured) != data:
+        trailing = os.read(self.file_fd, 1)
+        final_metadata = os.fstat(self.file_fd)
+        if (
+            bytes(captured) != data
+            or trailing
+            or final_metadata.st_size != len(data)
+        ):
             raise HostDiscoveryError("reserved output differs from canonical report")
         self.secure_bound_file(require_empty=False)
         os.fsync(self.file_fd)
@@ -293,6 +333,7 @@ def reserve_private_output(
     runner: CommandRunner = default_runner,
     system: str | None = None,
     home_root: Path | None = None,
+    file_acl_probe: FileAclProbe = native_file_acl_status,
 ) -> ReservedPrivateOutput:
     if output.exists() or output.is_symlink():
         raise HostDiscoveryError("output must not already exist")
@@ -318,11 +359,12 @@ def reserve_private_output(
         raise HostDiscoveryError("output parent must be on the home filesystem")
     if path_within(resolved_parent, ROOT.resolve(strict=True)):
         raise HostDiscoveryError("output must remain outside the source repository")
+    effective_system = system or platform.system()
     acl, _ = acl_status(
         resolved_parent,
         runner=runner,
         command_id="output_parent_acl",
-        system=system or platform.system(),
+        system=effective_system,
     )
     if acl == "PRESENT":
         raise HostDiscoveryError("output parent may not have an access control list")
@@ -335,6 +377,7 @@ def reserve_private_output(
         open_directory_flags |= os.O_NOFOLLOW
     parent_fd = os.open(resolved_parent, open_directory_flags)
     file_fd = -1
+    file_metadata: os.stat_result | None = None
     try:
         bound_parent = os.fstat(parent_fd)
         if (bound_parent.st_dev, bound_parent.st_ino) != (
@@ -354,13 +397,31 @@ def reserve_private_output(
             or file_metadata.st_size != 0
         ):
             raise HostDiscoveryError("reserved output is not a private empty file")
+        file_acl = file_acl_probe(file_fd, effective_system)
+        if file_acl == "PRESENT":
+            raise HostDiscoveryError("reserved output may not have an access control list")
+        if file_acl != "ABSENT":
+            raise HostDiscoveryError("reserved output access control list is unobservable")
     except Exception:
         if file_fd >= 0:
             os.close(file_fd)
-            try:
-                os.unlink(output.name, dir_fd=parent_fd)
-            except FileNotFoundError:
-                pass
+            if file_metadata is not None:
+                try:
+                    visible_file = os.stat(
+                        output.name,
+                        dir_fd=parent_fd,
+                        follow_symlinks=False,
+                    )
+                except OSError:
+                    visible_file = None
+                if visible_file is not None and (
+                    visible_file.st_dev,
+                    visible_file.st_ino,
+                ) == (file_metadata.st_dev, file_metadata.st_ino):
+                    try:
+                        os.unlink(output.name, dir_fd=parent_fd)
+                    except FileNotFoundError:
+                        pass
         os.close(parent_fd)
         raise
     return ReservedPrivateOutput(
@@ -371,6 +432,8 @@ def reserve_private_output(
         parent_inode=metadata.st_ino,
         file_device=file_metadata.st_dev,
         file_inode=file_metadata.st_ino,
+        system=effective_system,
+        file_acl_probe=file_acl_probe,
     )
 
 
@@ -380,12 +443,14 @@ def validate_private_output(
     runner: CommandRunner = default_runner,
     system: str | None = None,
     home_root: Path | None = None,
+    file_acl_probe: FileAclProbe = native_file_acl_status,
 ) -> None:
     with reserve_private_output(
         output,
         runner=runner,
         system=system,
         home_root=home_root,
+        file_acl_probe=file_acl_probe,
     ):
         pass
 

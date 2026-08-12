@@ -328,6 +328,56 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 "NOT_READY",
             )
 
+    def test_reserved_output_rejects_file_acl_presence_or_unobservability(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            for final_status in ("PRESENT", "UNKNOWN"):
+                output_parent = self.root(parent, f"output-{final_status.lower()}")
+                output = output_parent / "report.json"
+                observations = iter(("ABSENT", final_status))
+
+                def probe(_: int, __: str) -> str:
+                    return next(observations)
+
+                with host_privacy_discovery.reserve_private_output(
+                    output,
+                    runner=runner(),
+                    system="Darwin",
+                    home_root=parent,
+                    file_acl_probe=probe,
+                ) as reserved:
+                    with self.assertRaisesRegex(
+                        host_privacy_discovery.HostDiscoveryError,
+                        "access control list",
+                    ):
+                        reserved.write(self.discover(storage))
+                self.assertFalse(output.exists())
+
+    def test_reservation_failure_does_not_delete_replacement(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            output_parent = self.root(parent, "output")
+            output = output_parent / "report.json"
+
+            def replacing_probe(_: int, __: str) -> str:
+                output.unlink()
+                output.write_text("replacement", encoding="utf-8")
+                return "UNKNOWN"
+
+            with self.assertRaisesRegex(
+                host_privacy_discovery.HostDiscoveryError,
+                "access control list is unobservable",
+            ):
+                host_privacy_discovery.reserve_private_output(
+                    output,
+                    runner=runner(),
+                    system="Darwin",
+                    home_root=parent,
+                    file_acl_probe=replacing_probe,
+                )
+            self.assertEqual(output.read_text(encoding="utf-8"), "replacement")
+
     def test_reserved_output_rejects_precommit_content(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             parent = Path(directory_name).resolve()
@@ -396,6 +446,46 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
 
             try:
                 host_privacy_discovery.os.read = mutating_read
+                with self.assertRaisesRegex(
+                    host_privacy_discovery.HostDiscoveryError,
+                    "differs from canonical report",
+                ):
+                    reserved.write(report)
+            finally:
+                host_privacy_discovery.os.read = original_read
+                reserved.close()
+            self.assertFalse(output.exists())
+
+    def test_reserved_output_rejects_append_during_readback(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            storage = self.root(parent)
+            output_parent = self.root(parent, "output")
+            output = output_parent / "report.json"
+            report = self.discover(storage)
+            reserved = host_privacy_discovery.reserve_private_output(
+                output,
+                runner=runner(),
+                system="Darwin",
+                home_root=parent,
+            )
+            original_read = host_privacy_discovery.os.read
+            injected = False
+
+            def appending_read(descriptor: int, size: int) -> bytes:
+                nonlocal injected
+                if not injected:
+                    injected = True
+                    replacement_fd = os.open(output, os.O_WRONLY | os.O_APPEND)
+                    try:
+                        os.write(replacement_fd, b"X")
+                        os.fsync(replacement_fd)
+                    finally:
+                        os.close(replacement_fd)
+                return original_read(descriptor, size)
+
+            try:
+                host_privacy_discovery.os.read = appending_read
                 with self.assertRaisesRegex(
                     host_privacy_discovery.HostDiscoveryError,
                     "differs from canonical report",
