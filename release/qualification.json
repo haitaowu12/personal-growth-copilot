@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "release": "0.4.0-alpha.5",
+  "release": "0.4.0-alpha.6",
   "status": "blocked",
   "production_claim_allowed": false,
   "activation": "explicit-only-unregistered",

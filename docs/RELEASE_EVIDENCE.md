@@ -111,8 +111,14 @@ out-of-band-anchored prior index.
 ## Replayable external source packs
 
 All source packs conform to `release/external-gate-source.schema.json`, live in
-the restricted packet directory, bind the exact candidate commit, and occur no
-earlier than the owner-frozen trust policy. Referenced paths are relative,
+the restricted packet directory, bind the exact candidate commit, and complete
+no earlier than the owner-frozen trust policy. Preregistered inputs—the holdout
+seal, reviewer calibration, named-host identity, and pilot protocol—may and in
+the applicable cases must predate the policy; their exact hashes are frozen by
+it before qualification execution. The holdout seal, privacy-host identity,
+and pilot protocol each bind a distinct Ed25519 witness public key. Keep every
+corresponding private key outside the packet and candidate-author access.
+Referenced paths are relative,
 bounded regular files; absolute paths, symlinks, traversal, missing files, and
 hash changes fail closed. Private identity, holdout, host, and pilot evidence
 belongs in this restricted directory, never in the repository.
@@ -120,24 +126,32 @@ belongs in this restricted directory, never in the repository.
 - Reviewer packs bind the exact target config and result manifest, reconcile
   every reviewer actually used, reject two pseudonyms for one stable subject,
   require calibration before the first submitted qualification label, and
-  bind identity, independence, and calibration evidence to the frozen roster.
+  bind a structured, self-hashed identity attestation plus independence and
+  calibration evidence to the frozen roster and calibration set.
 - Holdout packs derive the holdout fraction from the public and sealed case
   counts, require exact result coverage of the sealed case IDs, preserve access
-  audit, encrypted case, schema, author, result, and attempt-inventory files,
-  and fail on candidate-author access or any hard-gate code.
+  audit, encrypted case, schema, author, raw transcript, result, and chained
+  attempt-event files, verify the preregistered holdout-witness signature over
+  every attempt head and count, and fail on candidate-author access, an omitted
+  or failed attempt, transcript tampering, or any hard-gate code.
 - Privacy packs require the named-host identity plus the fixed storage-map,
   encryption, no-sync, backup/restore, correction/export/deletion, bounded-
-  retention, and incident-response evidence files. Check results and open high
-  or critical findings determine the assertions.
+  retention, and incident-response evidence files. The exact catalog and full
+  findings ledger are hash/count bound by the preregistered host-audit key;
+  check results and open or accepted high/critical findings determine the
+  assertions. Extra controls cannot hide a failure.
 - Bilingual packs replay the reviewer pack and its exact target results,
   enumerate every Chinese or mixed-language turn review, require verified
   fluent reviewers, reproduce both primary score vectors and translation
   failure codes, and recalculate per-system weighted kappa. Missing runs,
   altered labels, degenerate agreement, or kappa below `0.70` fail.
 - Pilot packs bind an owner-frozen protocol and exact 10–20 episode schedule,
-  preserve consent and episode records, derive elapsed days, reconcile every
-  scheduled episode, and derive withdrawal, deletion, privacy, safety,
-  dependence, and fabricated-persistence outcomes from the retained ledger.
+  preserve consent and episode records, verify a preregistered witness signature
+  over the complete episode/incident ledger, derive elapsed days from the first
+  scheduled episode through the last closed episode, reconcile every scheduled
+  episode, and derive withdrawal, deletion, privacy, safety, dependence, and
+  fabricated-persistence outcomes from that ledger. Out-of-window actions and
+  high/critical uncategorized incidents fail closed.
 
 After the authority prepares a complete source pack, build its artifact from
 that source rather than from a hand-written assertion file:

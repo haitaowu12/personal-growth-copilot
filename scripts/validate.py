@@ -203,6 +203,10 @@ def validate() -> list[str]:
         ROOT / "release/holdout-seal.schema.json",
         ROOT / "release/holdout-result.schema.json",
         ROOT / "release/holdout-attempt.schema.json",
+        ROOT / "release/holdout-access-audit.schema.json",
+        ROOT / "release/privacy-host-identity.schema.json",
+        ROOT / "release/pilot-protocol.schema.json",
+        ROOT / "release/reviewer-identity-attestation.schema.json",
         ROOT / "release/trust-policy.json",
         ROOT / "release/evidence-index.json",
         ROOT / "scripts/release_evidence.py",
@@ -234,6 +238,10 @@ def validate() -> list[str]:
         ROOT / "release/holdout-seal.schema.json",
         ROOT / "release/holdout-result.schema.json",
         ROOT / "release/holdout-attempt.schema.json",
+        ROOT / "release/holdout-access-audit.schema.json",
+        ROOT / "release/privacy-host-identity.schema.json",
+        ROOT / "release/pilot-protocol.schema.json",
+        ROOT / "release/reviewer-identity-attestation.schema.json",
     ):
         try:
             Draft202012Validator.check_schema(

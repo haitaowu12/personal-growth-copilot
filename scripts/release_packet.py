@@ -686,6 +686,7 @@ def command_policy(args: argparse.Namespace) -> int:
         raise release_evidence.ReleaseEvidenceError(
             "invalid target config: " + "; ".join(errors)
         )
+    campaign._require_full_suite_scope(suite, config)
     seal = load_json(args.holdout_seal, "holdout seal")
     if errors := release_evidence.schema_errors(seal, "holdout_seal"):
         raise release_evidence.ReleaseEvidenceError(
@@ -706,6 +707,12 @@ def command_policy(args: argparse.Namespace) -> int:
             raise release_evidence.ReleaseEvidenceError(
                 f"holdout {prefix} hash mismatch"
             )
+    release_evidence.load_bound_public_key(
+        args.holdout_seal.resolve().parent,
+        seal["witness_public_key_path"],
+        seal["witness_public_key_sha256"],
+        "holdout witness",
+    )
     authority_document = load_json(args.authorities, "release authority roster")
     if set(authority_document) != {"authorities"} or not isinstance(
         authority_document["authorities"], list
@@ -759,11 +766,51 @@ def command_policy(args: argparse.Namespace) -> int:
             "release authorities must use distinct Ed25519 key material"
         )
     host_identity = release_evidence.read_once(args.privacy_host_identity)
+    host_identity_record = release_evidence.json_object(
+        host_identity, "privacy host identity"
+    )
+    if errors := release_evidence.schema_errors(host_identity_record, "privacy_host"):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid privacy host identity: " + "; ".join(errors)
+        )
+    release_evidence.load_bound_public_key(
+        args.privacy_host_identity.resolve().parent,
+        host_identity_record["audit_public_key_path"],
+        host_identity_record["audit_public_key_sha256"],
+        "privacy audit",
+    )
     pilot_protocol = release_evidence.read_once(args.pilot_protocol)
+    pilot_protocol_record = release_evidence.json_object(
+        pilot_protocol, "pilot protocol"
+    )
+    if errors := release_evidence.schema_errors(
+        pilot_protocol_record, "pilot_protocol"
+    ):
+        raise release_evidence.ReleaseEvidenceError(
+            "invalid pilot protocol: " + "; ".join(errors)
+        )
+    if pilot_protocol_record["candidate_commit"] != candidate:
+        raise release_evidence.ReleaseEvidenceError(
+            "pilot protocol differs from the clean candidate checkout"
+        )
+    release_evidence.load_bound_public_key(
+        args.pilot_protocol.resolve().parent,
+        pilot_protocol_record["witness_public_key_path"],
+        pilot_protocol_record["witness_public_key_sha256"],
+        "pilot witness",
+    )
     frozen = now()
     if release_evidence.parse_time(seal["sealed_at"]) > frozen:
         raise release_evidence.ReleaseEvidenceError(
             "holdout seal may not follow the policy freeze"
+        )
+    if release_evidence.parse_time(host_identity_record["captured_at"]) > frozen:
+        raise release_evidence.ReleaseEvidenceError(
+            "privacy host identity may not follow the policy freeze"
+        )
+    if release_evidence.parse_time(pilot_protocol_record["preregistered_at"]) > frozen:
+        raise release_evidence.ReleaseEvidenceError(
+            "pilot protocol preregistration may not follow the policy freeze"
         )
     policy = {
         "schema_version": "1.0",

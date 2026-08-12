@@ -3,17 +3,61 @@
   "$id": "https://personal-growth-copilot.local/release/holdout-attempt.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "evidence_class", "candidate_commit", "case_id", "status", "all_attempts_accounted_for", "attempt_count", "omitted_attempt_count", "witness_head_sha256", "attempt_sha256"],
+  "required": ["schema_version", "evidence_class", "candidate_commit", "case_id", "events", "ledger_sha256", "witness_receipt", "attempt_sha256"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "evidence_class": {"const": "holdout-attempt-inventory"},
     "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
     "case_id": {"type": "string", "pattern": "^holdout-[a-z0-9_-]{3,79}$"},
-    "status": {"enum": ["PASS", "FAIL"]},
-    "all_attempts_accounted_for": {"type": "boolean"},
-    "attempt_count": {"type": "integer", "minimum": 1},
-    "omitted_attempt_count": {"type": "integer", "minimum": 0},
-    "witness_head_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "attempt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/event"}
+    },
+    "ledger_sha256": {"$ref": "#/$defs/hash"},
+    "witness_receipt": {"$ref": "#/$defs/receipt"},
+    "attempt_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "previous_event_sha256", "attempt_id", "occurred_at", "outcome", "result_sha256", "event_sha256"],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 0},
+        "previous_event_sha256": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]},
+        "attempt_id": {"type": "string", "pattern": "^attempt-[0-9a-f]{32}$"},
+        "occurred_at": {"$ref": "#/$defs/timestamp"},
+        "outcome": {"enum": ["PASS", "FAIL", "ABORTED"]},
+        "result_sha256": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]},
+        "event_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["payload", "signature_base64"],
+      "properties": {
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain", "candidate_commit", "case_id", "ledger_sha256", "event_count", "head_event_sha256", "issued_at", "nonce"],
+          "properties": {
+            "domain": {"const": "pgc-holdout-attempt-witness-v1"},
+            "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            "case_id": {"type": "string", "pattern": "^holdout-[a-z0-9_-]{3,79}$"},
+            "ledger_sha256": {"$ref": "#/$defs/hash"},
+            "event_count": {"type": "integer", "minimum": 1},
+            "head_event_sha256": {"$ref": "#/$defs/hash"},
+            "issued_at": {"$ref": "#/$defs/timestamp"},
+            "nonce": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{16,200}$"}
+          }
+        },
+        "signature_base64": {"type": "string", "pattern": "^[A-Za-z0-9+/]+={0,2}$", "minLength": 40, "maxLength": 1000}
+      }
+    }
   }
 }
