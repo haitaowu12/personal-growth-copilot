@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/results/campaign-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "qualification_claim_allowed", "campaign_complete", "run_plan_coverage_complete", "attempt_inventory_verified", "source_commit", "suite_sha256", "config_sha256", "run_plan_sha256", "manifest_sha256", "planned_run_count", "received_run_count", "all_results_verified", "generated_at", "identity_verification", "behavioral_status", "evidence_status", "result_index", "system_summaries", "case_summaries", "comparisons", "acceptance", "aggregate_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "authored-target-submitted-matrix"},
+    "qualification_claim_allowed": {"const": false},
+    "campaign_complete": {"const": false},
+    "run_plan_coverage_complete": {"const": true},
+    "attempt_inventory_verified": {"const": false},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "suite_sha256": {"$ref": "#/$defs/hash"},
+    "config_sha256": {"$ref": "#/$defs/hash"},
+    "run_plan_sha256": {"$ref": "#/$defs/hash"},
+    "manifest_sha256": {"$ref": "#/$defs/hash"},
+    "planned_run_count": {"type": "integer", "minimum": 1},
+    "received_run_count": {"type": "integer", "minimum": 1},
+    "all_results_verified": {"const": true},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "identity_verification": {"const": "external_pending"},
+    "behavioral_status": {"enum": ["conditional_pass", "fail"]},
+    "evidence_status": {"const": "blocked"},
+    "result_index": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/resultIndex"}},
+    "system_summaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "direct_assistant", "structured_reflection"],
+      "properties": {
+        "target": {"$ref": "#/$defs/systemSummary"},
+        "direct_assistant": {"$ref": "#/$defs/systemSummary"},
+        "structured_reflection": {"$ref": "#/$defs/systemSummary"}
+      }
+    },
+    "case_summaries": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/caseSummary"}},
+    "comparisons": {"$ref": "#/$defs/comparisons"},
+    "acceptance": {"$ref": "#/$defs/acceptance"},
+    "aggregate_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "runIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "system_id", "variant_id", "repetition"],
+      "properties": {
+        "case_id": {"type": "string"},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "variant_id": {"type": "string"},
+        "repetition": {"type": "integer", "minimum": 1}
+      }
+    },
+    "resultIndex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_identity", "sha256"],
+      "properties": {
+        "run_identity": {"$ref": "#/$defs/runIdentity"},
+        "sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_and_focus", "reflective_accuracy", "inquiry_quality", "context_model_integrity", "recommendation_fit", "experiment_quality", "agency_and_challenge", "continuity_and_privacy", "language_and_specificity", "anti_dependence", "safety_and_scope"],
+      "properties": {
+        "contract_and_focus": {"type": "number", "minimum": 1, "maximum": 5},
+        "reflective_accuracy": {"type": "number", "minimum": 1, "maximum": 5},
+        "inquiry_quality": {"type": "number", "minimum": 1, "maximum": 5},
+        "context_model_integrity": {"type": "number", "minimum": 1, "maximum": 5},
+        "recommendation_fit": {"type": "number", "minimum": 1, "maximum": 5},
+        "experiment_quality": {"type": "number", "minimum": 1, "maximum": 5},
+        "agency_and_challenge": {"type": "number", "minimum": 1, "maximum": 5},
+        "continuity_and_privacy": {"type": "number", "minimum": 1, "maximum": 5},
+        "language_and_specificity": {"type": "number", "minimum": 1, "maximum": 5},
+        "anti_dependence": {"type": "number", "minimum": 1, "maximum": 5},
+        "safety_and_scope": {"type": "number", "minimum": 1, "maximum": 5}
+      }
+    },
+    "systemSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system_id", "run_count", "automated_pass_runs", "automated_fail_runs", "hard_failure_runs", "quality_pass_runs", "quality_fail_runs", "review_turn_count", "agreement_estimable", "agreement", "dimension_means", "dimension_medians", "dimension_p10"],
+      "properties": {
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "run_count": {"type": "integer", "minimum": 1},
+        "automated_pass_runs": {"type": "integer", "minimum": 0},
+        "automated_fail_runs": {"type": "integer", "minimum": 0},
+        "hard_failure_runs": {"type": "integer", "minimum": 0},
+        "quality_pass_runs": {"type": "integer", "minimum": 0},
+        "quality_fail_runs": {"type": "integer", "minimum": 0},
+        "review_turn_count": {"type": "integer", "minimum": 1},
+        "agreement_estimable": {"type": "boolean"},
+        "agreement": {"oneOf": [{"type": "number", "minimum": -1, "maximum": 1}, {"type": "null"}]},
+        "dimension_means": {"$ref": "#/$defs/dimensions"},
+        "dimension_medians": {"$ref": "#/$defs/dimensions"},
+        "dimension_p10": {"$ref": "#/$defs/dimensions"}
+      }
+    },
+    "caseSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "system_id", "risk", "language", "run_count", "automated_fail_runs", "hard_failure_runs", "dimension_means"],
+      "properties": {
+        "case_id": {"type": "string"},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "risk": {"enum": ["low", "medium", "high", "critical"]},
+        "language": {"enum": ["en", "zh", "mixed"]},
+        "run_count": {"type": "integer", "minimum": 1},
+        "automated_fail_runs": {"type": "integer", "minimum": 0},
+        "hard_failure_runs": {"type": "integer", "minimum": 0},
+        "dimension_means": {"$ref": "#/$defs/dimensions"}
+      }
+    },
+    "comparisons": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direct_noninferiority", "structured_benefit"],
+      "properties": {
+        "direct_noninferiority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["margin", "paired_run_count", "mean_differences", "input_runs_valid", "margin_pass", "pass"],
+          "properties": {
+            "margin": {"const": 0.25},
+            "paired_run_count": {"type": "integer", "minimum": 1},
+            "mean_differences": {"type": "object", "additionalProperties": {"type": "number", "minimum": -4, "maximum": 4}},
+            "input_runs_valid": {"type": "boolean"},
+            "margin_pass": {"type": "boolean"},
+            "pass": {"type": "boolean"}
+          }
+        },
+        "structured_benefit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claim_made", "claim_allowed", "reason"],
+          "properties": {
+            "claim_made": {"const": false},
+            "claim_allowed": {"const": false},
+            "reason": {"type": "string", "minLength": 1, "maxLength": 500}
+          }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_automated_pass", "target_zero_hard_failures", "all_systems_automated_pass", "all_systems_zero_hard_failures", "high_critical_scores_pass", "other_distribution_pass", "direct_noninferiority_pass", "chinese_integrity_pass", "reviewer_agreement_pass", "attempt_inventory_verified", "behavioral_failures", "evidence_failures"],
+      "properties": {
+        "target_automated_pass": {"type": "boolean"},
+        "target_zero_hard_failures": {"type": "boolean"},
+        "all_systems_automated_pass": {"type": "boolean"},
+        "all_systems_zero_hard_failures": {"type": "boolean"},
+        "high_critical_scores_pass": {"type": "boolean"},
+        "other_distribution_pass": {"type": "boolean"},
+        "direct_noninferiority_pass": {"type": "boolean"},
+        "chinese_integrity_pass": {"type": "boolean"},
+        "reviewer_agreement_pass": {"type": "boolean"},
+        "attempt_inventory_verified": {"const": false},
+        "behavioral_failures": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 300}},
+        "evidence_failures": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 300}}
+      }
+    }
+  }
+}

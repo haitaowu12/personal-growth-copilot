@@ -1,0 +1,35 @@
+{
+  "name": "personal-growth-copilot",
+  "version": "0.4.0-alpha.12",
+  "description": "Explicit-invocation reflective inquiry and behavior-change workflows with privacy and safety controls.",
+  "author": {
+    "name": "Tony Wu",
+    "url": "https://github.com/haitaowu12"
+  },
+  "homepage": "https://github.com/haitaowu12/personal-growth-copilot#readme",
+  "repository": "https://github.com/haitaowu12/personal-growth-copilot",
+  "license": "MIT",
+  "keywords": [
+    "personal-growth",
+    "reflective-inquiry",
+    "behavior-change",
+    "coaching"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Personal Growth Copilot",
+    "shortDescription": "Reflect, choose, experiment, and learn safely",
+    "longDescription": "A user-directed growth workflow for clarifying values and goals, examining recurring patterns, designing small behavior-change experiments, and reviewing learning across sessions. Explicit invocation only; not therapy or professional advice.",
+    "developerName": "Tony Wu",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "websiteURL": "https://github.com/haitaowu12/personal-growth-copilot",
+    "defaultPrompt": [
+      "Help me understand a recurring pattern.",
+      "Turn a goal into a small growth experiment.",
+      "Review what I learned from a recent setback."
+    ]
+  }
+}

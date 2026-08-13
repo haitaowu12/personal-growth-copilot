@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 dist/
+build/
 external-feedback/
 handoff-briefs/
 .DS_Store

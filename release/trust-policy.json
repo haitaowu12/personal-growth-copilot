@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "status": "UNCONFIGURED",
+  "candidate_commit": null,
+  "frozen_at": null,
+  "attempt_campaign_id": null,
+  "qualification_plan_sha256": null,
+  "target_config_sha256": null,
+  "holdout_seal_sha256": null,
+  "privacy_host_identity_sha256": null,
+  "pilot_protocol_sha256": null,
+  "authorities": [],
+  "policy_sha256": "4c846626f5116c4c9a0edce8a8018731876602d238161fc43fdd35aee0dc58c0"
+}

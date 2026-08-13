@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "status": "UNSEALED",
+  "candidate_freeze_commit": null,
+  "minimum_holdout_fraction": 0.2,
+  "target_holdout_fraction": 0.25,
+  "sealed_case_count": 0,
+  "independent_author_required": true,
+  "candidate_author_access_prohibited": true,
+  "ciphertext_sha256": null,
+  "case_schema_sha256": null,
+  "sealed_at": null,
+  "invalidated_at": null,
+  "invalidated_reason": null
+}
