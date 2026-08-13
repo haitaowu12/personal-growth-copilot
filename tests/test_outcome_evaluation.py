@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 import yaml
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,7 +51,7 @@ class OutcomeEvaluationTests(unittest.TestCase):
     def test_session_capsule_example_and_persistence_states(self) -> None:
         schema = load_json("skill/personal-growth-copilot/assets/session-capsule.schema.json")
         example = load_json("examples/session-capsule.example.json")
-        validator = Draft202012Validator(schema)
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
         self.assertEqual(list(validator.iter_errors(example)), [])
 
         missing_receipt = copy.deepcopy(example)
@@ -65,6 +65,14 @@ class OutcomeEvaluationTests(unittest.TestCase):
         hidden_field = copy.deepcopy(example)
         hidden_field["raw_transcript"] = "must not be retained"
         self.assertTrue(list(validator.iter_errors(hidden_field)))
+
+        missing_add_value = copy.deepcopy(example)
+        del missing_add_value["persistence"]["exact_proposed_delta"][0]["value"]
+        self.assertTrue(list(validator.iter_errors(missing_add_value)))
+
+        remove_with_value = copy.deepcopy(example)
+        remove_with_value["persistence"]["exact_proposed_delta"][0]["op"] = "remove"
+        self.assertTrue(list(validator.iter_errors(remove_with_value)))
 
     def test_strong_comparators_remain_design_only_and_match_capabilities(self) -> None:
         for comparator_id in ("strong_generalist", "minimal_visible_model"):
