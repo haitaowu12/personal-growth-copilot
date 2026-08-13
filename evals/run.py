@@ -23,7 +23,7 @@ from typing import Protocol, Sequence
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_DIR = ROOT / "skill/personal-growth-copilot/scripts"
+SCRIPT_DIR = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts"
 PROJECT_SCRIPT_DIR = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 sys.path.insert(0, str(PROJECT_SCRIPT_DIR))

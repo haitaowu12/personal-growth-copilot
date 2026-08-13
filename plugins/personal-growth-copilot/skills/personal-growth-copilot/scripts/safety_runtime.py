@@ -19,8 +19,8 @@ from typing import Callable, Literal, Protocol, Sequence
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_MACHINE = ROOT / "safety/safety-state-machine.yaml"
+SKILL_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_MACHINE = SKILL_ROOT / "assets/safety-state-machine.yaml"
 
 SafetyState = Literal[
     "ORDINARY_COACHING",

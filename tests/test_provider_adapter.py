@@ -119,12 +119,16 @@ output.write_text(json.dumps({
             auth_root = directory / "auth"
             auth_root.mkdir()
             shadow = directory / "shadow"
-            for relative in ("skill", "evals/baselines", "safety", "providers"):
+            for relative in (
+                "plugins/personal-growth-copilot",
+                "evals/baselines",
+                "providers",
+            ):
                 source = ROOT / relative
                 destination = shadow / relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(source, destination)
-            changed = shadow / "skill/personal-growth-copilot/references/context-model.md"
+            changed = shadow / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/context-model.md"
             changed.write_text(changed.read_text(encoding="utf-8") + "\nchanged\n")
             cfg = self.adapter_config(fake_codex)
             session = target_session.TargetSession(
@@ -157,7 +161,11 @@ output.write_text(json.dumps({
             directory = Path(directory_name)
             fake_codex = self.fake_codex(directory)
             shadow = directory / "shadow"
-            for relative in ("skill", "evals/baselines", "safety", "providers"):
+            for relative in (
+                "plugins/personal-growth-copilot",
+                "evals/baselines",
+                "providers",
+            ):
                 source = ROOT / relative
                 destination = shadow / relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
@@ -175,7 +183,7 @@ output.write_text(json.dumps({
             payload = target_session.FrozenStdioProvider.request_payload(
                 session.pending_request(), cfg
             )
-            changed = shadow / "skill/personal-growth-copilot/references/context-model.md"
+            changed = shadow / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/context-model.md"
             original_reader = codex_cli_adapter.read_regular_bytes
             mutated = False
 

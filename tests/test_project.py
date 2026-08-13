@@ -76,7 +76,7 @@ class ProjectTests(unittest.TestCase):
     def test_example_growth_record(self) -> None:
         records = load_module(
             "growth_record",
-            ROOT / "skill/personal-growth-copilot/scripts/growth_record.py",
+            ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/growth_record.py",
         )
         example = json.loads(
             (ROOT / "examples/growth-record.example.json").read_text(
@@ -88,7 +88,7 @@ class ProjectTests(unittest.TestCase):
     def test_growth_record_rejects_hidden_raw_material(self) -> None:
         records = load_module(
             "growth_record_reject",
-            ROOT / "skill/personal-growth-copilot/scripts/growth_record.py",
+            ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/growth_record.py",
         )
         example = json.loads(
             (ROOT / "examples/growth-record.example.json").read_text(
@@ -102,7 +102,7 @@ class ProjectTests(unittest.TestCase):
     def test_growth_record_rejects_broken_reference(self) -> None:
         records = load_module(
             "growth_record_reference",
-            ROOT / "skill/personal-growth-copilot/scripts/growth_record.py",
+            ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/growth_record.py",
         )
         example = json.loads(
             (ROOT / "examples/growth-record.example.json").read_text(
@@ -115,7 +115,7 @@ class ProjectTests(unittest.TestCase):
 
     def test_context_and_target_runtime_are_present_but_not_qualification(self) -> None:
         self.assertTrue(
-            (ROOT / "skill/personal-growth-copilot/scripts/context_runtime.py").is_file()
+            (ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/context_runtime.py").is_file()
         )
         self.assertTrue((ROOT / "evals/target_session.py").is_file())
         self.assertTrue((ROOT / "docs/TARGET_EXECUTION.md").is_file())
@@ -127,13 +127,13 @@ class ProjectTests(unittest.TestCase):
 
     def test_manual_invocation_and_release_block_are_enforced(self) -> None:
         metadata = (
-            ROOT / "skill/personal-growth-copilot/agents/openai.yaml"
+            ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/agents/openai.yaml"
         ).read_text(encoding="utf-8")
         release = json.loads(
             (ROOT / "release/qualification.json").read_text(encoding="utf-8")
         )
         self.assertIn("allow_implicit_invocation: false", metadata)
-        self.assertEqual(release["activation"], "explicit-only-unregistered")
+        self.assertEqual(release["activation"], "explicit-only-repo-marketplace")
         self.assertFalse(release["production_claim_allowed"])
 
 

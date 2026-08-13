@@ -40,7 +40,7 @@ mutation and omission tests. Until then, no comparator result is claimed.
 
 ## Session capsule
 
-`skill/personal-growth-copilot/assets/session-capsule.schema.json` defines a
+`plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json` defines a
 compact explicit-save artifact. The capsule preserves user wording, facts,
 hypotheses, alternatives, unknowns, choice, prediction, disconfirmation,
 review point, and exact proposed memory delta. `previewed` is not a write;

@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_DIR = ROOT / "skill/personal-growth-copilot/scripts"
+SCRIPT_DIR = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import safety_runtime as safety  # noqa: E402
