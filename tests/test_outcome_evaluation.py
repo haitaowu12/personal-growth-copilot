@@ -49,7 +49,7 @@ class OutcomeEvaluationTests(unittest.TestCase):
         self.assertIn("primary outcome ids must exactly match measures marked primary", errors)
 
     def test_session_capsule_example_and_persistence_states(self) -> None:
-        schema = load_json("skill/personal-growth-copilot/assets/session-capsule.schema.json")
+        schema = load_json("plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json")
         example = load_json("examples/session-capsule.example.json")
         validator = Draft202012Validator(schema, format_checker=FormatChecker())
         self.assertEqual(list(validator.iter_errors(example)), [])

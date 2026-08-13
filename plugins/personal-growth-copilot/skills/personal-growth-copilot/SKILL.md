@@ -42,6 +42,11 @@ question and bind any consent-required question to the active consent scope. A
 model-authored consent label, sensitivity label, model-change claim, inferred
 score, or choice does not satisfy that control.
 
+The bundled deterministic helpers require Python 3.11 or later and the pinned
+packages in `scripts/requirements.txt`. Conversational use does not require
+running the helpers. Do not install packages or enable persistence without the
+user's authorization.
+
 ## Set the working mode
 
 - **QUICK** — one decision, small context check, one action.

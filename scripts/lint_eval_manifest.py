@@ -13,7 +13,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 ROOT = Path(__file__).resolve().parents[1]
 CASES = ROOT / "evals/cases.json"
 SCHEMA = ROOT / "evals/schema.json"
-SCRIPT_DIR = ROOT / "skill/personal-growth-copilot/scripts"
+SCRIPT_DIR = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import safety_runtime  # noqa: E402

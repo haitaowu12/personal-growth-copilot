@@ -52,12 +52,18 @@ def validate_outcome_design(design: dict[str, object]) -> list[str]:
 def validate() -> list[str]:
     errors: list[str] = []
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-    skill = (ROOT / "skill/personal-growth-copilot/SKILL.md").read_text(
-        encoding="utf-8"
-    )
+    plugin_root = ROOT / "plugins/personal-growth-copilot"
+    skill_root = plugin_root / "skills/personal-growth-copilot"
+    skill = (skill_root / "SKILL.md").read_text(encoding="utf-8")
     metadata = (
-        ROOT / "skill/personal-growth-copilot/agents/openai.yaml"
+        skill_root / "agents/openai.yaml"
     ).read_text(encoding="utf-8")
+    plugin = json.loads(
+        (plugin_root / ".codex-plugin/plugin.json").read_text(encoding="utf-8")
+    )
+    marketplace = json.loads(
+        (ROOT / ".agents/plugins/marketplace.json").read_text(encoding="utf-8")
+    )
     qualification = json.loads(
         (ROOT / "release/qualification.json").read_text(encoding="utf-8")
     )
@@ -83,6 +89,47 @@ def validate() -> list[str]:
         errors.append("SKILL.md lacks explicit invocation rule")
     if "allow_implicit_invocation: false" not in metadata:
         errors.append("agents/openai.yaml does not disable implicit invocation")
+    if "$personal-growth-copilot" not in metadata:
+        errors.append("agents/openai.yaml default prompt lacks explicit skill invocation")
+    if plugin.get("name") != "personal-growth-copilot":
+        errors.append("plugin name mismatch")
+    if plugin.get("version") != version:
+        errors.append("plugin version mismatch")
+    if plugin.get("skills") != "./skills/":
+        errors.append("plugin skills path mismatch")
+    if any(field in plugin for field in ("apps", "hooks", "mcpServers")):
+        errors.append("plugin declares an unbundled app, hook, or MCP server")
+    entries = [
+        entry
+        for entry in marketplace.get("plugins", [])
+        if entry.get("name") == "personal-growth-copilot"
+    ]
+    if len(entries) != 1:
+        errors.append("marketplace must contain exactly one personal-growth-copilot entry")
+    else:
+        entry = entries[0]
+        if entry.get("source") != {
+            "source": "local",
+            "path": "./plugins/personal-growth-copilot",
+        }:
+            errors.append("marketplace plugin source mismatch")
+        if entry.get("policy") != {
+            "installation": "AVAILABLE",
+            "authentication": "ON_INSTALL",
+        }:
+            errors.append("marketplace plugin policy mismatch")
+    instruction_files = [skill_root / "SKILL.md", *sorted((skill_root / "references").glob("*.md"))]
+    for instruction_file in instruction_files:
+        body = instruction_file.read_text(encoding="utf-8")
+        referenced_resources = set(
+            re.findall(r"`((?:references|scripts|assets)/[^ `]+)`", body)
+        )
+        for relative_path in sorted(referenced_resources):
+            if not (skill_root / relative_path).is_file():
+                errors.append(
+                    f"{instruction_file.relative_to(skill_root)} resource is missing: "
+                    f"{relative_path}"
+                )
     if qualification.get("release") != version:
         errors.append("release version mismatch")
     if qualification.get("status") != "blocked":
@@ -127,7 +174,7 @@ def validate() -> list[str]:
             errors.append(f"duplicate evidence source url: {url}")
         evidence_urls.add(url)
     evidence_runtime_index_path = (
-        ROOT / "skill/personal-growth-copilot/assets/evidence-source-ids.json"
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/evidence-source-ids.json"
     )
     if not evidence_runtime_index_path.exists():
         errors.append("runtime evidence-source index missing")
@@ -179,18 +226,18 @@ def validate() -> list[str]:
         "bilingual-dialogue.md",
         "evidence-ledger.md",
     }
-    reference_dir = ROOT / "skill/personal-growth-copilot/references"
+    reference_dir = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references"
     available = {path.name for path in reference_dir.glob("*.md")}
     if missing := sorted(required_references - available):
         errors.append(f"missing references: {missing}")
-    schema = ROOT / "skill/personal-growth-copilot/assets/growth-record.schema.json"
+    schema = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/growth-record.schema.json"
     if not schema.exists():
         errors.append("growth record schema missing")
     required_runtime = {
-        ROOT / "skill/personal-growth-copilot/scripts/growth_record.py",
-        ROOT / "skill/personal-growth-copilot/scripts/record_store.py",
-        ROOT / "skill/personal-growth-copilot/scripts/context_runtime.py",
-        ROOT / "skill/personal-growth-copilot/assets/evidence-source-ids.json",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/growth_record.py",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/record_store.py",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/context_runtime.py",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/evidence-source-ids.json",
         ROOT / "requirements/ci.in",
         ROOT / "requirements/ci.txt",
         ROOT / "scripts/lint_eval_manifest.py",
@@ -218,9 +265,9 @@ def validate() -> list[str]:
         ROOT / "evals/comparators/minimal_visible_model.yaml",
         ROOT / "evals/outcome-measures.schema.json",
         ROOT / "evals/outcome-measures.json",
-        ROOT / "safety/safety-state-machine.yaml",
-        ROOT / "safety/resource-resolver-interface.md",
-        ROOT / "skill/personal-growth-copilot/scripts/safety_runtime.py",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/safety-state-machine.yaml",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/safety_runtime.py",
         ROOT / "scripts/run_deterministic_qualification.py",
         ROOT / "scripts/build_target_config.py",
         ROOT / "scripts/target_session_cli.py",
@@ -253,15 +300,15 @@ def validate() -> list[str]:
         ROOT / "scripts/release_packet.py",
         ROOT / "scripts/qualification_packet.py",
         ROOT / "scripts/host_privacy_discovery.py",
-        ROOT / "skill/personal-growth-copilot/assets/session-capsule.schema.json",
-        ROOT / "skill/personal-growth-copilot/references/session-capsule.md",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/session-capsule.md",
         ROOT / "examples/session-capsule.example.json",
     }
     for path in sorted(required_runtime):
         if not path.exists():
             errors.append(f"required runtime artifact missing: {path.relative_to(ROOT)}")
     for schema_path in (
-        ROOT / "skill/personal-growth-copilot/assets/growth-record.schema.json",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/growth-record.schema.json",
         ROOT / "evals/schema.json",
         ROOT / "evals/config.schema.json",
         ROOT / "evals/results/RESULT_SCHEMA.json",
@@ -291,7 +338,7 @@ def validate() -> list[str]:
         ROOT / "release/reviewer-identity-attestation.schema.json",
         ROOT / "release/qualification-packet-plan.schema.json",
         ROOT / "release/qualification-external-intake.schema.json",
-        ROOT / "skill/personal-growth-copilot/assets/session-capsule.schema.json",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json",
     ):
         try:
             Draft202012Validator.check_schema(
@@ -314,7 +361,7 @@ def validate() -> list[str]:
         errors.append("outcome measurement design fails its schema")
     errors.extend(validate_outcome_design(outcome_design))
     capsule_schema = json.loads(
-        (ROOT / "skill/personal-growth-copilot/assets/session-capsule.schema.json").read_text(
+        (ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json").read_text(
             encoding="utf-8"
         )
     )

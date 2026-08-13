@@ -2,8 +2,8 @@
 
 ## Observable states
 
-The canonical transition table is `../../../safety/safety-state-machine.yaml`;
-the executable conformance control is `../scripts/safety_runtime.py`. Free-text
+The canonical transition table is `assets/safety-state-machine.yaml`;
+the executable conformance control is `scripts/safety_runtime.py`. Free-text
 risk recognition remains a model/host observation problem, not a keyword
 classifier. Once an observation is made, do not improvise the state transition.
 
@@ -85,7 +85,7 @@ an assessment instrument.
 If current lookup fails, say that current local details could not be verified,
 use the generic immediate route, and focus on a trusted person who can be
 physically present. Never generate a plausible number, service name, opening
-status, or monitoring promise. See `../../../safety/resource-resolver-interface.md`.
+status, or monitoring promise. See `references/resource-resolver-interface.md`.
 
 ## Post-crisis return
 

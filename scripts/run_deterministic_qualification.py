@@ -29,14 +29,14 @@ CHECKS = (
     (
         "growth-record-example",
         (
-            "skill/personal-growth-copilot/scripts/growth_record.py",
+            "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/growth_record.py",
             "validate",
             "examples/growth-record.example.json",
         ),
     ),
     (
         "skill-structure-validation",
-        (".ci/quick_validate.py", "skill/personal-growth-copilot"),
+        (".ci/quick_validate.py", "plugins/personal-growth-copilot/skills/personal-growth-copilot"),
     ),
 )
 

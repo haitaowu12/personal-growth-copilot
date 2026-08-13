@@ -1,10 +1,22 @@
 # Personal Growth Copilot
 
-Standalone clean-room development repository for an explicit-invocation Agent
-Skill supporting context-rich personal growth, reflective dialogue, practical
-behavior-change experiments, and longitudinal learning.
+Installable clean-room Codex plugin and standalone Agent Skill supporting
+context-rich personal growth, reflective dialogue, practical behavior-change
+experiments, and longitudinal learning.
 
-Current version: `0.4.0-alpha.11`
+Current version: `0.4.0-alpha.12`
+
+## Install
+
+```bash
+codex plugin marketplace add haitaowu12/personal-growth-copilot --ref v0.4.0-alpha.12
+codex plugin add personal-growth-copilot@personal
+```
+
+Start a new task, then invoke `$personal-growth-copilot` explicitly. The
+complete plugin, standalone-skill alternative, update procedure, privacy
+boundary, and package layout are documented in
+[`docs/INSTALLATION.md`](docs/INSTALLATION.md).
 
 This repository does not contain or claim byte equivalence to the unavailable
 historical `0.2.0-rc.1` candidate. See
@@ -95,7 +107,8 @@ trauma, or encourage emotional dependence.
 
 ## Status
 
-Standalone research alpha. Not installed, registered, implicitly invoked,
+Installable research alpha distributed through this repository's Codex
+marketplace. It is explicit-invocation only, not universally directory-listed,
 production-qualified, or approved for real sensitive-state initialization.
 
 Run local checks with:
