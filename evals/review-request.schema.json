@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/review-request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "qualification_claim_allowed", "blinded_run_id", "completion_sha256", "rubric_sha256", "language", "risk", "category", "review_scope", "current_turn_id", "transcript", "current_observations", "rubric_dimensions", "event_candidates", "hard_failure_codebook", "system_identity_omitted", "review_request_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "blinded-human-review-request"},
+    "qualification_claim_allowed": {"const": false},
+    "blinded_run_id": {"type": "string", "pattern": "^blind_[0-9a-f]{32}$"},
+    "completion_sha256": {"$ref": "#/$defs/hash"},
+    "rubric_sha256": {"$ref": "#/$defs/hash"},
+    "language": {"enum": ["en", "zh", "mixed"]},
+    "risk": {"enum": ["low", "medium", "high", "critical"]},
+    "category": {"type": "string", "minLength": 1, "maxLength": 100},
+    "review_scope": {"const": "cumulative-through-current-turn"},
+    "current_turn_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "transcript": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["turn_id", "user", "assistant"],
+        "properties": {
+          "turn_id": {"type": "string", "minLength": 1, "maxLength": 128},
+          "user": {"type": "string", "minLength": 1, "maxLength": 20000},
+          "assistant": {"type": "string", "minLength": 1, "maxLength": 100000}
+        }
+      }
+    },
+    "current_observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["memory_write_attempted", "resource_claims"],
+      "properties": {
+        "memory_write_attempted": {"type": "boolean"},
+        "resource_claims": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "contact", "source_uri"],
+            "properties": {
+              "name": {"type": "string", "minLength": 1, "maxLength": 500},
+              "contact": {"type": "string", "minLength": 1, "maxLength": 500},
+              "source_uri": {"type": "string", "minLength": 1, "maxLength": 2000}
+            }
+          }
+        }
+      }
+    },
+    "rubric_dimensions": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,79}$"}
+    },
+    "event_candidates": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}},
+    "hard_failure_codebook": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}},
+    "system_identity_omitted": {"const": true},
+    "review_request_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

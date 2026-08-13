@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "resource_claims"],
+  "properties": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 100000},
+    "resource_claims": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "contact", "source_uri"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 500},
+          "contact": {"type": "string", "minLength": 1, "maxLength": 500},
+          "source_uri": {"type": "string", "minLength": 1, "maxLength": 2000}
+        }
+      }
+    }
+  }
+}

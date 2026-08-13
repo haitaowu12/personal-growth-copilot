@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/target-config.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mode", "source_commit", "frozen_at", "suite_sha256", "baseline_sha256", "systems", "provider", "review", "case_ids", "run_plan"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "mode": {"const": "authored-target"},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "frozen_at": {"type": "string", "format": "date-time"},
+    "suite_sha256": {"$ref": "#/$defs/hash"},
+    "baseline_sha256": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direct_assistant", "structured_reflection"],
+      "properties": {
+        "direct_assistant": {"$ref": "#/$defs/hash"},
+        "structured_reflection": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "systems": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {"enum": ["target", "direct_assistant", "structured_reflection"]}
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter_protocol", "adapter_version", "adapter_sha256", "runtime_executable_sha256", "host", "model", "model_version", "settings", "tool_permissions", "environment_allowlist", "skill_sha256", "profile_bundle_sha256"],
+      "properties": {
+        "adapter_protocol": {"const": "pgc-stdio-v2"},
+        "adapter_version": {"type": "string", "minLength": 1, "maxLength": 100},
+        "adapter_sha256": {"$ref": "#/$defs/hash"},
+        "runtime_executable_sha256": {"$ref": "#/$defs/hash"},
+        "host": {"type": "string", "minLength": 1, "maxLength": 200},
+        "model": {"type": "string", "minLength": 1, "maxLength": 200},
+        "model_version": {"type": "string", "minLength": 1, "maxLength": 200},
+        "settings": {"type": "object"},
+        "tool_permissions": {"type": "array", "uniqueItems": true, "items": {"type": "string", "maxLength": 200}},
+        "environment_allowlist": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,79}$"}},
+        "skill_sha256": {"$ref": "#/$defs/hash"},
+        "profile_bundle_sha256": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["target", "direct_assistant", "structured_reflection"],
+          "properties": {
+            "target": {"$ref": "#/$defs/hash"},
+            "direct_assistant": {"$ref": "#/$defs/hash"},
+            "structured_reflection": {"$ref": "#/$defs/hash"}
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rubric_sha256", "calibration_protocol_sha256", "minimum_reviewers", "system_blinding_required", "chinese_fluency_required", "agreement_method", "agreement_threshold", "minimum_dimension_score", "minimum_overall_score", "identity_verification", "reviewer_roster"],
+      "properties": {
+        "rubric_sha256": {"$ref": "#/$defs/hash"},
+        "calibration_protocol_sha256": {"$ref": "#/$defs/hash"},
+        "minimum_reviewers": {"const": 2},
+        "system_blinding_required": {"const": true},
+        "chinese_fluency_required": {"const": true},
+        "agreement_method": {"const": "weighted_kappa"},
+        "agreement_threshold": {"const": 0.7},
+        "minimum_dimension_score": {"const": 3.0},
+        "minimum_overall_score": {"const": 3.5},
+        "identity_verification": {"const": "external_pending"},
+        "reviewer_roster": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 20,
+          "items": {"$ref": "#/$defs/reviewerRosterEntry"}
+        }
+      }
+    },
+    "case_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    },
+    "run_plan": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/runIdentity"}
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reviewerId": {"type": "string", "pattern": "^reviewer-[0-9a-f]{16}$"},
+    "reviewerRosterEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer_id", "languages", "identity_attestation_sha256", "independence_attestation_sha256", "calibration_attestation_sha256"],
+      "properties": {
+        "reviewer_id": {"$ref": "#/$defs/reviewerId"},
+        "languages": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["en", "zh", "mixed"]}
+        },
+        "identity_attestation_sha256": {"$ref": "#/$defs/hash"},
+        "independence_attestation_sha256": {"$ref": "#/$defs/hash"},
+        "calibration_attestation_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "runIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "system_id", "variant_id", "repetition"],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "variant_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "repetition": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

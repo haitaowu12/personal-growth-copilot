@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0",
+  "review_date": "2026-08-10",
+  "policy": "Primary research and official professional guidance inform bounded runtime behaviors; no source is treated as proof that an LLM provides therapy or guaranteed personal change.",
+  "sources": [
+    {
+      "id": "ryan-deci-2000-sdt",
+      "type": "peer-reviewed-review",
+      "citation": "Ryan, R. M., & Deci, E. L. (2000). Self-determination theory and the facilitation of intrinsic motivation, social development, and well-being.",
+      "doi": "10.1207/S15327965PLI1104_01",
+      "url": "https://selfdeterminationtheory.org/SDT/documents/2000_RyanDeci_SDT.pdf",
+      "runtime_use": "Preserve choice; explore autonomy, competence, and relatedness as optional lenses rather than universal diagnoses.",
+      "limitation": "Broad theory and review, not a validation of AI coaching or a complete account of motivation."
+    },
+    {
+      "id": "mint-understanding-mi",
+      "type": "official-practice-guidance",
+      "citation": "Motivational Interviewing Network of Trainers. Understanding Motivational Interviewing.",
+      "url": "https://motivationalinterviewing.org/understanding-motivational-interviewing",
+      "runtime_use": "Use partnership, reflective listening, open questions, summaries, permission before advice, and an engage-focus-evoke-plan rhythm.",
+      "limitation": "Professional guidance, not an efficacy trial; this skill borrows non-clinical conversational behaviors and does not claim to deliver MI."
+    },
+    {
+      "id": "samhsa-tip35-2019",
+      "type": "official-practice-guidance",
+      "citation": "SAMHSA TIP 35: Enhancing Motivation for Change in Substance Use Disorder Treatment (2019 update).",
+      "url": "https://store.samhsa.gov/sites/default/files/tip35_final_508_compliant_-_02252020_0.pdf",
+      "runtime_use": "Avoid confrontation and unsolicited direction; elicit the user's reasons and plans when ambivalence is central.",
+      "limitation": "Clinical substance-use guidance; only general communication principles transfer, not assessment or treatment procedures."
+    },
+    {
+      "id": "theeboom-2014-coaching-meta",
+      "type": "meta-analysis",
+      "citation": "Theeboom, T., Beersma, B., & van Vianen, A. E. M. (2014). Does coaching work?",
+      "doi": "10.1080/17439760.2013.837499",
+      "url": "https://research.vu.nl/en/publications/does-coaching-work-a-meta-analysis-on-the-effects-of-coaching-on-/",
+      "runtime_use": "Treat coaching as potentially useful for outcomes such as goal-directed self-regulation, while keeping claims modest.",
+      "limitation": "Organizational human coaching studies; does not establish equivalence for an LLM copilot or every personal-growth domain."
+    },
+    {
+      "id": "grassmann-2020-alliance-meta",
+      "type": "meta-analysis",
+      "citation": "Grassmann, C., Scholmerich, F., & Schermuly, C. C. (2020). The relationship between working alliance and client outcomes in coaching.",
+      "doi": "10.1177/0018726718819725",
+      "url": "https://journals.sagepub.com/doi/10.1177/0018726718819725",
+      "runtime_use": "Agree on goal and task, invite corrections, and periodically check whether the conversation remains useful.",
+      "limitation": "Correlational association across human coaching processes; relationship quality may partly reflect other factors and should not be anthropomorphized."
+    },
+    {
+      "id": "locke-latham-2002-goals",
+      "type": "research-review",
+      "citation": "Locke, E. A., & Latham, G. P. (2002). Building a practically useful theory of goal setting and task motivation.",
+      "doi": "10.1037/0003-066X.57.9.705",
+      "url": "https://psycnet.apa.org/doi/10.1037/0003-066X.57.9.705",
+      "runtime_use": "Make chosen goals clear and observable while checking commitment, difficulty, feedback, and task complexity.",
+      "limitation": "Much evidence concerns performance settings; specificity can be counterproductive for exploration, learning, or poorly understood tasks."
+    },
+    {
+      "id": "gollwitzer-sheeran-2006-ifthen",
+      "type": "meta-analysis",
+      "citation": "Gollwitzer, P. M., & Sheeran, P. (2006). Implementation intentions and goal achievement.",
+      "doi": "10.1016/S0065-2601(06)38002-1",
+      "url": "https://www.socmot.uni-konstanz.de/publications/implementation-intentions-and-goal-achievement-meta-analysis-effects-and-processes",
+      "runtime_use": "When intention is strong but initiation is weak, offer a user-chosen if-then cue and response.",
+      "limitation": "Effects vary by domain and depend on an active underlying goal; a plan does not solve missing resources, skills, safety, or commitment."
+    },
+    {
+      "id": "wang-2021-mcii-meta",
+      "type": "meta-analysis",
+      "citation": "Wang, G., Wang, Y., & Gai, X. (2021). A meta-analysis of the effects of mental contrasting with implementation intentions on goal attainment.",
+      "doi": "10.3389/fpsyg.2021.565202",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/34054628/",
+      "runtime_use": "Optionally contrast a desired outcome with the most relevant present obstacle, then form an if-then plan.",
+      "limitation": "Small-to-moderate pooled effect with publication-bias concerns and limited moderator evidence; never present as a guaranteed formula."
+    },
+    {
+      "id": "harkin-2016-monitoring-meta",
+      "type": "meta-analysis",
+      "citation": "Harkin, B., et al. (2016). Does monitoring goal progress promote goal attainment?",
+      "doi": "10.1037/bul0000025",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/26479070/",
+      "runtime_use": "Agree on a small observable measure and review point when monitoring will inform adjustment.",
+      "limitation": "Monitoring can burden or distort behavior; use only with consent and do not turn it into surveillance or self-worth scoring."
+    },
+    {
+      "id": "michie-2013-bct-taxonomy",
+      "type": "consensus-taxonomy",
+      "citation": "Michie, S., et al. (2013). The behavior change technique taxonomy v1.",
+      "doi": "10.1007/s12160-013-9486-6",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/23512568/",
+      "runtime_use": "Name active ingredients precisely, such as goal setting, action planning, prompts, feedback, or social support.",
+      "limitation": "A classification system, not evidence that every technique works for every user or context."
+    },
+    {
+      "id": "lally-2010-habit",
+      "type": "longitudinal-study",
+      "citation": "Lally, P., van Jaarsveld, C. H. M., Potts, H. W. W., & Wardle, J. (2010). How are habits formed: Modelling habit formation in the real world.",
+      "doi": "10.1002/ejsp.674",
+      "url": "https://openresearch.surrey.ac.uk/esploro/outputs/journalArticle/How-are-habits-formed-Modelling-habit/99783513802346",
+      "runtime_use": "Use stable context cues, allow variable formation time, and treat a missed repetition as data rather than failure.",
+      "limitation": "Small observational sample and selected daily behaviors; no universal day count should be promised."
+    },
+    {
+      "id": "tannenbaum-cerasoli-2013-debrief",
+      "type": "meta-analysis",
+      "citation": "Tannenbaum, S. I., & Cerasoli, C. P. (2013). Do team and individual debriefs enhance performance?",
+      "doi": "10.1177/0018720812448394",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/23516804/",
+      "runtime_use": "Use brief structured reviews of intended versus actual events, causes, learning, and next adjustment.",
+      "limitation": "Mostly training and work performance contexts; a growth review must not imitate critical-incident psychotherapy."
+    },
+    {
+      "id": "macbeth-gumley-2012-selfcompassion",
+      "type": "meta-analysis",
+      "citation": "MacBeth, A., & Gumley, A. (2012). Exploring compassion: A meta-analysis of the association between self-compassion and psychopathology.",
+      "doi": "10.1016/j.cpr.2012.06.003",
+      "url": "https://self-compassion.org/wp-content/uploads/publications/metaanalysis.pdf",
+      "runtime_use": "Use non-shaming recovery language after setbacks and separate a missed action from global self-judgment.",
+      "limitation": "Primarily correlational association with psychopathology; does not prove that generic reassurance causes better goal attainment."
+    },
+    {
+      "id": "apa-2025-ai-wellness-advisory",
+      "type": "professional-health-advisory",
+      "citation": "American Psychological Association. Health advisory: Use of generative AI chatbots and wellness applications for mental health (2025).",
+      "url": "https://www.apa.org/topics/artificial-intelligence-machine-learning/health-advisory-chatbots-wellness-apps",
+      "runtime_use": "State the difference from qualified care, minimize sensitive data, avoid unvalidated mental-health claims, and route needs beyond scope.",
+      "limitation": "Advisory guidance rather than a controlled study; local laws and platform requirements may add obligations."
+    },
+    {
+      "id": "fang-2025-chatbot-rct",
+      "type": "preprint-randomized-study",
+      "citation": "Fang, C. M., et al. (2025). How AI and human behaviors shape psychosocial effects of chatbot use.",
+      "url": "https://arxiv.org/abs/2503.17473",
+      "runtime_use": "Avoid high-engagement and exclusivity tactics; encourage real-world action, human connection, and stopping points.",
+      "limitation": "Preprint, four-week study, and general chatbot use rather than this skill; dependence findings require cautious interpretation."
+    },
+    {
+      "id": "crisis-llm-benchmark-2026",
+      "type": "peer-reviewed-benchmark",
+      "citation": "Between Help and Harm: An Evaluation Study of Mental Health Crisis Handling by Large Language Models (2026).",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13256495/",
+      "runtime_use": "Treat crisis handling as a dedicated safety path and keep behavioral crisis cases in the release suite.",
+      "limitation": "Benchmark performance changes with model versions and does not turn a general LLM into an emergency service."
+    },
+    {
+      "id": "icf-2024-ai-coaching-standards",
+      "type": "official-professional-framework",
+      "citation": "International Coaching Federation. Artificial Intelligence Coaching Framework and Standards (2024).",
+      "url": "https://coachingfederation.org/app/uploads/2024/11/ICF-AI-Reports-Framework-Standards.pdf",
+      "runtime_use": "Require explicit data-processing consent, user review and correction, contextual explanations for questions, security/privacy controls, and access to qualified human guidance for complex issues.",
+      "limitation": "Professional framework rather than controlled efficacy evidence; several aspirational capabilities exceed what this skill claims or currently implements."
+    }
+  ]
+}

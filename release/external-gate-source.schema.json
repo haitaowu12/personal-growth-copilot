@@ -1,0 +1,340 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/external-gate-source.schema.json",
+  "oneOf": [
+    {"$ref": "#/$defs/reviewerAttestation"},
+    {"$ref": "#/$defs/holdout"},
+    {"$ref": "#/$defs/privacyPreflight"},
+    {"$ref": "#/$defs/bilingualReview"},
+    {"$ref": "#/$defs/pilot"}
+  ],
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "relativePath": {"type": "string", "minLength": 1, "maxLength": 500},
+    "reviewerId": {"type": "string", "pattern": "^reviewer-[0-9a-f]{16}$"},
+    "reviewerAttestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "evidence_class", "candidate_commit", "completed_at", "rubric_sha256", "calibration_set_path", "calibration_set_sha256", "config_path", "config_sha256", "result_manifest_path", "result_manifest_sha256", "reviewers"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "evidence_class": {"const": "reviewer-attestation-source"},
+        "candidate_commit": {"$ref": "#/$defs/commit"},
+        "completed_at": {"$ref": "#/$defs/timestamp"},
+        "rubric_sha256": {"$ref": "#/$defs/hash"},
+        "calibration_set_path": {"$ref": "#/$defs/relativePath"},
+        "calibration_set_sha256": {"$ref": "#/$defs/hash"},
+        "config_path": {"$ref": "#/$defs/relativePath"},
+        "config_sha256": {"$ref": "#/$defs/hash"},
+        "result_manifest_path": {"$ref": "#/$defs/relativePath"},
+        "result_manifest_sha256": {"$ref": "#/$defs/hash"},
+        "reviewers": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 20,
+          "items": {"$ref": "#/$defs/reviewerEvidence"}
+        }
+      }
+    },
+    "reviewerEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer_id", "subject_sha256", "languages", "identity_evidence_path", "identity_evidence_sha256", "independence_evidence_path", "independence_evidence_sha256", "calibration_evidence_path", "calibration_evidence_sha256", "calibrated_at", "identity_verified", "independence_verified", "calibration_passed", "used_run_count"],
+      "properties": {
+        "reviewer_id": {"$ref": "#/$defs/reviewerId"},
+        "subject_sha256": {"$ref": "#/$defs/hash"},
+        "languages": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["en", "zh", "mixed"]}
+        },
+        "identity_evidence_path": {"$ref": "#/$defs/relativePath"},
+        "identity_evidence_sha256": {"$ref": "#/$defs/hash"},
+        "independence_evidence_path": {"$ref": "#/$defs/relativePath"},
+        "independence_evidence_sha256": {"$ref": "#/$defs/hash"},
+        "calibration_evidence_path": {"$ref": "#/$defs/relativePath"},
+        "calibration_evidence_sha256": {"$ref": "#/$defs/hash"},
+        "calibrated_at": {"$ref": "#/$defs/timestamp"},
+        "identity_verified": {"type": "boolean"},
+        "independence_verified": {"type": "boolean"},
+        "calibration_passed": {"type": "boolean"},
+        "used_run_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "holdout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "evidence_class", "candidate_commit", "seal_path", "seal_file_sha256", "seal_sha256", "revealed_at", "completed_at", "access_audit_path", "access_audit_file_sha256", "access_audit_sha256", "results"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "evidence_class": {"const": "holdout-source"},
+        "candidate_commit": {"$ref": "#/$defs/commit"},
+        "seal_path": {"$ref": "#/$defs/relativePath"},
+        "seal_file_sha256": {"$ref": "#/$defs/hash"},
+        "seal_sha256": {"$ref": "#/$defs/hash"},
+        "revealed_at": {"$ref": "#/$defs/timestamp"},
+        "completed_at": {"$ref": "#/$defs/timestamp"},
+        "access_audit_path": {"$ref": "#/$defs/relativePath"},
+        "access_audit_file_sha256": {"$ref": "#/$defs/hash"},
+        "access_audit_sha256": {"$ref": "#/$defs/hash"},
+        "results": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/holdoutResult"}
+        }
+      }
+    },
+    "holdoutResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "result_path", "result_file_sha256", "result_sha256", "attempt_inventory_path", "attempt_inventory_file_sha256", "attempt_inventory_sha256"],
+      "properties": {
+        "case_id": {"type": "string", "pattern": "^holdout-[a-z0-9_-]{3,79}$"},
+        "result_path": {"$ref": "#/$defs/relativePath"},
+        "result_file_sha256": {"$ref": "#/$defs/hash"},
+        "result_sha256": {"$ref": "#/$defs/hash"},
+        "attempt_inventory_path": {"$ref": "#/$defs/relativePath"},
+        "attempt_inventory_file_sha256": {"$ref": "#/$defs/hash"},
+        "attempt_inventory_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "privacyPreflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "evidence_class", "candidate_commit", "named_host", "host_identity_path", "host_identity_sha256", "completed_at", "retention_days", "checks", "findings", "audit_sha256", "audit_event_count", "audit_receipt"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "evidence_class": {"const": "privacy-preflight-source"},
+        "candidate_commit": {"$ref": "#/$defs/commit"},
+        "named_host": {"type": "string", "minLength": 1, "maxLength": 200},
+        "host_identity_path": {"$ref": "#/$defs/relativePath"},
+        "host_identity_sha256": {"$ref": "#/$defs/hash"},
+        "completed_at": {"$ref": "#/$defs/timestamp"},
+        "retention_days": {"type": "integer", "minimum": 1, "maximum": 365},
+        "checks": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 20,
+          "items": {"$ref": "#/$defs/privacyCheck"}
+        },
+        "findings": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {"$ref": "#/$defs/privacyFinding"}
+        },
+        "audit_sha256": {"$ref": "#/$defs/hash"},
+        "audit_event_count": {"type": "integer", "minimum": 7},
+        "audit_receipt": {"$ref": "#/$defs/privacyReceipt"}
+      }
+    },
+    "privacyReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["payload", "signature_base64"],
+      "properties": {
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain", "candidate_commit", "audit_id", "host_identity_sha256", "audit_sha256", "event_count", "completed_at", "nonce"],
+          "properties": {
+            "domain": {"const": "pgc-privacy-audit-witness-v1"},
+            "candidate_commit": {"$ref": "#/$defs/commit"},
+            "audit_id": {"type": "string", "pattern": "^privacy-audit-[0-9a-f]{16}$"},
+            "host_identity_sha256": {"$ref": "#/$defs/hash"},
+            "audit_sha256": {"$ref": "#/$defs/hash"},
+            "event_count": {"type": "integer", "minimum": 7},
+            "completed_at": {"$ref": "#/$defs/timestamp"},
+            "nonce": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{16,200}$"}
+          }
+        },
+        "signature_base64": {"type": "string", "pattern": "^[A-Za-z0-9+/]+={0,2}$", "minLength": 40, "maxLength": 1000}
+      }
+    },
+    "privacyCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_id", "status", "executed_at", "evidence_path", "evidence_sha256"],
+      "properties": {
+        "check_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,79}$"},
+        "status": {"enum": ["PASS", "FAIL"]},
+        "executed_at": {"$ref": "#/$defs/timestamp"},
+        "evidence_path": {"$ref": "#/$defs/relativePath"},
+        "evidence_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "privacyFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_id", "severity", "status", "evidence_path", "evidence_sha256"],
+      "properties": {
+        "finding_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_-]{2,79}$"},
+        "severity": {"enum": ["low", "medium", "high", "critical"]},
+        "status": {"enum": ["OPEN", "RESOLVED", "ACCEPTED"]},
+        "evidence_path": {"$ref": "#/$defs/relativePath"},
+        "evidence_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "bilingualReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "evidence_class", "candidate_commit", "completed_at", "reviewer_source_path", "reviewer_source_sha256", "fluent_reviewer_ids", "expected_review_ids", "reviews"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "evidence_class": {"const": "bilingual-review-source"},
+        "candidate_commit": {"$ref": "#/$defs/commit"},
+        "completed_at": {"$ref": "#/$defs/timestamp"},
+        "reviewer_source_path": {"$ref": "#/$defs/relativePath"},
+        "reviewer_source_sha256": {"$ref": "#/$defs/hash"},
+        "fluent_reviewer_ids": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/reviewerId"}
+        },
+        "expected_review_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/hash"}
+        },
+        "reviews": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/bilingualRun"}
+        }
+      }
+    },
+    "scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]{2,79}$": {"type": "integer", "minimum": 1, "maximum": 5}
+      }
+    },
+    "bilingualRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_id", "run_id", "system_id", "language", "result_sha256", "primary_1_reviewer_id", "primary_2_reviewer_id", "primary_1_scores", "primary_2_scores", "meaning_or_safety_failure_codes"],
+      "properties": {
+        "review_id": {"$ref": "#/$defs/hash"},
+        "run_id": {"type": "string", "pattern": "^run-[0-9a-f]{24}$"},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "language": {"enum": ["zh", "mixed"]},
+        "result_sha256": {"$ref": "#/$defs/hash"},
+        "primary_1_reviewer_id": {"$ref": "#/$defs/reviewerId"},
+        "primary_2_reviewer_id": {"$ref": "#/$defs/reviewerId"},
+        "primary_1_scores": {"$ref": "#/$defs/scores"},
+        "primary_2_scores": {"$ref": "#/$defs/scores"},
+        "meaning_or_safety_failure_codes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}
+        }
+      }
+    },
+    "pilot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "evidence_class", "candidate_commit", "protocol_path", "protocol_sha256", "preregistered_at", "started_at", "ended_at", "planned_episode_ids", "episodes", "incidents", "ledger_sha256", "ledger_event_count", "ledger_receipt"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "evidence_class": {"const": "pilot-source"},
+        "candidate_commit": {"$ref": "#/$defs/commit"},
+        "protocol_path": {"$ref": "#/$defs/relativePath"},
+        "protocol_sha256": {"$ref": "#/$defs/hash"},
+        "preregistered_at": {"$ref": "#/$defs/timestamp"},
+        "started_at": {"$ref": "#/$defs/timestamp"},
+        "ended_at": {"$ref": "#/$defs/timestamp"},
+        "planned_episode_ids": {
+          "type": "array",
+          "minItems": 10,
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^episode-[0-9a-f]{16}$"}
+        },
+        "episodes": {
+          "type": "array",
+          "minItems": 10,
+          "maxItems": 20,
+          "items": {"$ref": "#/$defs/pilotEpisode"}
+        },
+        "incidents": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {"$ref": "#/$defs/pilotIncident"}
+        },
+        "ledger_sha256": {"$ref": "#/$defs/hash"},
+        "ledger_event_count": {"type": "integer", "minimum": 10},
+        "ledger_receipt": {"$ref": "#/$defs/pilotReceipt"}
+      }
+    },
+    "pilotReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["payload", "signature_base64"],
+      "properties": {
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain", "candidate_commit", "ledger_id", "protocol_sha256", "ledger_sha256", "event_count", "completed_at", "nonce"],
+          "properties": {
+            "domain": {"const": "pgc-pilot-ledger-witness-v1"},
+            "candidate_commit": {"$ref": "#/$defs/commit"},
+            "ledger_id": {"type": "string", "pattern": "^pilot-ledger-[0-9a-f]{16}$"},
+            "protocol_sha256": {"$ref": "#/$defs/hash"},
+            "ledger_sha256": {"$ref": "#/$defs/hash"},
+            "event_count": {"type": "integer", "minimum": 10},
+            "completed_at": {"$ref": "#/$defs/timestamp"},
+            "nonce": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{16,200}$"}
+          }
+        },
+        "signature_base64": {"type": "string", "pattern": "^[A-Za-z0-9+/]+={0,2}$", "minLength": 40, "maxLength": 1000}
+      }
+    },
+    "pilotEpisode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["episode_id", "scheduled_at", "closed_at", "outcome", "consent_evidence_path", "consent_evidence_sha256", "episode_evidence_path", "episode_evidence_sha256", "withdrawal_requested_at", "withdrawal_honored_at", "deletion_requested", "deletion_completed_at"],
+      "properties": {
+        "episode_id": {"type": "string", "pattern": "^episode-[0-9a-f]{16}$"},
+        "scheduled_at": {"$ref": "#/$defs/timestamp"},
+        "closed_at": {"$ref": "#/$defs/timestamp"},
+        "outcome": {"enum": ["COMPLETED", "WITHDRAWN", "STOPPED"]},
+        "consent_evidence_path": {"$ref": "#/$defs/relativePath"},
+        "consent_evidence_sha256": {"$ref": "#/$defs/hash"},
+        "episode_evidence_path": {"$ref": "#/$defs/relativePath"},
+        "episode_evidence_sha256": {"$ref": "#/$defs/hash"},
+        "withdrawal_requested_at": {
+          "oneOf": [{"$ref": "#/$defs/timestamp"}, {"type": "null"}]
+        },
+        "withdrawal_honored_at": {
+          "oneOf": [{"$ref": "#/$defs/timestamp"}, {"type": "null"}]
+        },
+        "deletion_requested": {"type": "boolean"},
+        "deletion_completed_at": {
+          "oneOf": [
+            {"$ref": "#/$defs/timestamp"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "pilotIncident": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["incident_id", "category", "severity", "detected_at", "evidence_path", "evidence_sha256"],
+      "properties": {
+        "incident_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_-]{2,79}$"},
+        "category": {"enum": ["privacy", "hard_safety", "dependence", "fabricated_persistence", "other"]},
+        "severity": {"enum": ["low", "medium", "high", "critical"]},
+        "detected_at": {"$ref": "#/$defs/timestamp"},
+        "evidence_path": {"$ref": "#/$defs/relativePath"},
+        "evidence_sha256": {"$ref": "#/$defs/hash"}
+      }
+    }
+  }
+}

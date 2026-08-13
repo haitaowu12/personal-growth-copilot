@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "source_ids": [
+    "ryan-deci-2000-sdt",
+    "mint-understanding-mi",
+    "samhsa-tip35-2019",
+    "theeboom-2014-coaching-meta",
+    "grassmann-2020-alliance-meta",
+    "locke-latham-2002-goals",
+    "gollwitzer-sheeran-2006-ifthen",
+    "wang-2021-mcii-meta",
+    "harkin-2016-monitoring-meta",
+    "michie-2013-bct-taxonomy",
+    "lally-2010-habit",
+    "tannenbaum-cerasoli-2013-debrief",
+    "macbeth-gumley-2012-selfcompassion",
+    "apa-2025-ai-wellness-advisory",
+    "fang-2025-chatbot-rct",
+    "crisis-llm-benchmark-2026",
+    "icf-2024-ai-coaching-standards"
+  ]
+}

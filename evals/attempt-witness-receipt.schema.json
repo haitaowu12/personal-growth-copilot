@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/attempt-witness-receipt.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "key_id", "payload", "signature_base64"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "key_id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{2,79}$"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "campaign_id", "candidate_commit", "event_sha256", "sequence", "previous_event_sha256", "witnessed_at", "nonce"],
+      "properties": {
+        "domain": {"const": "pgc-attempt-witness-receipt-v1"},
+        "campaign_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{15,99}$"},
+        "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "event_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "sequence": {"type": "integer", "minimum": 0},
+        "previous_event_sha256": {"anyOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9a-f]{64}$"}]},
+        "witnessed_at": {"type": "string", "format": "date-time"},
+        "nonce": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{16,200}$"}
+      }
+    },
+    "signature_base64": {"type": "string", "pattern": "^[A-Za-z0-9+/]+={0,2}$", "minLength": 40, "maxLength": 1000}
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/holdout-access-audit.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "candidate_commit", "holdout_seal_sha256", "generated_at", "events", "audit_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "holdout-access-audit"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "holdout_seal_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "events": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event_id", "actor_role", "accessed_at", "evidence_path", "evidence_sha256"],
+        "properties": {
+          "event_id": {"type": "string", "pattern": "^access-[0-9a-f]{16}$"},
+          "actor_role": {"enum": ["candidate_author", "holdout_author", "execution_operator", "reviewer"]},
+          "accessed_at": {"type": "string", "format": "date-time"},
+          "evidence_path": {"type": "string", "minLength": 1, "maxLength": 500},
+          "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "audit_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

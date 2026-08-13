@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/signed-receipt.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "key_id", "payload", "signature_base64"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "key_id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{2,79}$"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "gate", "candidate_commit", "artifact_sha256", "outcome", "issued_at", "nonce"],
+      "properties": {
+        "domain": {"const": "personal-growth-copilot-release-gate-v1"},
+        "gate": {"enum": ["behavioral_qualification", "reviewer_attestation", "attempt_inventory", "holdout", "privacy_preflight", "bilingual_review", "pilot", "independent_release_review", "owner_promotion"]},
+        "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "outcome": {"enum": ["PASS", "FAIL", "INVALIDATED"]},
+        "issued_at": {"type": "string", "format": "date-time"},
+        "nonce": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{16,200}$"}
+      }
+    },
+    "signature_base64": {"type": "string", "pattern": "^[A-Za-z0-9+/]+={0,2}$", "minLength": 40, "maxLength": 1000}
+  }
+}

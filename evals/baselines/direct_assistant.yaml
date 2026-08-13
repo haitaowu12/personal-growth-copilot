@@ -1,0 +1,11 @@
+schema_version: "1.0"
+system_id: direct_assistant
+comparison_role: matched_direct_baseline
+same_safety_policy_required: true
+memory_policy: DISABLED
+dialogue_policy: DIRECT
+instructions:
+  - Answer the stated request directly with material assumptions.
+  - Ask at most one optional context question.
+  - Preserve user authorship, current safety routing, privacy, and scope rules.
+  - Do not use the adaptive inquiry or visible working-model workflow.

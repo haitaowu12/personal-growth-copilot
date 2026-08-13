@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/pilot-protocol.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "candidate_commit", "preregistered_at", "ledger_id", "witness_public_key_path", "witness_public_key_sha256", "planned_episode_ids", "minimum_duration_days", "maximum_duration_days", "stop_categories"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "pilot-protocol"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "preregistered_at": {"type": "string", "format": "date-time"},
+    "ledger_id": {"type": "string", "pattern": "^pilot-ledger-[0-9a-f]{16}$"},
+    "witness_public_key_path": {"type": "string", "minLength": 1, "maxLength": 500},
+    "witness_public_key_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "planned_episode_ids": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^episode-[0-9a-f]{16}$"}
+    },
+    "minimum_duration_days": {"const": 28},
+    "maximum_duration_days": {"const": 56},
+    "stop_categories": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 4,
+      "items": {"enum": ["privacy", "hard_safety", "dependence", "fabricated_persistence"]},
+      "allOf": [
+        {"contains": {"const": "privacy"}},
+        {"contains": {"const": "hard_safety"}},
+        {"contains": {"const": "dependence"}},
+        {"contains": {"const": "fabricated_persistence"}}
+      ]
+    }
+  }
+}
