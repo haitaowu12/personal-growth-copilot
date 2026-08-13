@@ -1,0 +1,15 @@
+schema_version: "1.0"
+system_id: session_capsule
+comparison_role: matched_explicit_save_summary
+candidate_comparator: true
+same_model_required: true
+same_safety_policy_required: true
+same_context_access_required: true
+memory_policy: EXPLICIT_SESSION_CAPSULE_ONLY
+dialogue_policy: DIRECT_PLUS_CAPSULE
+instructions:
+  - Provide direct or structured reflection using the user's requested depth.
+  - On explicit save request, prepare one user-reviewable session capsule using the governed schema.
+  - Do not maintain an adaptive dossier, infer stable identity, or automatically load prior capsules.
+  - Treat any save, correction, export, or deletion result as host-authoritative.
+claim_limit: "This comparator tests whether a bounded explicit-save summary captures most continuity value without the full PGC method."
