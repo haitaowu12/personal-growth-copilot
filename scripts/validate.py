@@ -20,6 +20,35 @@ def canonical_hash(value: object) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def validate_outcome_design(design: dict[str, object]) -> list[str]:
+    errors: list[str] = []
+    measures = design.get("measures", [])
+    if not isinstance(measures, list):
+        return ["outcome measures must be an array"]
+    ids = [measure.get("id") for measure in measures if isinstance(measure, dict)]
+    if len(ids) != len(set(ids)):
+        errors.append("outcome measure ids must be unique")
+    primary_ids = [
+        measure.get("id")
+        for measure in measures
+        if isinstance(measure, dict) and measure.get("role") == "primary"
+    ]
+    if primary_ids != design.get("primary_outcome_ids"):
+        errors.append("primary outcome ids must exactly match measures marked primary")
+    if len(primary_ids) != 2:
+        errors.append("exactly two primary outcomes must be preregistered")
+    layers = {
+        measure.get("layer")
+        for measure in measures
+        if isinstance(measure, dict)
+    }
+    if layers != {"process", "proximal", "delayed", "burden", "dependence"}:
+        errors.append("outcome design must cover all five measurement layers")
+    if design.get("qualification_claim_allowed") is not False:
+        errors.append("outcome design must remain nonqualifying until execution")
+    return errors
+
+
 def validate() -> list[str]:
     errors: list[str] = []
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
@@ -45,6 +74,9 @@ def validate() -> list[str]:
         (ROOT / "provenance/community-sources.json").read_text(encoding="utf-8")
     )
     cases = json.loads((ROOT / "evals/cases.json").read_text(encoding="utf-8"))
+    outcome_design = json.loads(
+        (ROOT / "evals/outcome-measures.json").read_text(encoding="utf-8")
+    )
     if "TODO" in skill:
         errors.append("SKILL.md contains TODO")
     if "Use only after explicit invocation" not in skill:
@@ -182,6 +214,10 @@ def validate() -> list[str]:
         ROOT / "evals/configs/conformance.json",
         ROOT / "evals/baselines/direct_assistant.yaml",
         ROOT / "evals/baselines/structured_reflection.yaml",
+        ROOT / "evals/comparators/strong_generalist.yaml",
+        ROOT / "evals/comparators/minimal_visible_model.yaml",
+        ROOT / "evals/outcome-measures.schema.json",
+        ROOT / "evals/outcome-measures.json",
         ROOT / "safety/safety-state-machine.yaml",
         ROOT / "safety/resource-resolver-interface.md",
         ROOT / "skill/personal-growth-copilot/scripts/safety_runtime.py",
@@ -194,6 +230,7 @@ def validate() -> list[str]:
         ROOT / "providers/codex-output.schema.json",
         ROOT / "providers/README.md",
         ROOT / "docs/TARGET_EXECUTION.md",
+        ROOT / "docs/OUTCOME_EVALUATION.md",
         ROOT / "docs/RELEASE_EVIDENCE.md",
         ROOT / "release/gate-artifact.schema.json",
         ROOT / "release/signed-receipt.schema.json",
@@ -216,6 +253,9 @@ def validate() -> list[str]:
         ROOT / "scripts/release_packet.py",
         ROOT / "scripts/qualification_packet.py",
         ROOT / "scripts/host_privacy_discovery.py",
+        ROOT / "skill/personal-growth-copilot/assets/session-capsule.schema.json",
+        ROOT / "skill/personal-growth-copilot/references/session-capsule.md",
+        ROOT / "examples/session-capsule.example.json",
     }
     for path in sorted(required_runtime):
         if not path.exists():
@@ -234,6 +274,7 @@ def validate() -> list[str]:
         ROOT / "evals/attempt-event.schema.json",
         ROOT / "evals/attempt-witness-receipt.schema.json",
         ROOT / "evals/attempt-inventory-index.schema.json",
+        ROOT / "evals/outcome-measures.schema.json",
         ROOT / "providers/codex-output.schema.json",
         ROOT / "release/gate-artifact.schema.json",
         ROOT / "release/signed-receipt.schema.json",
@@ -250,6 +291,7 @@ def validate() -> list[str]:
         ROOT / "release/reviewer-identity-attestation.schema.json",
         ROOT / "release/qualification-packet-plan.schema.json",
         ROOT / "release/qualification-external-intake.schema.json",
+        ROOT / "skill/personal-growth-copilot/assets/session-capsule.schema.json",
     ):
         try:
             Draft202012Validator.check_schema(
@@ -265,6 +307,22 @@ def validate() -> list[str]:
     for collection in ("evidence", "scales", "check_ins", "decisions"):
         if collection not in growth_schema.get("required", []):
             errors.append(f"growth record schema must require {collection}")
+    outcome_schema = json.loads(
+        (ROOT / "evals/outcome-measures.schema.json").read_text(encoding="utf-8")
+    )
+    if list(Draft202012Validator(outcome_schema).iter_errors(outcome_design)):
+        errors.append("outcome measurement design fails its schema")
+    errors.extend(validate_outcome_design(outcome_design))
+    capsule_schema = json.loads(
+        (ROOT / "skill/personal-growth-copilot/assets/session-capsule.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    capsule_example = json.loads(
+        (ROOT / "examples/session-capsule.example.json").read_text(encoding="utf-8")
+    )
+    if list(Draft202012Validator(capsule_schema).iter_errors(capsule_example)):
+        errors.append("session capsule example fails its schema")
     for baseline_name in ("direct_assistant", "structured_reflection"):
         baseline = yaml.safe_load(
             (ROOT / f"evals/baselines/{baseline_name}.yaml").read_text(encoding="utf-8")
@@ -275,6 +333,25 @@ def validate() -> list[str]:
             errors.append(f"baseline may not weaken safety: {baseline_name}")
         if baseline.get("memory_policy") != "DISABLED":
             errors.append(f"baseline memory must be disabled: {baseline_name}")
+    for comparator_name in ("strong_generalist", "minimal_visible_model"):
+        comparator = yaml.safe_load(
+            (ROOT / f"evals/comparators/{comparator_name}.yaml").read_text(
+                encoding="utf-8"
+            )
+        )
+        if comparator.get("comparator_id") != comparator_name:
+            errors.append(f"comparator id mismatch: {comparator_name}")
+        if comparator.get("status") != "design-only-unexecuted":
+            errors.append(f"comparator must remain design-only: {comparator_name}")
+        for field in (
+            "same_model_required",
+            "same_safety_policy_required",
+            "same_context_access_required",
+        ):
+            if comparator.get(field) is not True:
+                errors.append(f"comparator may not weaken {field}: {comparator_name}")
+        if comparator.get("memory_policy") != "READ_ONLY_USER_APPROVED":
+            errors.append(f"comparator context policy mismatch: {comparator_name}")
     lock_text = (ROOT / "requirements/ci.txt").read_text(encoding="utf-8")
     input_requirements = {
         (match.group(1).lower().replace("_", "-"), match.group(2))

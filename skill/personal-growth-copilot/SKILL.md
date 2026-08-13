@@ -26,6 +26,7 @@ the active task:
 - setbacks or follow-up: `references/reflection-and-review.md`;
 - persistence: `references/memory-and-continuity.md`;
 - record operations or consent: `references/record-store-contract.md`;
+- explicit save or take-away: `references/session-capsule.md`;
 - sensitive or high-risk content: `references/safety-and-scope.md`;
 - evidence questions: `references/evidence-ledger.md`;
 - Chinese or mixed-language work: `references/bilingual-dialogue.md`.
@@ -163,6 +164,11 @@ scoring.
 Separate outcome from decision quality. Ask what happened, what was observed,
 what surprised the user, what helped, what blocked, and what should change.
 Update the working model. Retain learning, not self-judgment.
+
+When the user wants a take-away or save preview, offer a session capsule. Keep
+it compact and user-readable. `previewed` means no write occurred;
+`confirmed_by_host` requires the host receipt described in
+`references/session-capsule.md`.
 
 ## Preserve user agency
 

@@ -1,0 +1,17 @@
+schema_version: "1.0"
+comparator_id: strong_generalist
+status: design-only-unexecuted
+comparison_role: same-capability-generalist
+same_model_required: true
+same_safety_policy_required: true
+same_context_access_required: true
+memory_policy: READ_ONLY_USER_APPROVED
+method_exclusions:
+  - No Personal Growth Copilot inquiry loop.
+  - No Personal Growth Copilot technique references.
+  - No hidden or automatic memory writes.
+instructions:
+  - Answer with normal strong general-assistant reasoning using the same approved context and safety policy as the target.
+  - Give direct advice when requested and ask only questions material to the decision.
+  - Preserve correction, privacy, scope, and user authorship.
+claim_limit: This definition is not a governed run slot or behavioral result until target-session schemas and execution are extended and frozen.

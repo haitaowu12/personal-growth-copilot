@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/session-capsule.schema.json",
+  "title": "User-approved Personal Growth Copilot session capsule",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "capsule_id",
+    "created_at",
+    "session_objective",
+    "preserved_user_wording",
+    "confirmed_facts",
+    "working_hypotheses",
+    "unknowns",
+    "user_choice",
+    "prediction",
+    "disconfirming_observation",
+    "review_point",
+    "open_question",
+    "persistence"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "capsule_id": {"type": "string", "pattern": "^capsule-[0-9a-f]{16}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "session_objective": {"type": "string", "minLength": 5, "maxLength": 500},
+    "preserved_user_wording": {"type": "string", "minLength": 1, "maxLength": 500},
+    "confirmed_facts": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {"$ref": "#/$defs/taggedStatement"}
+    },
+    "working_hypotheses": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/hypothesis"}
+    },
+    "unknowns": {
+      "type": "array",
+      "maxItems": 12,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 3, "maxLength": 500}
+    },
+    "user_choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "wording"],
+      "properties": {
+        "kind": {"enum": ["action", "intentional_non_action", "unresolved"]},
+        "wording": {"type": "string", "minLength": 2, "maxLength": 500}
+      }
+    },
+    "prediction": {"type": ["string", "null"], "minLength": 3, "maxLength": 500},
+    "disconfirming_observation": {"type": ["string", "null"], "minLength": 3, "maxLength": 500},
+    "review_point": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": {"enum": ["date_time", "event"]},
+            "value": {"type": "string", "minLength": 3, "maxLength": 300}
+          }
+        }
+      ]
+    },
+    "open_question": {"type": ["string", "null"], "minLength": 3, "maxLength": 500},
+    "persistence": {"$ref": "#/$defs/persistence"}
+  },
+  "$defs": {
+    "taggedStatement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "source_tag"],
+      "properties": {
+        "statement": {"type": "string", "minLength": 3, "maxLength": 500},
+        "source_tag": {"enum": ["USER-REPORTED", "OBSERVED-IN-CHAT", "CORRECTION"]}
+      }
+    },
+    "hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "status", "alternatives"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^hyp-[0-9a-f]{8}$"},
+        "statement": {"type": "string", "minLength": 3, "maxLength": 500},
+        "status": {"enum": ["tentative", "narrowed", "superseded", "rejected"]},
+        "alternatives": {
+          "type": "array",
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 3, "maxLength": 500}
+        }
+      }
+    },
+    "delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "path"],
+      "properties": {
+        "op": {"enum": ["add", "replace", "remove"]},
+        "path": {"type": "string", "pattern": "^(/([^~/]|~0|~1)*)+$"},
+        "value": {}
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "exact_proposed_delta", "host_receipt_sha256"],
+      "properties": {
+        "status": {"enum": ["not_requested", "previewed", "confirmed_by_host"]},
+        "exact_proposed_delta": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {"$ref": "#/$defs/delta"}
+        },
+        "host_receipt_sha256": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "not_requested"}}},
+          "then": {
+            "properties": {
+              "exact_proposed_delta": {"maxItems": 0},
+              "host_receipt_sha256": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "previewed"}}},
+          "then": {
+            "properties": {
+              "exact_proposed_delta": {"minItems": 1},
+              "host_receipt_sha256": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "confirmed_by_host"}}},
+          "then": {
+            "properties": {
+              "exact_proposed_delta": {"minItems": 1},
+              "host_receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

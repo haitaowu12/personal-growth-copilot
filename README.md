@@ -4,7 +4,7 @@ Standalone clean-room development repository for an explicit-invocation Agent
 Skill supporting context-rich personal growth, reflective dialogue, practical
 behavior-change experiments, and longitudinal learning.
 
-Current version: `0.4.0-alpha.10`
+Current version: `0.4.0-alpha.11`
 
 This repository does not contain or claim byte equivalence to the unavailable
 historical `0.2.0-rc.1` candidate. See
@@ -83,6 +83,11 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   encryption, declared-sync, and backup observations without retaining raw
   command output. It cannot generate a privacy PASS, authorize persistence, or
   convert unexecuted lifecycle and incident controls from `UNKNOWN`.
+- a design-only outcome contract that separates process, proximal, delayed,
+  burden, and dependence measures; fixes two primary outcome IDs before target
+  execution; defines two stronger same-capability comparators; and validates a
+  user-readable explicit-save session capsule. None is executed outcome
+  evidence yet.
 
 The copilot may feel conversationally similar to a thoughtful coach. It must
 not claim to be a therapist, simulate a clinical relationship, diagnose, mine
@@ -112,4 +117,7 @@ release review, and owner promotion each require their own exact evidence.
 Synthetic expected-event fixtures prove only that the harness works.
 The target adapter, review, and campaign tests prove only that the evidence path
 fails closed; no real target-model run or human qualification is claimed yet.
+The strong-generalist and minimal-visible-model comparators remain
+design-only; current schemas do not execute them as governed run slots.
+See `docs/OUTCOME_EVALUATION.md` for the measurement and comparator boundary.
 See `docs/RELEASE_EVIDENCE.md` for the signed external-evidence contract.
