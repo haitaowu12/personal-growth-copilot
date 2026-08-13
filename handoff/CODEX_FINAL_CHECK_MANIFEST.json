@@ -44,13 +44,34 @@
       "event": "push",
       "conclusion": "success",
       "head_sha": "0774e9568673c89061f0cddf9ffb74d27574ac82",
-      "python_matrix": ["3.11.15", "3.12.13", "3.13.15", "3.14.7"],
+      "python_matrix": [
+        "3.11.15",
+        "3.12.13",
+        "3.13.15",
+        "3.14.7"
+      ],
       "all_jobs_success": true,
       "artifacts": [
-        {"python": "3.11.15", "artifact_id": 9193675012, "archive_sha256": "24c2dac95d5771d3a86fe99db6e6ef682be1080da85fc50e3a69923754a53bbb"},
-        {"python": "3.12.13", "artifact_id": 9193677213, "archive_sha256": "122b04aabf328ae61d7eb72901061ab1dbf2ca646391e23c96bce0609a715bee"},
-        {"python": "3.13.15", "artifact_id": 9193683082, "archive_sha256": "1b499c72e62ea7471ca28517a49221a9577c6f3b24871b1e8de41295fd4f7a3d"},
-        {"python": "3.14.7", "artifact_id": 9193682697, "archive_sha256": "4ab7ee6f52c6a214bbad1c8e396fe9a16ea8cea6fe89e6ac8eb23daf4757fab2"}
+        {
+          "python": "3.11.15",
+          "artifact_id": 9193675012,
+          "archive_sha256": "24c2dac95d5771d3a86fe99db6e6ef682be1080da85fc50e3a69923754a53bbb"
+        },
+        {
+          "python": "3.12.13",
+          "artifact_id": 9193677213,
+          "archive_sha256": "122b04aabf328ae61d7eb72901061ab1dbf2ca646391e23c96bce0609a715bee"
+        },
+        {
+          "python": "3.13.15",
+          "artifact_id": 9193683082,
+          "archive_sha256": "1b499c72e62ea7471ca28517a49221a9577c6f3b24871b1e8de41295fd4f7a3d"
+        },
+        {
+          "python": "3.14.7",
+          "artifact_id": 9193682697,
+          "archive_sha256": "4ab7ee6f52c6a214bbad1c8e396fe9a16ea8cea6fe89e6ac8eb23daf4757fab2"
+        }
       ],
       "representative_python": "3.12.13",
       "representative_deterministic_aggregate_sha256": "ab932bae4ea069bed16641866beb495c14abfded16deb721815126bfc8f07726",
@@ -65,7 +86,12 @@
       "conclusion": "success",
       "head_sha": "0774e9568673c89061f0cddf9ffb74d27574ac82",
       "synthetic_merge_commit": "6972ea445675c66add7deb5c9288212df9b7a21c",
-      "python_matrix": ["3.11.15", "3.12.13", "3.13.15", "3.14.7"],
+      "python_matrix": [
+        "3.11.15",
+        "3.12.13",
+        "3.13.15",
+        "3.14.7"
+      ],
       "all_jobs_success": true,
       "representative_python": "3.12.13",
       "representative_deterministic_aggregate_sha256": "3fd0a8ba62a3b7a4e57c5da2705d8263d5a941e1b87b2551336d75df98bed490"
@@ -75,7 +101,7 @@
       "focused_unit_tests": "4/4 pass",
       "python_compile": "pass",
       "json_yaml_parse": "pass",
-      "scope": "candidate files in a synthetic minimal root; superseded by exact-head CI for repository qualification"
+      "scope": "candidate files in a synthetic minimal root; superseded by the exact-head CI above for repository qualification"
     },
     "known_failed_predecessor": {
       "commit": "edb0a2bf316fffa6eca1fa619e341694ebdff086",
