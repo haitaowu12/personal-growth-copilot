@@ -104,7 +104,17 @@
         "op": {"enum": ["add", "replace", "remove"]},
         "path": {"type": "string", "pattern": "^(/([^~/]|~0|~1)*)+$"},
         "value": {}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"op": {"enum": ["add", "replace"]}}},
+          "then": {"required": ["value"]}
+        },
+        {
+          "if": {"properties": {"op": {"const": "remove"}}},
+          "then": {"not": {"required": ["value"]}}
+        }
+      ]
     },
     "persistence": {
       "type": "object",

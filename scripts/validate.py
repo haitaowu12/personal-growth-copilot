@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -321,7 +321,11 @@ def validate() -> list[str]:
     capsule_example = json.loads(
         (ROOT / "examples/session-capsule.example.json").read_text(encoding="utf-8")
     )
-    if list(Draft202012Validator(capsule_schema).iter_errors(capsule_example)):
+    if list(
+        Draft202012Validator(
+            capsule_schema, format_checker=FormatChecker()
+        ).iter_errors(capsule_example)
+    ):
         errors.append("session capsule example fails its schema")
     for baseline_name in ("direct_assistant", "structured_reflection"):
         baseline = yaml.safe_load(
