@@ -1,6 +1,6 @@
 # Roadmap
 
-## Completed through 0.4.0-alpha.10
+## Completed through 0.4.0-alpha.11
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
@@ -56,26 +56,38 @@
 - fail-closed read-only named-host privacy discovery with hashed command
   observations, exact private-output boundaries, incomplete sync-inventory
   handling, and a hard prohibition on persistence authorization.
+- design-only outcome measurement across process, proximal, delayed, burden,
+  and dependence layers with two fixed primary outcome IDs, explicit missing
+  and dropout treatment, two same-capability comparator definitions, and a
+  schema-bound explicit-save session capsule.
 
 ## Next evidence slice
 
-1. initialize the private packet on a dedicated non-sync evaluation host,
+1. extend the governed run schemas, provider profiles, results, aggregation,
+   and attempt inventory to execute the strong-generalist and
+   minimal-visible-model comparators; retain current baselines as ablations;
+2. expand ordinary-growth and multi-session cases, including disconfirmation,
+   direct-answer, intentional non-action, low engagement, non-attempt, and
+   dropout paths;
+3. initialize the private packet on a dedicated non-sync evaluation host,
    provision the real independent inputs, pass preregistration preflight, and
    freeze the exact trust policy;
-2. provision restricted credentials, then run
-   the authored cases on a frozen target model and matched baselines;
-3. add independently authored untouched cases after the skill freezes;
-4. conduct two-reviewer safety and bilingual adjudication and calculate
+4. provision restricted credentials, then run the authored cases on a frozen
+   target model, current ablations, and strong comparators while collecting the
+   fixed outcome, burden, and dependence measures;
+5. add independently authored untouched cases after the skill freezes;
+6. conduct two-reviewer safety and English/Chinese adjudication and calculate
    preregistered agreement;
-5. produce signed reviewer-attestation and
+7. produce signed reviewer-attestation and
    immutable attempt-inventory evidence using the implemented receipt protocol;
-6. calibrate any auxiliary model judge to human labels;
-7. resolve every `FAIL` or `UNKNOWN` from named-host discovery, then execute the
+8. calibrate any auxiliary model judge to human labels;
+9. resolve every `FAIL` or `UNKNOWN` from named-host discovery, then execute the
    source-witnessed host privacy/security and incident evidence contract;
-8. implement a persistent adapter only if host discovery proves correct storage,
+10. implement a persistent adapter only if host discovery proves correct storage,
    encryption, no-sync path, backup, correction, export, and deletion behavior;
-9. run a 10–20 episode consented private pilot over 4–8 weeks;
-10. obtain signed independent release review and explicit owner promotion.
+11. run a 10–20 episode consented private pilot over 4–8 weeks, retaining
+    failures, non-attempts, missing reviews, withdrawals, and dependence signals;
+12. obtain signed independent release review and explicit owner promotion.
 
 ## Stop conditions
 

@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "capsule_id": "capsule-0123456789abcdef",
+  "created_at": "2026-08-13T03:40:00Z",
+  "session_objective": "Choose a low-burden way to practice a presentation before Friday.",
+  "preserved_user_wording": "I want practice that reveals where I get stuck, not another perfect script.",
+  "confirmed_facts": [
+    {
+      "statement": "The presentation is scheduled for Friday.",
+      "source_tag": "USER-REPORTED"
+    },
+    {
+      "statement": "A full rehearsal feels too burdensome tonight.",
+      "source_tag": "USER-REPORTED"
+    }
+  ],
+  "working_hypotheses": [
+    {
+      "id": "hyp-0123abcd",
+      "statement": "A short unscripted opening may reveal the first material retrieval gap.",
+      "status": "tentative",
+      "alternatives": [
+        "The main obstacle may be fatigue rather than retrieval.",
+        "The difficult part may occur during questions rather than the opening."
+      ]
+    }
+  ],
+  "unknowns": [
+    "Whether the first retrieval gap occurs in the opening or later questions."
+  ],
+  "user_choice": {
+    "kind": "action",
+    "wording": "Practice the opening aloud once for five minutes tonight."
+  },
+  "prediction": "One specific retrieval gap will become observable within five minutes.",
+  "disconfirming_observation": "The opening is fluent and the first difficulty appears only during questions.",
+  "review_point": {
+    "kind": "event",
+    "value": "Immediately after the five-minute practice."
+  },
+  "open_question": "Which later section should be tested if the opening is fluent?",
+  "persistence": {
+    "status": "previewed",
+    "exact_proposed_delta": [
+      {
+        "op": "add",
+        "path": "/experiments/-",
+        "value": {
+          "action": "Practice the opening aloud once for five minutes tonight.",
+          "review_point": "Immediately after practice."
+        }
+      }
+    ],
+    "host_receipt_sha256": null
+  }
+}
