@@ -1,6 +1,7 @@
 from __future__ import annotations
-import importlib.util, json, unittest
+import copy, importlib.util, json, unittest
 from pathlib import Path
+from jsonschema import Draft202012Validator
 ROOT=Path(__file__).resolve().parents[1]
 SPEC=importlib.util.spec_from_file_location("validate_design_assets",ROOT/"scripts/validate_design_assets.py")
 assert SPEC and SPEC.loader
@@ -17,6 +18,17 @@ class DesignAssetsTests(unittest.TestCase):
         capsule=json.loads((ROOT/"examples/session-capsule.example.json").read_text(encoding="utf-8"))
         self.assertFalse(capsule["retention"]["stored"]); self.assertIsNone(capsule["retention"]["host_receipt"])
         self.assertNotEqual(capsule["memory_delta"]["status"],"COMMITTED")
+
+    def test_capsule_receipt_matches_storage_state(self):
+        schema=json.loads((ROOT/"skill/personal-growth-copilot/assets/session-capsule.schema.json").read_text(encoding="utf-8"))
+        capsule=json.loads((ROOT/"examples/session-capsule.example.json").read_text(encoding="utf-8"))
+        validator=Draft202012Validator(schema)
+        with_receipt=copy.deepcopy(capsule)
+        with_receipt["retention"]["host_receipt"]="unverified-receipt"
+        self.assertTrue(list(validator.iter_errors(with_receipt)))
+        without_receipt=copy.deepcopy(capsule)
+        without_receipt["retention"]["stored"]=True
+        self.assertTrue(list(validator.iter_errors(without_receipt)))
     def test_ordinary_suite_contains_delayed_and_chinese_cases(self):
         cases=json.loads((ROOT/"evals/ordinary-growth-cases.json").read_text(encoding="utf-8"))["cases"]
         self.assertGreaterEqual(len(cases),12)

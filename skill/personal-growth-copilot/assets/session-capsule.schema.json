@@ -71,6 +71,44 @@
       }
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "required": ["retention"],
+        "properties": {
+          "retention": {
+            "required": ["stored"],
+            "properties": {"stored": {"const": false}}
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retention": {
+            "properties": {"host_receipt": {"type": "null"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["retention"],
+        "properties": {
+          "retention": {
+            "required": ["stored"],
+            "properties": {"stored": {"const": true}}
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retention": {
+            "properties": {"host_receipt": {"type": "string", "minLength": 1}}
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "sourcedItem": {
       "type": "object",
