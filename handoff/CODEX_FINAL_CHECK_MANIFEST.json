@@ -110,6 +110,81 @@
       "fixed_by": "0774e9568673c89061f0cddf9ffb74d27574ac82"
     }
   },
+  "post_review_fix": {
+    "parent_commit": "b29258df45f8fdeef9c717467e86ab0b3893223f",
+    "commit": "46676c9185e1fd2e78d3ef9609c936d409dc4837",
+    "tree": "ac3409fe9d220184e663c10e458de9a5992d27cf",
+    "changed_files": [
+      "skill/personal-growth-copilot/assets/session-capsule.schema.json",
+      "tests/test_design_assets.py"
+    ],
+    "reason": "Enforce the host-contract invariant that stored=false requires a null receipt and stored=true requires a non-empty host receipt.",
+    "local_validation": {
+      "design_validator": "pass",
+      "focused_unit_tests": "5/5 pass",
+      "full_unit_tests": "129/129 pass",
+      "git_diff_check": "pass"
+    },
+    "exact_head_push": {
+      "run_id": 31739762225,
+      "event": "push",
+      "conclusion": "success",
+      "head_sha": "46676c9185e1fd2e78d3ef9609c936d409dc4837",
+      "python_matrix": [
+        "3.11.15",
+        "3.12.13",
+        "3.13.15",
+        "3.14.7"
+      ],
+      "all_jobs_success": true,
+      "artifacts": [
+        {
+          "python": "3.11.15",
+          "artifact_id": 9196588790,
+          "archive_sha256": "b36a27b9e3c31561a3687d4aff220e3c339859b6edc25f7f8e587013001d59a1"
+        },
+        {
+          "python": "3.12.13",
+          "artifact_id": 9196594225,
+          "archive_sha256": "27a9f3593057c05a1bca16ef8e50784ddd46a54f255f205112a27ae24d04d288"
+        },
+        {
+          "python": "3.13.15",
+          "artifact_id": 9196592879,
+          "archive_sha256": "103e50b2b116cce4ce183d82165b34f3956abb9f6cb61b25ebca92fa0c528218"
+        },
+        {
+          "python": "3.14.7",
+          "artifact_id": 9196591918,
+          "archive_sha256": "23fcdc7284e63fdf6c4e658fb4346d7b3726569b5892d31683a889501c8e9c57"
+        }
+      ],
+      "representative_python": "3.12.13",
+      "representative_deterministic_aggregate_sha256": "f16e10a4c03347bcb4e54ec45d93adcd8bcb8a7673560030031d21707e81a425",
+      "representative_unit_tests": 129,
+      "representative_check_count": 8,
+      "representative_source_tree_clean": true,
+      "representative_dependency_lock_match": true
+    },
+    "pull_request": {
+      "run_id": 31739764766,
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_sha": "46676c9185e1fd2e78d3ef9609c936d409dc4837",
+      "synthetic_merge_commit": "157a6990695c197171b0553f2f5c6721dfa9988f",
+      "python_matrix": [
+        "3.11.15",
+        "3.12.13",
+        "3.13.15",
+        "3.14.7"
+      ],
+      "all_jobs_success": true,
+      "representative_python": "3.12.13",
+      "representative_deterministic_aggregate_sha256": "1c355e88b411adb725c7d17662b08577d3c5f638a1a934cb71793f3d0974d068",
+      "representative_artifact_id": 9196593950,
+      "representative_archive_sha256": "365ae0fa93403a0a9ca8a27e5ee3ede7420c0ba79e541ef6b3a7ad558fc56b8f"
+    }
+  },
   "implemented_scope": [
     "BCIO-aligned candidate technique registry with fit, burden, disconfirmation, and no-efficacy controls",
     "explicit-save session capsule schema and non-persistent example",
