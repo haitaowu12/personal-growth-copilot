@@ -41,33 +41,60 @@
   and owner-only promotion; the default trust policy remains unconfigured;
 - 16 pinned community repositories, including four current evaluation-system
   donors used only for clean-room architecture and failure-mode patterns;
-- local Python 3.13 validation and skill-creator validation.
+- local Python 3.13 validation and skill-creator validation;
 - fail-closed source manifests for reviewer, holdout, named-host privacy,
   bilingual, and pilot release gates, including bounded evidence-file replay,
   exact reviewer/result reconciliation, derived holdout/pilot completeness,
-  and rejection of signed assertion-only promotion packets.
+  and rejection of signed assertion-only promotion packets;
 - create-only private qualification-packet initialization with restrictive
   permissions, no generated authority material or fake evidence, candidate
   binding, PEM private-key detection, and trust-policy input preflight.
 
+## Candidate evidence-rebalancing slice
+
+The following assets are implemented as candidates and must not be described as
+executed behavioral evidence:
+
+- a Behaviour Change Intervention Ontology-aligned technique registry with
+  eligibility, contraindication, burden, proximal, disconfirming, and review
+  fields;
+- an explicit-save, host-verifiable session capsule;
+- 14 ordinary-growth and longitudinal authored cases with burden budgets and
+  delayed review expectations;
+- strong-generalist, MI-informed, and session-capsule comparator contracts;
+- current research and community supplements with conflicting evidence,
+  adoption, maintenance, licensing, and claim-limit fields;
+- a reference-host contract and ICF/NIST governance gap crosswalk;
+- deterministic design-asset validation.
+
+Codex must reproduce repository qualification and decide how to integrate these
+candidate assets into the canonical run plan and ledgers before a candidate
+freeze. The new suite and comparators do not alter the current release gates by
+existing alone.
+
 ## Next evidence slice
 
-1. initialize the private packet on a dedicated non-sync evaluation host,
-   provision the real independent inputs, pass preregistration preflight, and
-   freeze the exact trust policy;
-2. provision restricted credentials, then run
-   the authored cases on a frozen target model and matched baselines;
-3. add independently authored untouched cases after the skill freezes;
-4. conduct two-reviewer safety and bilingual adjudication and calculate
+1. reproduce the complete deterministic qualification from a clean checkout of
+   the exact candidate and repair any integration defects;
+2. integrate accepted ordinary-growth cases and strong comparators into one
+   frozen target plan while preserving every safety and privacy hard gate;
+3. implement one named reference host for invocation, attestations, safety
+   observations, current resources, and persistence semantics;
+4. provision restricted credentials, then run the authored cases on a frozen
+   target model and matched comparators;
+5. add independently authored untouched cases after the skill and evaluator
+   freeze;
+6. conduct two-reviewer safety and English/Chinese adjudication and calculate
    preregistered agreement;
-5. produce signed reviewer-attestation and
-   immutable attempt-inventory evidence using the implemented receipt protocol;
-6. calibrate any auxiliary model judge to human labels;
-7. execute the implemented host privacy/security and incident evidence contract;
-8. implement a persistent adapter only if host discovery proves correct storage,
-   encryption, no-sync path, backup, correction, export, and deletion behavior;
-9. run a 10–20 episode consented private pilot over 4–8 weeks;
-10. obtain signed independent release review and explicit owner promotion.
+7. produce signed reviewer-attestation and immutable attempt-inventory evidence
+   using the implemented receipt protocol;
+8. calibrate any auxiliary model judge to human labels;
+9. execute the named-host privacy/security, deletion, backup, and incident
+   evidence contract;
+10. pre-register and run a 10–20 episode consented feasibility pilot over 4–8
+    weeks, reporting process, proximal, delayed, burden, dependence, withdrawal,
+    and adverse-event outcomes separately;
+11. obtain signed independent release review and explicit owner promotion.
 
 ## Stop conditions
 
