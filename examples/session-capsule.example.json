@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "capsule_id": "cap_0123456789abcdef0123456789abcdef",
+  "created_at": "2026-08-13T17:00:00Z",
+  "objective": "Choose a bounded first test for a delayed but important project.",
+  "user_wording": ["The project matters, but I feel overloaded when I look at the whole thing."],
+  "confirmed_facts": [
+    {"id": "fact-1", "statement": "The next deliverable is already defined.", "source": "USER-REPORTED"},
+    {"id": "fact-2", "statement": "Previous detailed plans did not increase initiation.", "source": "USER-REPORTED"}
+  ],
+  "working_hypotheses": [
+    {
+      "id": "hyp-1",
+      "statement": "Perceived task size may be blocking initiation more than task ambiguity.",
+      "confidence": "medium",
+      "supporting_fact_ids": ["fact-1", "fact-2"],
+      "alternative": "The project may not be a current priority despite its stated importance.",
+      "disconfirming_observation": "A ten-minute start is still not attempted when the task is reduced and time is available.",
+      "status": "active"
+    }
+  ],
+  "unknowns_that_matter": ["Whether a competing obligation is consuming the available start window."],
+  "user_choice": {
+    "status": "ACTION",
+    "chosen_by": "USER",
+    "statement": "Attempt one ten-minute start tomorrow morning.",
+    "reason": "It tests initiation without requiring a new full plan."
+  },
+  "experiment": {
+    "technique_ids": ["PGC-BCT-003", "PGC-BCT-008"],
+    "prediction": "If perceived task size is the main barrier, a bounded start should be attempted when the first step is visible.",
+    "action": "Open the defined deliverable and work for ten minutes at 09:00.",
+    "evidence": "Whether the start occurs and what blocks it if it does not.",
+    "disconfirming_signal": "No attempt despite an available start window and a visible first step.",
+    "review_at": "2026-08-14T17:00:00Z",
+    "stop_condition": "Stop if the task reveals an unrecognized safety, authority, or workload constraint."
+  },
+  "review": {
+    "review_at": "2026-08-14T17:00:00Z",
+    "proximal_outcome": "The user reports whether the start occurred and the immediate barrier.",
+    "delayed_outcome": "The observation changes, narrows, or rejects the working hypothesis."
+  },
+  "open_questions": ["What competing obligation would make tomorrow's start window unavailable?"],
+  "memory_delta": {"status": "NOT_REQUESTED", "proposed_fields": [], "host_result": null},
+  "retention": {"policy": "SESSION_ONLY", "stored": false, "host_receipt": null}
+}

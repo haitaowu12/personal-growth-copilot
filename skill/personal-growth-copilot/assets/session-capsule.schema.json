@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haitaowu12/personal-growth-copilot/session-capsule.schema.json",
+  "title": "Personal Growth Copilot explicit-save session capsule",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "capsule_id", "created_at", "objective", "user_wording", "confirmed_facts", "working_hypotheses", "unknowns_that_matter", "user_choice", "review", "open_questions", "memory_delta", "retention"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "capsule_id": {"type": "string", "pattern": "^cap_[0-9a-f]{32}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "objective": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "user_wording": {"type": "array", "maxItems": 10, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+    "confirmed_facts": {"type": "array", "maxItems": 30, "items": {"$ref": "#/$defs/sourcedItem"}},
+    "working_hypotheses": {"type": "array", "maxItems": 10, "items": {"$ref": "#/$defs/hypothesis"}},
+    "unknowns_that_matter": {"type": "array", "maxItems": 15, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+    "user_choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "chosen_by", "statement"],
+      "properties": {
+        "status": {"enum": ["ACTION", "INTENTIONAL_NO_ACTION", "DEFERRED", "UNDECIDED"]},
+        "chosen_by": {"const": "USER"},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "reason": {"type": "string", "maxLength": 1500}
+      }
+    },
+    "experiment": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["technique_ids", "prediction", "action", "evidence", "disconfirming_signal", "review_at", "stop_condition"],
+      "properties": {
+        "technique_ids": {"type": "array", "maxItems": 4, "uniqueItems": true, "items": {"type": "string", "pattern": "^PGC-BCT-[0-9]{3}$"}},
+        "prediction": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "action": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "evidence": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "disconfirming_signal": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "review_at": {"type": "string", "format": "date-time"},
+        "stop_condition": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_at", "proximal_outcome", "delayed_outcome"],
+      "properties": {
+        "review_at": {"type": "string", "format": "date-time"},
+        "proximal_outcome": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "delayed_outcome": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "open_questions": {"type": "array", "maxItems": 10, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+    "memory_delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "proposed_fields", "host_result"],
+      "properties": {
+        "status": {"enum": ["NOT_REQUESTED", "PREVIEWED", "CONFIRMED", "REVOKED", "REJECTED"]},
+        "proposed_fields": {"type": "array", "maxItems": 20, "items": {"type": "string", "minLength": 1, "maxLength": 300}},
+        "host_result": {"type": ["string", "null"], "maxLength": 1000}
+      }
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy", "stored", "host_receipt"],
+      "properties": {
+        "policy": {"enum": ["OFF", "SESSION_ONLY", "CONFIRM_EACH"]},
+        "stored": {"type": "boolean"},
+        "host_receipt": {"type": ["string", "null"], "maxLength": 300}
+      }
+    }
+  },
+  "$defs": {
+    "sourcedItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "source"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "source": {"enum": ["USER-REPORTED", "OBSERVED-IN-CHAT", "CORRECTION"]}
+      }
+    },
+    "hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "confidence", "supporting_fact_ids", "alternative", "disconfirming_observation", "status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "confidence": {"enum": ["low", "medium", "high"]},
+        "supporting_fact_ids": {"type": "array", "maxItems": 20, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+        "alternative": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "disconfirming_observation": {"type": "string", "minLength": 1, "maxLength": 1500},
+        "status": {"enum": ["active", "superseded", "rejected"]}
+      }
+    }
+  }
+}

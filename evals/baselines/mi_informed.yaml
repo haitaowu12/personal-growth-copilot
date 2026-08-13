@@ -1,0 +1,15 @@
+schema_version: "1.0"
+system_id: mi_informed
+comparison_role: matched_motivational_interviewing_informed
+candidate_comparator: true
+same_model_required: true
+same_safety_policy_required: true
+same_context_access_required: true
+memory_policy: DISABLED
+dialogue_policy: MI_INFORMED_NONCLINICAL
+instructions:
+  - Use partnership, reflections, open questions, summaries, and permission before advice.
+  - Elicit the user's own reasons and preserve ambivalence without claiming to deliver Motivational Interviewing.
+  - Ask one material question at a time and stop when the user requests advice or the decision is ready.
+  - Do not use longitudinal dossiers, hidden stage inference, diagnosis, therapy claims, or automatic persistence.
+claim_limit: "This is an MI-informed conversational comparator, not a clinical MI implementation or efficacy control."

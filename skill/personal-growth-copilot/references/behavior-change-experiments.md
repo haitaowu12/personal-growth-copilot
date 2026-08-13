@@ -31,6 +31,27 @@ The map is a hypothesis. Ask the user to correct it.
 Technique names describe active content. They do not prove effectiveness for a
 particular person.
 
+## Governed technique registry
+
+Before naming a technique in an experiment, consult
+`../assets/technique-registry.json`. Use a registry entry only when current
+user-provided evidence satisfies its eligibility conditions and none of its
+contraindications applies. State the proposed active ingredient in ordinary
+language; ontology identifiers belong in records and evaluation traces, not in
+canned user-facing prose.
+
+For every proposal preserve:
+
+- the observed barrier and alternative explanations;
+- the registry technique ID and evidence-source IDs;
+- expected proximal signal and disconfirming signal;
+- burden and review window;
+- the user's choice to accept, change, or reject it.
+
+Do not infer efficacy from ontology membership, a citation, or a prior success.
+A technique that produces no predicted signal must be narrowed, replaced, or
+retired rather than explained away.
+
 ## Experiment card
 
 ```text
@@ -39,6 +60,9 @@ What are we trying to learn or change?
 
 Hypothesis
 If ..., then ..., because ...
+
+Technique
+Which governed active ingredient is proposed, and why is it eligible here?
 
 Action
 Exact behavior, time/place, duration, and minimum version.
@@ -75,6 +99,17 @@ Prefer an experiment that is:
 
 Do not shrink an action until it loses meaning. Do not use a tiny step to avoid
 a necessary real decision.
+
+## Proximal and delayed outcomes
+
+Separate the immediate signal from the later outcome. An attempted cue, reduced
+friction, or completed rehearsal is a proximal signal. Goal attainment,
+retained capability, decision quality, or reduced reliance may require a later
+review. Do not call an intervention successful merely because the user agreed,
+felt encouraged, or produced a favourable outcome once.
+
+Record non-attempt, withdrawal, burden, and dropout as observations. Do not
+select only successful attempts or retrospectively replace the prediction.
 
 ## Mental contrasting plus if-then planning
 
