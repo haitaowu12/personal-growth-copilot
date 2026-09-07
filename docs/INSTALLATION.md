@@ -76,3 +76,12 @@ plugins/personal-growth-copilot/
     ├── scripts/
     └── assets/
 ```
+
+## Learning candidate
+
+The learning candidate is version `0.5.0-alpha.1`. Existing published-tag commands
+above intentionally remain pinned to the earlier alpha. The candidate's complete
+skill folder can be imported by a compatible host, or its offline lesson built with
+`python3 scripts/build_learning.py --out /chosen/path/learning.html` from the skill
+folder. No runtime package fetch is needed by the finished HTML. Do not label an
+untagged candidate as a published release.

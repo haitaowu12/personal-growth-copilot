@@ -1,7 +1,7 @@
 {
   "name": "personal-growth-copilot",
-  "version": "0.4.0-alpha.12",
-  "description": "Explicit-invocation reflective inquiry and behavior-change workflows with privacy and safety controls.",
+  "version": "0.5.0-alpha.1",
+  "description": "Explicit-invocation reflective growth and source-grounded topic practice with user-owned progress.",
   "author": {
     "name": "Tony Wu",
     "url": "https://github.com/haitaowu12"
@@ -13,7 +13,8 @@
     "personal-growth",
     "reflective-inquiry",
     "behavior-change",
-    "coaching"
+    "coaching",
+    "learning"
   ],
   "skills": "./skills/",
   "interface": {
@@ -29,7 +30,8 @@
     "defaultPrompt": [
       "Help me understand a recurring pattern.",
       "Turn a goal into a small growth experiment.",
-      "Review what I learned from a recent setback."
+      "Review what I learned from a recent setback.",
+      "Help me learn a topic through source-grounded practice."
     ]
   }
 }

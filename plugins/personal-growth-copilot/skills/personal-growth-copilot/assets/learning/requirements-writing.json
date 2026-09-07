@@ -1,0 +1,433 @@
+{
+  "schema_version": "1.0",
+  "id": "requirements-writing",
+  "version": "1.0.0",
+  "title": "Write requirements you can verify",
+  "subtitle": "Turn a vague request into an observable obligation. Then prove you can use the method.",
+  "audience": "Adults new to requirements writing. No systems engineering background required.",
+  "minutes": 20,
+  "review_days": [
+    7,
+    21
+  ],
+  "sources": [
+    {
+      "id": "nasa-c",
+      "title": "NASA Systems Engineering Handbook — Appendix C",
+      "url": "https://www.nasa.gov/reference/appendix-c-how-to-write-a-good-requirement/",
+      "section": "C.1; C.2 Product Requirement; C.4 Clarity and Verifiability/Testability",
+      "accessed": "2026-09-07",
+      "coverage": "selected-sections",
+      "claim": "A requirement names its responsible product, states one obligation, and supports an objective compliance check. Ambiguous terms and unjustified assumptions weaken it.",
+      "limits": "Selected guidance, not a complete requirements standard or approval checklist. Local project rules and justified design constraints still apply."
+    },
+    {
+      "id": "nasa-v",
+      "title": "NASA Systems Engineering Handbook — Product Verification",
+      "url": "https://www.nasa.gov/reference/5-3-product-verification/",
+      "section": "5.3 Product Verification, introduction and process description",
+      "accessed": "2026-09-07",
+      "coverage": "selected-sections",
+      "claim": "Verification compares a realized product with its specified requirements using planned evidence. Inspection, analysis, demonstration, and test can contribute.",
+      "limits": "The appropriate evidence method depends on the requirement and product. A measurement example here is not a full test procedure."
+    },
+    {
+      "id": "nasa-validation",
+      "title": "NASA Systems Engineering Handbook — Product Validation",
+      "url": "https://www.nasa.gov/reference/5-4-product-validation/",
+      "section": "5.4 Product Validation, introduction and process description",
+      "accessed": "2026-09-07",
+      "coverage": "selected-sections",
+      "claim": "Product validation examines whether the product fulfills its intended use and stakeholder expectations in the relevant environment.",
+      "limits": "Passing a specified threshold alone does not establish fitness for the real use. Requirements validation and product validation are distinct activities."
+    }
+  ],
+  "content_notice": "Original instructional examples and exercises informed by the linked NASA guidance. All numerical thresholds and project facts are invented teaching assumptions, not NASA requirements. No endorsement or certification is implied.",
+  "concepts": [
+    {
+      "id": "obligation",
+      "title": "One clear obligation",
+      "objective": "Identify the responsible product and separate independent obligations.",
+      "prerequisites": [],
+      "source_ids": [
+        "nasa-c"
+      ],
+      "explanation": "Name the product and its required behavior. Split obligations that can pass or fail independently. Put the reason for a requirement in a separate rationale.",
+      "misconception": "Adding “shall” does not make an ambiguous or compound sentence verifiable.",
+      "example": {
+        "before": "The desk service should be helpful and notify users and keep records.",
+        "after": "DESK-01: The desk service shall send a receipt to the requester after accepting a support request.",
+        "why": "This isolates one behavior. Receipt content and delivery timing still need separate agreed criteria; this sentence is not yet a finished baseline."
+      },
+      "questions": {
+        "diagnostic": {
+          "prompt": "A draft says: “The station display shall show departures and archive maintenance logs.” What is the first useful repair?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "Split display behavior from log retention.",
+              "feedback": "Yes. Each obligation can fail while the other succeeds. Separate them before defining detailed acceptance criteria."
+            },
+            {
+              "id": "b",
+              "text": "Replace “shall” with “will.”",
+              "feedback": "Changing the verb does not resolve the two independent obligations."
+            },
+            {
+              "id": "c",
+              "text": "Add “reliably” to the end.",
+              "feedback": "“Reliably” adds no measurable criterion and leaves both obligations tangled."
+            }
+          ],
+          "correct": "a",
+          "hint": "Could one part pass while the other fails?"
+        },
+        "practice": {
+          "prompt": "Which draft isolates one product obligation?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "The sensor shall log readings, email alerts, and stay easy to maintain.",
+              "feedback": "This combines logging, notification, and a vague maintenance goal."
+            },
+            {
+              "id": "b",
+              "text": "The sensor shall record a timestamp with each accepted reading.",
+              "feedback": "Yes. One product performs one observable behavior. The timestamp format can be specified next."
+            },
+            {
+              "id": "c",
+              "text": "The operator will probably review the readings.",
+              "feedback": "This describes an uncertain human activity, not a sensor obligation."
+            }
+          ],
+          "correct": "b",
+          "hint": "Find one named product and one observable behavior."
+        },
+        "transfer": {
+          "prompt": "A library kiosk must print a receipt and erase a patron’s temporary session data. Why write two requirements?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "To make the document look more detailed.",
+              "feedback": "Document length does not justify decomposition."
+            },
+            {
+              "id": "b",
+              "text": "Because every sentence must have a numerical threshold.",
+              "feedback": "Not every requirement needs a number; some use observable states or content rules."
+            },
+            {
+              "id": "c",
+              "text": "Because printing and erasure need independently checked outcomes.",
+              "feedback": "Yes. A printed receipt does not show that temporary data was erased."
+            }
+          ],
+          "correct": "c",
+          "hint": "Imagine the receipt prints correctly but data remains."
+        },
+        "review": {
+          "prompt": "A new draft says: “The pump shall report pressure and alert an operator when pressure is low.” What do you check first?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "Whether reporting and alerting have separate acceptance evidence.",
+              "feedback": "Yes. Distinct outcomes need clear boundaries and evidence."
+            },
+            {
+              "id": "b",
+              "text": "Whether both verbs use the same number of letters.",
+              "feedback": "Word shape does not affect the required behavior."
+            },
+            {
+              "id": "c",
+              "text": "Whether “intelligently” would make the requirement stronger.",
+              "feedback": "A descriptive adverb does not resolve the obligations."
+            }
+          ],
+          "correct": "a",
+          "hint": "Look for independently failing behaviors."
+        }
+      },
+      "writing": {
+        "prompt": "A meeting-room service must confirm bookings and remove cancelled bookings from the room display. Write two separate product requirements. Leave unknown timing as an explicit open issue instead of inventing a promise.",
+        "criteria": [
+          {
+            "id": "subject",
+            "text": "Each statement names the responsible product."
+          },
+          {
+            "id": "single",
+            "text": "Each statement contains one independently checkable obligation."
+          },
+          {
+            "id": "unknown",
+            "text": "Unknown criteria are named as open issues, not hidden assumptions."
+          }
+        ],
+        "example": "ROOM-01: The booking service shall send a confirmation to the requester after accepting a booking. ROOM-02: The room display shall remove a booking after receiving its cancellation. Open issues: agree timing and confirmation content with the service owner.",
+        "notes": "Compare your wording against the criteria. Many answers are valid. This self-check does not approve an engineering baseline."
+      }
+    },
+    {
+      "id": "measure",
+      "title": "Make the outcome observable",
+      "objective": "Specify an observable result, conditions, and a defensible acceptance boundary.",
+      "prerequisites": [
+        "obligation"
+      ],
+      "source_ids": [
+        "nasa-c",
+        "nasa-v"
+      ],
+      "explanation": "Replace vague performance words with an observable result and its conditions. Choose a threshold only when the scenario supplies it or its owner has agreed it. Record unresolved values explicitly.",
+      "misconception": "An exact number is not evidence that the number is justified.",
+      "example": {
+        "before": "The desk service shall respond quickly.",
+        "after": "Teaching assumption: the service owner agrees a 5-second receipt target. DESK-02: When an online request is accepted, the desk service shall deliver its receipt within 5 seconds of acceptance.",
+        "why": "A tester can compare the acceptance and receipt timestamps. The assumed target needs validation before real use."
+      },
+      "questions": {
+        "diagnostic": {
+          "prompt": "The owner asks for a “fast” receipt but gives no timing target. What should you do?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "Declare a 10-millisecond target because it is precise.",
+              "feedback": "Precision does not justify a target or prove feasibility."
+            },
+            {
+              "id": "b",
+              "text": "Agree a justified timing target and conditions with the owner.",
+              "feedback": "Yes. Resolve the missing criterion and its basis instead of quietly inventing it."
+            },
+            {
+              "id": "c",
+              "text": "Accept “fast” because everyone understands it.",
+              "feedback": "Different readers can interpret “fast” differently."
+            }
+          ],
+          "correct": "b",
+          "hint": "Where does the proposed acceptance threshold come from?"
+        },
+        "practice": {
+          "prompt": "Teaching assumption: an owner agrees that offline events must be uploaded within 60 seconds after connectivity returns. Which draft is checkable?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "The client shall upload offline events soon.",
+              "feedback": "“Soon” has no agreed test boundary."
+            },
+            {
+              "id": "b",
+              "text": "The client shall upload offline events as appropriate.",
+              "feedback": "“As appropriate” leaves the triggering conditions unspecified."
+            },
+            {
+              "id": "c",
+              "text": "After connectivity returns, the client shall upload its queued offline events within 60 seconds.",
+              "feedback": "Yes. The condition, result, and time boundary come from the stated assumption."
+            }
+          ],
+          "correct": "c",
+          "hint": "Use the supplied condition and threshold."
+        },
+        "transfer": {
+          "prompt": "A luggage counter must update within 2 seconds after a scan. What evidence directly checks that timing?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "The scanner’s purchase invoice.",
+              "feedback": "Purchase evidence does not measure response time."
+            },
+            {
+              "id": "b",
+              "text": "The difference between scan and counter-update timestamps under the specified conditions.",
+              "feedback": "Yes. Observe the defined trigger and result using an adequate time measurement method."
+            },
+            {
+              "id": "c",
+              "text": "A user saying the counter looks modern.",
+              "feedback": "Appearance does not establish timing compliance."
+            }
+          ],
+          "correct": "b",
+          "hint": "Measure the interval named in the requirement."
+        },
+        "review": {
+          "prompt": "An invented scenario specifies a temperature reading within ±0.5 °C at 20 °C. Which result violates that requirement?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "20.2 °C",
+              "feedback": "This is 0.2 °C above the reference and inside the stated boundary."
+            },
+            {
+              "id": "b",
+              "text": "19.6 °C",
+              "feedback": "This is 0.4 °C below the reference and inside the stated boundary."
+            },
+            {
+              "id": "c",
+              "text": "20.7 °C",
+              "feedback": "Yes. The error is +0.7 °C, beyond the supplied ±0.5 °C criterion."
+            }
+          ],
+          "correct": "c",
+          "hint": "Compare absolute error with the supplied tolerance."
+        }
+      },
+      "writing": {
+        "prompt": "Teaching assumption: after a parcel scan is accepted, its status must appear on the operator display within 3 seconds. Write the requirement and describe what you would measure.",
+        "criteria": [
+          {
+            "id": "trigger",
+            "text": "The timing starts at scan acceptance."
+          },
+          {
+            "id": "result",
+            "text": "The result is the parcel status appearing on the operator display."
+          },
+          {
+            "id": "bound",
+            "text": "The 3-second limit is present and attributed to the scenario."
+          },
+          {
+            "id": "evidence",
+            "text": "The check compares acceptance and display timestamps."
+          }
+        ],
+        "example": "PARCEL-01: After a parcel scan is accepted, the operator display shall show that parcel’s updated status within 3 seconds. Compare the acceptance and display timestamps using a measurement method suited to this limit. The limit is a teaching assumption.",
+        "notes": "Real verification planning also defines instrumentation, conditions, sample coverage, and uncertainty. This exercise covers the basic evidence link."
+      }
+    },
+    {
+      "id": "purpose",
+      "title": "Check the promise and the purpose",
+      "objective": "Distinguish evidence of requirement compliance from evidence of useful operation.",
+      "prerequisites": [
+        "measure"
+      ],
+      "source_ids": [
+        "nasa-v",
+        "nasa-validation"
+      ],
+      "explanation": "Check compliance with the specified requirement, then examine intended use. These questions need different evidence even when one trial contributes to both.",
+      "misconception": "A product can meet a stated requirement while failing the actual user need.",
+      "example": {
+        "before": "The receipt arrives within 5 seconds, so the service is useful.",
+        "after": "Verification: measure receipt timing. Product validation: observe whether requesters can use the receipt to track the right request in their real workflow.",
+        "why": "Fast delivery alone does not establish that the receipt helps the requester."
+      },
+      "questions": {
+        "diagnostic": {
+          "prompt": "A booking receipt passes its timing test, but users cannot identify the room it confirms. What follows?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "The timing requirement may pass while the intended use remains unmet.",
+              "feedback": "Yes. The evidence answers the timing question, not every user-need question."
+            },
+            {
+              "id": "b",
+              "text": "Passing timing proves the full service is useful.",
+              "feedback": "The timing result does not establish that users can identify their booking."
+            },
+            {
+              "id": "c",
+              "text": "Verification should be abandoned.",
+              "feedback": "Compliance checks remain useful; they need complementary evidence about use."
+            }
+          ],
+          "correct": "a",
+          "hint": "What exactly did the timing test establish?"
+        },
+        "practice": {
+          "prompt": "Which activity directly examines intended use?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "Checking the software version string.",
+              "feedback": "Version identification supports configuration control, not this use claim."
+            },
+            {
+              "id": "b",
+              "text": "Watching representative users identify and reach their booked room using the confirmation.",
+              "feedback": "Yes. The activity examines the outcome in a relevant user workflow."
+            },
+            {
+              "id": "c",
+              "text": "Counting the number of requirement pages.",
+              "feedback": "Document size does not establish fitness for use."
+            }
+          ],
+          "correct": "b",
+          "hint": "Observe the user outcome that motivated the system."
+        },
+        "transfer": {
+          "prompt": "A flood-warning display updates within its specified interval, but its symbols confuse operators in a drill. What is the useful next step?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "Claim complete success based on update timing.",
+              "feedback": "This would generalize beyond the evidence."
+            },
+            {
+              "id": "b",
+              "text": "Remove the timing requirement from the report.",
+              "feedback": "A real timing result should be retained with its proper scope."
+            },
+            {
+              "id": "c",
+              "text": "Keep the timing result and investigate operator understanding in the intended context.",
+              "feedback": "Yes. Preserve the supported result and investigate the unmet operational need."
+            }
+          ],
+          "correct": "c",
+          "hint": "Keep supported evidence; name what it does not establish."
+        },
+        "review": {
+          "prompt": "A warehouse route planner meets a computation-time limit. Workers still cannot follow its route instructions. Which conclusion is justified?",
+          "choices": [
+            {
+              "id": "a",
+              "text": "All requirements must be wrong.",
+              "feedback": "One unmet use need does not invalidate every requirement."
+            },
+            {
+              "id": "b",
+              "text": "The speed check passed; useful route guidance needs separate evidence.",
+              "feedback": "Yes. Separate the supported compliance claim from the unresolved use claim."
+            },
+            {
+              "id": "c",
+              "text": "Workers should be excluded from evaluation.",
+              "feedback": "Representative users are relevant to evaluating intended use."
+            }
+          ],
+          "correct": "b",
+          "hint": "Distinguish measured compliance from useful operation."
+        }
+      },
+      "writing": {
+        "prompt": "A community centre replaces its sign-in desk with a kiosk. Teaching assumption: it must issue a visitor pass within 15 seconds after a valid sign-in. Write one verification check and one product-validation scenario.",
+        "criteria": [
+          {
+            "id": "verify",
+            "text": "Verification checks the specified 15-second interval and trigger."
+          },
+          {
+            "id": "validate",
+            "text": "Validation observes a representative visitor completing the intended sign-in workflow."
+          },
+          {
+            "id": "limits",
+            "text": "The answer does not equate a timing pass with complete operational success."
+          }
+        ],
+        "example": "Verification: measure from accepted valid sign-in to pass issuance and compare with 15 seconds. Product validation: observe representative visitors locating the kiosk, signing in, and using the issued pass to reach the intended activity, including accessibility needs. Retain issues even if timing passes.",
+        "notes": "These are original teaching scenarios. They do not replace a project validation plan or stakeholder acceptance."
+      }
+    }
+  ]
+}

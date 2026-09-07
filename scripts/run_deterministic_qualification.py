@@ -21,6 +21,13 @@ CHECKS = (
     ("repository-validation", ("scripts/validate.py",)),
     ("evaluation-manifest-lint", ("scripts/lint_eval_manifest.py",)),
     (
+        "learning-pack-validation",
+        (
+            "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/build_learning.py",
+            "--check",
+        ),
+    ),
+    (
         "multiturn-harness-conformance",
         ("evals/run.py", "--conformance", "--require-clean"),
     ),
@@ -36,7 +43,10 @@ CHECKS = (
     ),
     (
         "skill-structure-validation",
-        (".ci/quick_validate.py", "plugins/personal-growth-copilot/skills/personal-growth-copilot"),
+        (
+            ".ci/quick_validate.py",
+            "plugins/personal-growth-copilot/skills/personal-growth-copilot",
+        ),
     ),
 )
 
@@ -99,7 +109,11 @@ def build_evidence() -> dict[str, Any]:
         if completed.stdout:
             print(completed.stdout, end="" if completed.stdout.endswith("\n") else "\n")
         if completed.stderr:
-            print(completed.stderr, file=sys.stderr, end="" if completed.stderr.endswith("\n") else "\n")
+            print(
+                completed.stderr,
+                file=sys.stderr,
+                end="" if completed.stderr.endswith("\n") else "\n",
+            )
         results.append(
             {
                 "check_id": check_id,
@@ -133,6 +147,9 @@ def build_evidence() -> dict[str, Any]:
         "source_tree_clean": source_tree_clean,
         "source_tree_status": source_tree_status,
         "python": sys.version,
+        "node": subprocess.run(
+            ["node", "--version"], capture_output=True, text=True, check=True
+        ).stdout.strip(),
         "platform": platform.platform(),
         "requirements_lock_sha256": _sha256(
             (ROOT / "requirements/ci.txt").read_bytes()
