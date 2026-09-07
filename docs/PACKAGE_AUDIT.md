@@ -1,6 +1,6 @@
 # Package audit
 
-Version: `0.4.0-alpha.12`
+Version: `0.5.0-alpha.1`
 
 ## Distribution contract
 
@@ -16,13 +16,14 @@ Version: `0.4.0-alpha.12`
 
 The installable skill folder contains:
 
-- one 266-line core instruction and workflow file;
+- one core instruction and workflow file;
 - one host-facing prompt and invocation-policy file;
-- twelve task-routed knowledge and safety references;
-- four deterministic runtime helpers plus a pinned dependency manifest for
+- task-routed knowledge, learning, and safety references;
+- deterministic runtime helpers and the learning builder plus a pinned dependency manifest for
   context, records, validation, and safety state;
-- four portable assets: record schema, session-capsule schema, evidence-source
-  identifiers, and the safety transition table.
+- portable record, session, evidence, safety, and learning assets.
+- one source-grounded topic pack and offline player source, with a shared reducer
+  tested in Node.js and strict Python schema/semantic validation.
 
 The package has no required file outside its plugin folder. In particular, the
 safety transition table and resource-resolver contract are bundled with the

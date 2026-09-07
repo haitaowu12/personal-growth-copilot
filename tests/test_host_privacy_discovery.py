@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import stat
 import sys
 import tempfile
@@ -36,9 +37,7 @@ def runner(
         if command_id == "time_machine_destination":
             return host_privacy_discovery.CommandResult(command_id, 1, b"", backup)
         if command_id in {"storage_acl", "output_parent_acl"}:
-            return host_privacy_discovery.CommandResult(
-                command_id, acl_exit, acl, b""
-            )
+            return host_privacy_discovery.CommandResult(command_id, acl_exit, acl, b"")
         raise AssertionError(command_id)
 
     return run
@@ -115,9 +114,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             duplicate = json.loads(json.dumps(report))
             duplicate["checks"][1]["check_id"] = "storage_map"
             self.assertTrue(
-                release_evidence.schema_errors(
-                    duplicate, "host_privacy_discovery"
-                )
+                release_evidence.schema_errors(duplicate, "host_privacy_discovery")
             )
             self.assertTrue(host_privacy_discovery.verify_report(duplicate))
             tampered = json.loads(json.dumps(report))
@@ -130,7 +127,9 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             self.assertNotIn(b"FileVault is On", serialized)
             self.assertNotIn(b"No destinations configured", serialized)
 
-    def test_no_sync_fails_on_overlap_and_stays_unknown_without_complete_inventory(self) -> None:
+    def test_no_sync_fails_on_overlap_and_stays_unknown_without_complete_inventory(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             parent = Path(directory_name).resolve()
             sync = self.root(parent, "sync")
@@ -176,7 +175,9 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             )
             self.assertEqual(self.checks(disabled)["encryption"]["status"], "FAIL")
 
-    def test_storage_permissions_symlinks_and_source_repository_fail_closed(self) -> None:
+    def test_storage_permissions_symlinks_and_source_repository_fail_closed(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             parent = Path(directory_name).resolve()
             storage = self.root(parent)
@@ -219,9 +220,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             )
             checks = self.checks(report)
             self.assertEqual(checks["storage_map"]["status"], "FAIL")
-            self.assertIn(
-                "STORAGE_ROOT_CHANGED", checks["storage_map"]["reason_codes"]
-            )
+            self.assertIn("STORAGE_ROOT_CHANGED", checks["storage_map"]["reason_codes"])
             self.assertEqual(checks["no_sync"]["status"], "FAIL")
             self.assertIn("STORAGE_ROOT_CHANGED", checks["no_sync"]["reason_codes"])
 
@@ -292,6 +291,27 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 unknown_check["reason_codes"],
             )
 
+    @unittest.skipUnless(platform.system() == "Darwin", "native macOS ACL integration")
+    def test_native_macos_private_output_integration(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name).resolve()
+            output_parent = self.root(parent, "native-output")
+            output = output_parent / "report.json"
+            # No injected runner or ACL probe: exercise the real macOS boundary.
+            with host_privacy_discovery.reserve_private_output(
+                output, home_root=parent
+            ) as reserved:
+                reserved.write({"native_acl_integration": True})
+            self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o600)
+            self.assertEqual(
+                json.loads(output.read_text()), {"native_acl_integration": True}
+            )
+
+    def test_unsupported_native_acl_probe_stays_unknown(self) -> None:
+        self.assertEqual(
+            host_privacy_discovery.native_file_acl_status(-1, "Linux"), "UNKNOWN"
+        )
+
     def test_discovery_output_is_private_create_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             parent = Path(directory_name).resolve()
@@ -304,6 +324,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 runner=runner(),
                 system="Darwin",
                 home_root=parent,
+                file_acl_probe=lambda _fd, _system: "ABSENT",
             ) as reserved:
                 reserved.write(report)
             self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o600)
@@ -317,9 +338,12 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                     runner=runner(),
                     system="Darwin",
                     home_root=parent,
+                    file_acl_probe=lambda _fd, _system: "ABSENT",
                 )
 
-    def test_reserved_output_rejects_parent_swap_and_unlinks_bound_placeholder(self) -> None:
+    def test_reserved_output_rejects_parent_swap_and_unlinks_bound_placeholder(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
             parent = Path(directory_name).resolve()
             storage = self.root(parent)
@@ -332,6 +356,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 runner=runner(),
                 system="Darwin",
                 home_root=parent,
+                file_acl_probe=lambda _fd, _system: "ABSENT",
             )
             good.rename(moved)
             good.symlink_to(exposed, target_is_directory=True)
@@ -357,6 +382,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 runner=runner(),
                 system="Darwin",
                 home_root=parent,
+                file_acl_probe=lambda _fd, _system: "ABSENT",
             )
             output.unlink()
             output.write_text("replacement", encoding="utf-8")
@@ -381,6 +407,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 runner=runner(),
                 system="Darwin",
                 home_root=parent,
+                file_acl_probe=lambda _fd, _system: "ABSENT",
             ) as reserved:
                 os.chmod(output, 0o644)
                 reserved.write(self.discover(storage))
@@ -397,9 +424,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
             for final_status in ("PRESENT", "UNKNOWN"):
                 output_parent = self.root(parent, f"output-{final_status.lower()}")
                 output = output_parent / "report.json"
-                observations = iter(
-                    ("ABSENT", "ABSENT", "ABSENT", final_status)
-                )
+                observations = iter(("ABSENT", "ABSENT", "ABSENT", final_status))
 
                 def probe(_: int, __: str) -> str:
                     return next(observations)
@@ -484,6 +509,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 runner=runner(),
                 system="Darwin",
                 home_root=parent,
+                file_acl_probe=lambda _fd, _system: "ABSENT",
             ) as reserved:
                 os.write(reserved.file_fd, b"unexpected")
                 with self.assertRaisesRegex(
@@ -505,10 +531,13 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 runner=runner(),
                 system="Darwin",
                 home_root=parent,
+                file_acl_probe=lambda _fd, _system: "ABSENT",
             ) as reserved:
                 os.lseek(reserved.file_fd, 4096, os.SEEK_SET)
                 reserved.write(report)
-            self.assertEqual(output.read_bytes(), release_evidence.canonical_bytes(report))
+            self.assertEqual(
+                output.read_bytes(), release_evidence.canonical_bytes(report)
+            )
             self.assertEqual(json.loads(output.read_text(encoding="utf-8")), report)
 
     def test_reserved_output_rejects_same_length_content_mutation(self) -> None:
@@ -523,6 +552,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 runner=runner(),
                 system="Darwin",
                 home_root=parent,
+                file_acl_probe=lambda _fd, _system: "ABSENT",
             )
             original_read = host_privacy_discovery.os.read
             injected = False
@@ -563,6 +593,7 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 runner=runner(),
                 system="Darwin",
                 home_root=parent,
+                file_acl_probe=lambda _fd, _system: "ABSENT",
             )
             original_read = host_privacy_discovery.os.read
             injected = False

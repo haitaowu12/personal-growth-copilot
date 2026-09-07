@@ -148,3 +148,13 @@ unverified; hash-shaped attestation references are not accepted as proof.
 The Codex adapter rejects recorded tool activity after a turn, which is not a
 confidentiality sandbox. The harness run is deliberately labeled conformance evidence and
 cannot prove model behavior. It has not executed or passed layers 4–8.
+
+## Optional source-grounded learning lane
+
+Explicit topic-learning requests can use the portable offline player. Python validates
+source identity, schema, prerequisites, and question keys; one JavaScript reducer owns
+progression, evidence labels, review timing, and imported-history replay. The same
+reducer runs under Node during development checks. The player renders plain text under
+a restrictive CSP, makes no network requests, and saves only after a user selects
+browser saving or export. This educational store does not qualify the coaching store
+or sensitive-state persistence. See `LEARNING_RELEASE.md` for the acceptance boundary.
