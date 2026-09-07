@@ -40,10 +40,10 @@ that specialist is explicitly invoked or available.
 
 - explicit invocation only;
 - not registered in implicit routing;
-- private standalone research repository;
-- no live skill installation in alpha;
+- versioned research alpha with explicit-invocation plugin distribution;
+- ordinary topic practice supported through the offline learning reference player;
 - no production, clinical, or outcome-efficacy claim;
-- no public distribution decision until release and provenance review.
+- package availability does not imply production qualification or sensitive-state approval.
 
 These are immutable release invariants: implicit invocation stays disabled;
 synthetic, authored, holdout, privacy, pilot, and independent-review gates stay
@@ -77,3 +77,11 @@ A successful session leaves the user with:
 - hidden scoring, universal life rankings, or unvalidated assessment;
 - raw journal ingestion, third-party dossiers, or emotion-salience memory;
 - autonomous reminders, connectors, external writes, or background work.
+
+## Topic-learning extension
+
+The optional learning lane helps a user understand, practise, and apply a bounded
+source-grounded topic. The first pack teaches verifiable requirements. Its supported
+reference host is an offline browser player; source content and learner records are
+separate. Record first attempts, assistance, writing self-review, and delayed review
+without inferring mastery. See `LEARNING_RELEASE.md` and `LEARNING_PILOT.md`.

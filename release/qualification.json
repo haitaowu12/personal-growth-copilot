@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "release": "0.4.0-alpha.12",
+  "release": "0.5.0-alpha.1",
   "status": "blocked",
   "production_claim_allowed": false,
   "activation": "explicit-only-repo-marketplace",
@@ -33,7 +33,10 @@
     "judge_calibration": "pending",
     "named_host_privacy_preflight": "pending",
     "privacy_safe_controlled_pilot": "pending",
-    "independent_release_review": "pending"
+    "independent_release_review": "pending",
+    "source_grounded_learning_implementation": "pass-local-deterministic-only",
+    "learning_browser_acceptance": "blocked-browser-permission",
+    "learning_outcomes": "pending"
   },
   "evidence_contract": {
     "deterministic_controls": {
