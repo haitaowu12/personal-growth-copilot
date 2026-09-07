@@ -63,15 +63,16 @@
           );
         }
       } else {
+        // Opt-out takes effect even if the browser refuses deletion.
+        saved = false;
         try {
           localStorage.removeItem(key);
-          saved = false;
           tell(
             "This lesson’s browser copy was removed. Current tab progress remains. Downloaded files and backups are unchanged.",
           );
         } catch (_) {
           tell(
-            "Browser copy could not be removed. Use browser site-data controls to remove it.",
+            "Saving is off for this tab, but the old browser copy could not be removed. Use browser site-data controls to remove it before reopening.",
             true,
           );
         }
