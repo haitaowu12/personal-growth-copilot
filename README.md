@@ -4,9 +4,34 @@ Installable clean-room Codex plugin and standalone Agent Skill supporting
 context-rich personal growth, reflective dialogue, practical behavior-change
 experiments, and longitudinal learning.
 
-Current version: `0.4.0-alpha.12`
+Current version: `0.5.0-alpha.1`
+
+## Learn through practice
+
+The current development candidate adds a source-grounded requirements-writing lesson:
+three concepts, twelve scenario questions, worked examples, written applications,
+self-review, and delayed retrieval. It runs offline with no account or model. Source
+links open only on request; progress saving is opt-in.
+
+Build a portable lesson from this checkout:
+
+```bash
+python3 plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/build_learning.py \
+  --out build/learning/requirements-writing.html
+```
+
+Use the declared Python environment below. Open the HTML in a modern browser. Export
+progress before closing if device saving is off. See `docs/TOPIC_PACKS.md` for source
+provenance, update compatibility, and distribution. Build the complete portable bundle
+with `python3 scripts/package_learning.py --out build/learning-candidate.zip`. Read
+`docs/LEARNING_ACCEPTANCE.md` for verified scope and pending browser checks. Learning efficacy and production
+qualification remain unproven.
 
 ## Install
+
+The published tag below remains the earlier alpha; it does not include this learning
+candidate until a reviewed release is published. Use the source build above for this
+candidate.
 
 ```bash
 codex plugin marketplace add haitaowu12/personal-growth-copilot --ref v0.4.0-alpha.12

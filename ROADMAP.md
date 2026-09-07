@@ -1,3 +1,11 @@
+# Source-grounded learning candidate
+
+Current development adds a portable offline requirements-writing lesson, strict topic
+packs, deterministic progression and progress replay, explicit saving/export/import,
+source references, and a conversational learning lane. Human-learning outcomes and
+browser acceptance evidence remain separate from code and schema checks. See
+`docs/LEARNING_RELEASE.md` for acceptance and `docs/LEARNING_PILOT.md` for next evidence.
+
 # Roadmap
 
 ## Completed through 0.4.0-alpha.11
@@ -91,7 +99,7 @@
 
 ## Stop conditions
 
-Do not install, register, enable implicit invocation, initialize real sensitive
+Do not enable implicit invocation, initialize real sensitive
 state, claim production readiness, or run a real pilot until its preceding
 gates have evidence. A strong average score cannot waive a hard safety,
 privacy, dependence, or fabricated-persistence failure.
