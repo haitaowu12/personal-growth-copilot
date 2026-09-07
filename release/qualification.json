@@ -26,7 +26,7 @@
     "host_privacy_discovery_protocol": "pass-local-conformance-nonpromotional",
     "outcome_measurement_design": "pass-local-design-unexecuted",
     "deterministic_ci_definition": "pass-local",
-    "hosted_exact_head_ci": "unavailable-github-account-quota-owner-approved-local-evidence-substitution",
+    "hosted_exact_head_ci": "required-see-exact-head-workflow-evidence",
     "behavioral_comparison": "pending",
     "independent_untouched_holdouts": "pending",
     "bilingual_human_review": "pending",
@@ -42,7 +42,7 @@
     "deterministic_controls": {
       "status": "pass-local",
       "generator": "scripts/run_deterministic_qualification.py",
-      "ci_artifact": "deterministic-qualification-python-{python-version}",
+      "ci_artifact": "deterministic-qualification-{os}-python-{python-version}",
       "covers": [
         "repository structure",
         "evaluation manifest structure",
@@ -60,7 +60,8 @@
         "create-only private qualification-packet initialization, non-evidentiary external-participant intake, fail-closed incremental preregistration, and authoritative all-or-nothing trust-policy freeze validation",
         "read-only, non-promotional named-host privacy discovery with bounded hashed observations and no persistence authorization",
         "schema-bound process, proximal, delayed, burden, and dependence measure design; two fixed primary outcome ids; design-only strong comparator definitions; and explicit-save session-capsule validation",
-        "skill structure"
+        "skill structure",
+        "source-linked topic validation, shared learning reducer, import replay and portable package rebuild parity"
       ],
       "does_not_cover": [
         "target-model behavior or baseline comparison",
@@ -75,7 +76,9 @@
         "executed strong-comparator results or any observed process, proximal, delayed, burden, or dependence outcome",
         "controlled pilot",
         "efficacy",
-        "release approval"
+        "release approval",
+        "actual desktop/mobile/keyboard browser journey and storage behavior",
+        "independent topic answer-key review or learner transfer and retention evidence"
       ]
     }
   }
