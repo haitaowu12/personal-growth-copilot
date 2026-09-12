@@ -13,9 +13,10 @@ pilot gates pass.
 - The provider is snapshotted byte-for-byte into a private temporary directory,
   invoked without a shell, and bound to its SHA-256, source commit,
   model/version, settings, declared tools, skill, exact inference-runtime
-  executable hash, and a named environment allowlist. The Codex adapter reads,
-  hashes, snapshots, and executes the same runtime bytes; profile and result
-  files are likewise hashed and consumed from one bounded read.
+  executable hash, exact output-schema hash, and a named environment allowlist.
+  The Codex adapter reads, hashes, and snapshots the same runtime and output-
+  schema bytes before invocation; profile files are likewise hashed and
+  consumed from one bounded read.
 - The freeze config is required to be secret-free. The builder and validator
   reject common secret-bearing key names, but cannot infer every arbitrary
   plaintext value; inspect the freeze before use. At execution, only explicitly
@@ -56,9 +57,10 @@ exactly one JSON object to standard output. It receives:
 - protocol `pgc-stdio-v3`;
 - frozen provider-identity SHA-256;
 - frozen secret-free host/model/settings/tool metadata plus skill, system
-  contract, exact inference-runtime executable hash, per-system profile hashes,
-  and complete profile-bundle hashes, so the adapter cannot silently select an unbound
-  executable or model profile;
+  contract, exact inference-runtime executable hash, exact output-schema hash,
+  per-system profile hashes, and complete profile-bundle hashes, so the adapter
+  cannot silently select an unbound executable, response contract, or model
+  profile;
 - system, case, variant, repetition, and turn identifiers;
 - the current user turn and prior user/assistant history.
 
@@ -76,6 +78,20 @@ files are create-only with mode `0600`; use a new path for every state. Run the
 adapter in a separately reviewed restricted account/container before using real
 provider credentials or private prompts; the stdio wrapper itself is not a
 sandbox and `tool_permissions` is frozen disclosure metadata, not enforcement.
+For the Codex adapter, set all three runtime paths to absolute, resolved paths:
+
+```text
+export PGC_EVAL_REPO_ROOT=/absolute/path/to/clean/personal-growth-copilot
+export PGC_CODEX_BIN=/absolute/resolved/path/to/codex
+export PGC_CODEX_AUTH_ROOT=/private/evaluation-codex-home
+```
+
+`PGC_EVAL_REPO_ROOT`, `PGC_CODEX_BIN`, and `PGC_CODEX_AUTH_ROOT` may not be
+symlinks. `PGC_CODEX_BIN` and `--runtime-executable` must name the same resolved,
+executable regular file; a launcher or symlink returned by a package manager is
+rejected. A `host=codex-cli` freeze accepts exactly these three environment
+names, an empty tool-permission list, and only the optional `reasoning_effort`
+setting.
 
 1. Put secret-free model settings in a JSON object. Prepare a reviewer-roster
    object whose only key is `reviewers`; every entry declares a pseudonymous ID,
@@ -93,7 +109,9 @@ sandbox and `tool_permissions` is frozen disclosure metadata, not enforcement.
      --host <host> --model <model> --model-version <version> \
      --settings-file /absolute/path/to/settings.json \
      --reviewer-roster-file /private/reviewer-roster.json \
-     --environment-name <SECRET_ENV_NAME> \
+     --environment-name PGC_EVAL_REPO_ROOT \
+     --environment-name PGC_CODEX_BIN \
+     --environment-name PGC_CODEX_AUTH_ROOT \
      --output /private/evidence/target-config.json
    ```
 
@@ -113,7 +131,9 @@ sandbox and `tool_permissions` is frozen disclosure metadata, not enforcement.
      --config /private/evidence/target-config.json \
      --session /private/evidence/session-001.json \
      --adapter /absolute/path/to/adapter \
-     --env <SECRET_ENV_NAME> \
+     --env PGC_EVAL_REPO_ROOT \
+     --env PGC_CODEX_BIN \
+     --env PGC_CODEX_AUTH_ROOT \
      --output /private/evidence/session-002.json
    ```
 
@@ -255,7 +275,10 @@ python scripts/attempt_inventory_cli.py capture \
   --prior-index /private/evidence/attempt-ledger/index-000000.json \
   --session /private/evidence/sessions/run-001-before.json \
   --session-output /private/evidence/sessions/run-001-after.json \
-  --adapter providers/codex_cli_adapter.py --env PGC_CODEX_BIN \
+  --adapter providers/codex_cli_adapter.py \
+  --env PGC_EVAL_REPO_ROOT \
+  --env PGC_CODEX_BIN \
+  --env PGC_CODEX_AUTH_ROOT \
   --witness-adapter /private/bin/attempt-witness \
   --policy /private/release-packet/trust-policy.json \
   --expected-policy-sha256 OWNER_DISTRIBUTED_POLICY_HASH

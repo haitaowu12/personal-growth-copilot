@@ -25,8 +25,9 @@ Implemented product and validation scope:
   deterministic synthetic run identities across target, two ablations, and two
   same-capability comparators;
 - one governed system contract, byte-bound profile bundles, stdio-v3 provider
-  requests, resumable model capture, blinded review requests, bilingual review
-  rules, campaign aggregation, and immutable attempt-witness contracts;
+  requests, snapshotted inference-runtime and output-schema inputs, resumable
+  model capture, blinded review requests, bilingual review rules, campaign
+  aggregation, and immutable attempt-witness contracts;
 - descriptive paired outputs for `strong_generalist` and
   `minimal_visible_model`, with `claim_made=false` and `claim_allowed=false`;
 - process, proximal, delayed, burden, and dependence measurement design with

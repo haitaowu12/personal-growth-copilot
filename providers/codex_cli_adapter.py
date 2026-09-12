@@ -92,6 +92,8 @@ def required_path(name: str, *, directory: bool = False) -> Path:
     if not value:
         fail(f"required environment name is absent: {name}")
     path = Path(value)
+    if not path.is_absolute():
+        fail(f"environment path must be absolute: {name}")
     if path.is_symlink():
         fail(f"environment path may not be a symlink: {name}")
     try:
@@ -125,6 +127,7 @@ def load_request() -> dict:
         "model",
         "model_version",
         "runtime_executable_sha256",
+        "output_schema_sha256",
         "settings",
         "tool_permissions",
         "skill_sha256",
@@ -299,8 +302,15 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
     codex_bin = required_path("PGC_CODEX_BIN")
     auth_root = required_path("PGC_CODEX_AUTH_ROOT", directory=True)
     output_schema = repository / "providers/codex-output.schema.json"
-    if output_schema.is_symlink() or not output_schema.is_file():
-        fail("Codex output schema is unavailable")
+    if output_schema.is_symlink():
+        fail("Codex output schema may not be a symlink")
+    try:
+        resolved_output_schema = output_schema.resolve(strict=True)
+        resolved_output_schema.relative_to(repository)
+    except (OSError, ValueError):
+        fail("Codex output schema is unavailable or escapes the evaluation repository")
+    if not resolved_output_schema.is_file():
+        fail("Codex output schema is not a regular file")
     execution = payload["provider_execution"]
     settings = execution["settings"]
     if not isinstance(settings, dict) or set(settings) - ALLOWED_SETTINGS:
@@ -312,6 +322,19 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
         fail("Codex adapter requires host=codex-cli")
     if execution["tool_permissions"]:
         fail("Codex evaluation adapter requires an empty tool-permission list")
+    output_schema_bytes = read_regular_bytes(
+        resolved_output_schema, maximum=1_048_576
+    )
+    if hashlib.sha256(output_schema_bytes).hexdigest() != execution[
+        "output_schema_sha256"
+    ]:
+        fail("Codex output schema differs from the frozen provider request")
+    try:
+        output_schema_document = json.loads(output_schema_bytes.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        fail("Codex output schema is not valid UTF-8 JSON")
+    if not isinstance(output_schema_document, dict):
+        fail("Codex output schema must contain one JSON object")
     runtime_bytes = read_regular_bytes(codex_bin, maximum=209_715_200)
     if hashlib.sha256(runtime_bytes).hexdigest() != execution[
         "runtime_executable_sha256"
@@ -321,6 +344,7 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
         directory = Path(directory_name)
         output_path = directory / "last-message.json"
         runtime_path = directory / "frozen-runtime"
+        output_schema_path = directory / "frozen-output-schema.json"
         descriptor = os.open(
             runtime_path,
             os.O_WRONLY | os.O_CREAT | os.O_EXCL,
@@ -331,6 +355,16 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
             stream.flush()
             os.fsync(stream.fileno())
         os.chmod(runtime_path, 0o500)
+        schema_descriptor = os.open(
+            output_schema_path,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+            0o400,
+        )
+        with os.fdopen(schema_descriptor, "wb") as stream:
+            stream.write(output_schema_bytes)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(output_schema_path, 0o400)
         child_environment = dict(os.environ)
         child_environment["CODEX_HOME"] = str(auth_root)
         command = [
@@ -347,7 +381,7 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
             "--config",
             f'model_reasoning_effort="{reasoning}"',
             "--output-schema",
-            str(output_schema),
+            str(output_schema_path),
             "--output-last-message",
             str(output_path),
             "--json",

@@ -22,7 +22,7 @@
 ### Changed
 
 - Provider protocol upgraded to `pgc-stdio-v3` with system-contract,
-  system-profile, and profile-bundle hashes.
+  system-profile, profile-bundle, inference-runtime, and output-schema hashes.
 - Target configuration, run, result, campaign, attempt, and release schemas now
   require all five governed systems.
 - Campaign and bilingual-review aggregation now derive their system set from the
@@ -36,6 +36,8 @@
 
 - Provider profile loading now canonicalizes macOS `/var` and `/private/var`
   paths before enforcing repository containment.
+- Codex output-schema bytes are now no-follow read, hash-verified, and copied to
+  a private snapshot before model invocation.
 - Test fixtures, reviewer evidence, campaign counts, and qualification language
   no longer assume a three-system or stdio-v2 contract.
 

@@ -52,7 +52,7 @@
         "safety-state transitions and memory freeze",
         "current-resource resolver failure behavior",
         "branchable multi-turn harness conformance",
-        "byte-snapshotted stdio-v3 provider, frozen suite/system-contract/profile/run plan, and resumable externally-unverified review-packet import protocol",
+        "byte-snapshotted stdio-v3 adapter, inference runtime, and output schema; frozen suite/system-contract/profile/run plan; and resumable externally-unverified review-packet import protocol",
         "cumulative blinded review-request binding, exact rubric parity, full-suite submitted-run manifest reconciliation, conditional campaign aggregation, and Codex CLI runtime/profile/tool-telemetry controls",
         "unconfigured fail-closed, role-scoped signed release-evidence construction and verification bound to an exact clean candidate checkout and out-of-band policy/current-index anchors",
         "unconfigured owner-epoch-bound externally witnessed provider-attempt capture, post-freeze result reconciliation, retry/omission detection, and out-of-band witness-head anchoring",

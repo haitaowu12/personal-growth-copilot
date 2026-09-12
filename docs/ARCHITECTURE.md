@@ -56,7 +56,8 @@ Visible working model -> chosen experiment -> review
   and user-owned decisions;
 - branch execution, variants, repetitions, governed system slots, transcript/result
   hashing, and hard-gate aggregation in the evaluation harness.
-- byte-snapshotted stdio-provider identity, reserved-environment denial,
+- byte-snapshotted stdio-provider identity, inference runtime, and output schema,
+  reserved-environment denial,
   preregistered run matrix, resumable target capture, opaque review-packet
   import, quality thresholds, and deterministic target replay.
 - cumulative system-blinded review-request export, calibrated-reviewer

@@ -116,6 +116,9 @@ def main() -> int:
             raise ValueError(
                 "runtime executable must be an executable regular non-symlink file"
             )
+        output_schema = target_session.PROVIDER_OUTPUT_SCHEMA_PATH
+        if output_schema.is_symlink() or not output_schema.is_file():
+            raise ValueError("provider output schema must be a regular non-symlink file")
         if args.settings_file.is_symlink() or not args.settings_file.is_file():
             raise ValueError("settings file must be a regular non-symlink file")
         settings = json.loads(args.settings_file.read_text(encoding="utf-8"))
@@ -147,6 +150,7 @@ def main() -> int:
                 "adapter_version": args.adapter_version,
                 "adapter_sha256": file_hash(adapter),
                 "runtime_executable_sha256": file_hash(runtime_executable),
+                "output_schema_sha256": file_hash(output_schema),
                 "host": args.host,
                 "model": args.model,
                 "model_version": args.model_version,

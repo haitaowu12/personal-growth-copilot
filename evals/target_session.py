@@ -33,6 +33,7 @@ HUMAN_REVIEW_SCHEMA = ROOT / "evals/human-review.schema.json"
 REVIEW_REQUEST_SCHEMA = ROOT / "evals/review-request.schema.json"
 TARGET_RESULT_SCHEMA = ROOT / "evals/results/TARGET_RUN_SCHEMA.json"
 CANONICAL_SUITE_PATH = ROOT / "evals/cases.json"
+PROVIDER_OUTPUT_SCHEMA_PATH = ROOT / "providers/codex-output.schema.json"
 RUBRIC_DIMENSIONS = (
     "contract_and_focus",
     "reflective_accuracy",
@@ -57,6 +58,13 @@ RESERVED_ENVIRONMENT_PREFIXES = (
     "PERL",
     "JAVA_TOOL_OPTIONS",
 )
+CODEX_REQUIRED_ENVIRONMENT_NAMES = {
+    "PGC_CODEX_AUTH_ROOT",
+    "PGC_CODEX_BIN",
+    "PGC_EVAL_REPO_ROOT",
+}
+CODEX_ALLOWED_SETTINGS = {"reasoning_effort"}
+CODEX_ALLOWED_REASONING = {"low", "medium", "high", "xhigh", "max", "ultra"}
 SENSITIVE_KEY_FRAGMENTS = (
     "secret",
     "password",
@@ -195,6 +203,12 @@ def validate_target_config(config: dict[str, Any], suite: dict[str, Any]) -> lis
     expected_skill_hash = _file_sha256(ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md")
     if config["provider"]["skill_sha256"] != expected_skill_hash:
         errors.append("skill_sha256 does not match the current skill")
+    if PROVIDER_OUTPUT_SCHEMA_PATH.is_symlink() or not PROVIDER_OUTPUT_SCHEMA_PATH.is_file():
+        errors.append("provider output schema must be a regular non-symlink file")
+    elif config["provider"]["output_schema_sha256"] != _file_sha256(
+        PROVIDER_OUTPUT_SCHEMA_PATH
+    ):
+        errors.append("output_schema_sha256 does not match the governed output schema")
     if config["provider"]["profile_bundle_sha256"] != profile_bundle_sha256():
         errors.append("profile_bundle_sha256 does not match governed profile files")
     expected_rubric_hash = _file_sha256(ROOT / "evals/rubric.md")
@@ -213,6 +227,19 @@ def validate_target_config(config: dict[str, Any], suite: dict[str, Any]) -> lis
             RESERVED_ENVIRONMENT_PREFIXES
         ):
             errors.append(f"provider environment name is reserved: {name}")
+    if config["provider"]["host"] == "codex-cli":
+        if environment_names != CODEX_REQUIRED_ENVIRONMENT_NAMES:
+            errors.append(
+                "codex-cli environment allowlist must contain exactly "
+                + ", ".join(sorted(CODEX_REQUIRED_ENVIRONMENT_NAMES))
+            )
+        if config["provider"]["tool_permissions"]:
+            errors.append("codex-cli tool_permissions must be empty")
+        settings = config["provider"]["settings"]
+        if set(settings) - CODEX_ALLOWED_SETTINGS:
+            errors.append("codex-cli settings contain an unsupported key")
+        if settings.get("reasoning_effort", "high") not in CODEX_ALLOWED_REASONING:
+            errors.append("codex-cli reasoning_effort is unsupported")
     roster = config["review"]["reviewer_roster"]
     reviewer_ids = [entry["reviewer_id"] for entry in roster]
     if len(reviewer_ids) != len(set(reviewer_ids)):
@@ -343,6 +370,7 @@ class FrozenStdioProvider:
                 "runtime_executable_sha256": config["provider"][
                     "runtime_executable_sha256"
                 ],
+                "output_schema_sha256": config["provider"]["output_schema_sha256"],
                 "settings": deepcopy(config["provider"]["settings"]),
                 "tool_permissions": list(config["provider"]["tool_permissions"]),
                 "skill_sha256": config["provider"]["skill_sha256"],

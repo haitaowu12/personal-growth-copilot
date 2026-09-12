@@ -70,6 +70,9 @@ def config():
             "adapter_version": "fixture-1",
             "adapter_sha256": sha(ADAPTER),
             "runtime_executable_sha256": sha(ADAPTER),
+            "output_schema_sha256": sha(
+                target_session.PROVIDER_OUTPUT_SCHEMA_PATH
+            ),
             "host": "test-host",
             "model": "protocol-fixture-not-a-model",
             "model_version": "fixture-1",
@@ -501,7 +504,7 @@ class TargetSessionTests(unittest.TestCase):
             with self.assertRaises(target_session.ProviderProtocolError):
                 second_session.capture(second_provider)
 
-    def test_config_binds_suite_baselines_plan_environment_and_secret_free_settings(self):
+    def test_config_binds_suite_systems_provider_inputs_and_secret_free_settings(self):
         cfg = config()
         cfg["provider"]["environment_allowlist"] = ["PATH"]
         self.assertTrue(
@@ -521,6 +524,40 @@ class TargetSessionTests(unittest.TestCase):
         self.assertTrue(
             any(
                 "secret-like key" in error
+                for error in target_session.validate_target_config(cfg, SUITE)
+            )
+        )
+        cfg = config()
+        cfg["provider"]["output_schema_sha256"] = "0" * 64
+        self.assertTrue(
+            any(
+                "output_schema_sha256" in error
+                for error in target_session.validate_target_config(cfg, SUITE)
+            )
+        )
+        cfg = config()
+        cfg["provider"].update(
+            {
+                "host": "codex-cli",
+                "settings": {"reasoning_effort": "high"},
+                "tool_permissions": [],
+                "environment_allowlist": [],
+            }
+        )
+        self.assertTrue(
+            any(
+                "codex-cli environment allowlist" in error
+                for error in target_session.validate_target_config(cfg, SUITE)
+            )
+        )
+        cfg["provider"]["environment_allowlist"] = sorted(
+            target_session.CODEX_REQUIRED_ENVIRONMENT_NAMES
+        )
+        self.assertFalse(target_session.validate_target_config(cfg, SUITE))
+        cfg["provider"]["settings"] = {"temperature": 0}
+        self.assertTrue(
+            any(
+                "codex-cli settings" in error
                 for error in target_session.validate_target_config(cfg, SUITE)
             )
         )

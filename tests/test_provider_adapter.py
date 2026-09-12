@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import io
+import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -76,6 +79,13 @@ output.write_text(json.dumps({
             }
         )
         return cfg
+
+    def test_codex_adapter_requires_absolute_environment_paths(self):
+        with mock.patch.dict(
+            os.environ, {"PGC_CODEX_BIN": "relative/codex"}, clear=False
+        ), mock.patch.object(codex_cli_adapter.sys, "stderr", io.StringIO()):
+            with self.assertRaises(SystemExit):
+                codex_cli_adapter.required_path("PGC_CODEX_BIN")
 
     def test_codex_adapter_uses_bound_profile_without_case_or_gold_label_leakage(self):
         with tempfile.TemporaryDirectory() as directory_name:
@@ -209,6 +219,127 @@ output.write_text(json.dumps({
                 profile = codex_cli_adapter.load_profile(payload, shadow)
             self.assertTrue(mutated)
             self.assertNotIn("INJECTED UNFROZEN PROFILE", profile)
+
+    def test_output_schema_is_hash_bound_and_snapshotted_before_codex(self):
+        with tempfile.TemporaryDirectory() as directory_name:
+            directory = Path(directory_name)
+            fake_codex = self.fake_codex(directory)
+            auth_root = directory / "auth"
+            auth_root.mkdir()
+            shadow = directory / "shadow"
+            for relative in (
+                "plugins/personal-growth-copilot",
+                "evals",
+                "providers",
+            ):
+                source = ROOT / relative
+                destination = shadow / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(source, destination)
+
+            cfg = self.adapter_config(fake_codex)
+            session = target_session.TargetSession(
+                suite=SUITE,
+                config=cfg,
+                case_id="advice-loop-saturation",
+                system_id="target",
+                variant_id="canonical",
+                repetition=1,
+                clock=FakeClock(),
+            )
+            live_schema = (shadow / "providers/codex-output.schema.json").resolve()
+            original_schema = live_schema.read_bytes()
+            live_schema.write_text(
+                json.dumps({"type": "object", "additionalProperties": True}),
+                encoding="utf-8",
+            )
+            provider = target_session.FrozenStdioProvider(
+                config=cfg,
+                adapter_path=ADAPTER,
+                environment={
+                    "PGC_CODEX_AUTH_ROOT": str(auth_root),
+                    "PGC_CODEX_BIN": str(fake_codex),
+                    "PGC_EVAL_REPO_ROOT": str(shadow),
+                },
+                clock=FakeClock(),
+            )
+            try:
+                with self.assertRaises(target_session.ProviderProtocolError):
+                    session.capture(provider)
+            finally:
+                provider.close()
+
+            live_schema.write_bytes(original_schema)
+            payload = target_session.FrozenStdioProvider.request_payload(
+                session.pending_request(), cfg
+            )
+            original_reader = codex_cli_adapter.read_regular_bytes
+            mutated = False
+
+            def mutate_after_read(path, *, maximum):
+                nonlocal mutated
+                data = original_reader(path, maximum=maximum)
+                if path == live_schema and not mutated:
+                    live_schema.write_text(
+                        json.dumps({"type": "string"}), encoding="utf-8"
+                    )
+                    mutated = True
+                return data
+
+            def inspect_invocation(command, **kwargs):
+                snapshot = Path(command[command.index("--output-schema") + 1])
+                self.assertNotEqual(snapshot, live_schema)
+                self.assertEqual(snapshot.read_bytes(), original_schema)
+                output = Path(command[command.index("--output-last-message") + 1])
+                output.write_text(
+                    json.dumps(
+                        {
+                            "text": "Snapshot-bound output.",
+                            "resource_claims": [],
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout=json.dumps(
+                        {
+                            "type": "thread.started",
+                            "thread_id": "thread_schema_snapshot",
+                        }
+                    )
+                    + "\n",
+                    stderr="",
+                )
+
+            with (
+                mock.patch.dict(
+                    os.environ,
+                    {
+                        "PGC_CODEX_AUTH_ROOT": str(auth_root),
+                        "PGC_CODEX_BIN": str(fake_codex),
+                    },
+                    clear=False,
+                ),
+                mock.patch.object(
+                    codex_cli_adapter,
+                    "read_regular_bytes",
+                    side_effect=mutate_after_read,
+                ),
+                mock.patch.object(
+                    codex_cli_adapter.subprocess,
+                    "run",
+                    side_effect=inspect_invocation,
+                ),
+            ):
+                output, response_id = codex_cli_adapter.invoke_codex(
+                    payload, "frozen prompt", shadow.resolve()
+                )
+            self.assertTrue(mutated)
+            self.assertEqual(output["text"], "Snapshot-bound output.")
+            self.assertEqual(response_id, "codex-thread_schema_snapshot")
+            self.assertNotEqual(live_schema.read_bytes(), original_schema)
 
     def test_codex_adapter_rejects_substituted_runtime_and_incomplete_event_stream(self):
         for event_statement in (

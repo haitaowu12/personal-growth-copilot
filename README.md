@@ -77,7 +77,8 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   materiality, one-question flow, saturation, exact user-approved scale and
   score actions, and user-owned choice;
 - a development-only, secret-free stdio-v3 provider protocol with byte-snapshotted
-  execution, a frozen suite/system-profile/run matrix, resumable capture, opaque
+  adapter, runtime, and output-schema execution inputs, a frozen
+  suite/system-profile/run matrix, resumable capture, opaque
   externally-unverified reviewer packets, quality floors, hard-failure
   preservation, and deterministic target-run replay;
 - a cumulative blinded review-request artifact covering all eleven governed
@@ -94,8 +95,8 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   external Ed25519 witness chain, then reconciles every signed event against
   the exact verified result files and an out-of-band current head/count;
 - a development-only Codex CLI adapter with complete governed system-profile
-  hashes and event-stream rejection of tool activity; it still requires a
-  dedicated restricted host and credentials;
+  hashes, a hash-bound private output-schema snapshot, and event-stream rejection
+  of tool activity; it still requires a dedicated restricted host and credentials;
 - a create-only canonical release-packet builder and role-scoped Ed25519 receipt
   verifier for behavioral, reviewer, attempt,
   holdout, privacy, bilingual, pilot, independent-review, and owner-promotion

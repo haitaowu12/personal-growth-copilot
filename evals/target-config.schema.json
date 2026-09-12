@@ -33,12 +33,13 @@
     "provider": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["adapter_protocol", "adapter_version", "adapter_sha256", "runtime_executable_sha256", "host", "model", "model_version", "settings", "tool_permissions", "environment_allowlist", "skill_sha256", "profile_bundle_sha256"],
+      "required": ["adapter_protocol", "adapter_version", "adapter_sha256", "runtime_executable_sha256", "output_schema_sha256", "host", "model", "model_version", "settings", "tool_permissions", "environment_allowlist", "skill_sha256", "profile_bundle_sha256"],
       "properties": {
         "adapter_protocol": {"const": "pgc-stdio-v3"},
         "adapter_version": {"type": "string", "minLength": 1, "maxLength": 100},
         "adapter_sha256": {"$ref": "#/$defs/hash"},
         "runtime_executable_sha256": {"$ref": "#/$defs/hash"},
+        "output_schema_sha256": {"$ref": "#/$defs/hash"},
         "host": {"type": "string", "minLength": 1, "maxLength": 200},
         "model": {"type": "string", "minLength": 1, "maxLength": 200},
         "model_version": {"type": "string", "minLength": 1, "maxLength": 200},
