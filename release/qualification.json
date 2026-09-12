@@ -35,7 +35,7 @@
     "privacy_safe_controlled_pilot": "pending",
     "independent_release_review": "pending",
     "source_grounded_learning_implementation": "pass-local-deterministic-only",
-    "learning_browser_acceptance": "blocked-browser-permission",
+    "learning_browser_acceptance": "pass-local-chromium-file-origin",
     "learning_outcomes": "pending"
   },
   "evidence_contract": {
@@ -52,16 +52,16 @@
         "safety-state transitions and memory freeze",
         "current-resource resolver failure behavior",
         "branchable multi-turn harness conformance",
-        "byte-snapshotted stdio provider, frozen suite/baseline/run plan, and resumable externally-unverified review-packet import protocol",
+        "byte-snapshotted stdio-v3 provider, frozen suite/system-contract/profile/run plan, and resumable externally-unverified review-packet import protocol",
         "cumulative blinded review-request binding, exact rubric parity, full-suite submitted-run manifest reconciliation, conditional campaign aggregation, and Codex CLI runtime/profile/tool-telemetry controls",
         "unconfigured fail-closed, role-scoped signed release-evidence construction and verification bound to an exact clean candidate checkout and out-of-band policy/current-index anchors",
         "unconfigured owner-epoch-bound externally witnessed provider-attempt capture, post-freeze result reconciliation, retry/omission detection, and out-of-band witness-head anchoring",
         "unconfigured source-manifest replay for reviewer, holdout, privacy, bilingual, and pilot gate evidence",
         "create-only private qualification-packet initialization, non-evidentiary external-participant intake, fail-closed incremental preregistration, and authoritative all-or-nothing trust-policy freeze validation",
         "read-only, non-promotional named-host privacy discovery with bounded hashed observations and no persistence authorization",
-        "schema-bound process, proximal, delayed, burden, and dependence measure design; two fixed primary outcome ids; design-only strong comparator definitions; and explicit-save session-capsule validation",
+        "schema-bound process, proximal, delayed, burden, and dependence measure design; two fixed primary outcome ids; governed nonclaiming strong-comparator execution profiles; and explicit-save session-capsule validation",
         "skill structure",
-        "source-linked topic validation, shared learning reducer, import replay and portable package rebuild parity"
+        "source-linked topic validation, shared learning reducer, import replay, and portable package rebuild parity"
       ],
       "does_not_cover": [
         "target-model behavior or baseline comparison",
@@ -77,8 +77,26 @@
         "controlled pilot",
         "efficacy",
         "release approval",
-        "actual desktop/mobile/keyboard browser journey and storage behavior",
+        "browser runtime behavior",
         "independent topic answer-key review or learner transfer and retention evidence"
+      ]
+    },
+    "learning_browser_acceptance": {
+      "status": "pass-local-chromium-file-origin",
+      "generator": "scripts/run_learning_browser_acceptance.mjs",
+      "artifact": "build/evidence/learning-browser-acceptance.json",
+      "covers": [
+        "packaged-file keyboard entry and feedback focus",
+        "three-concept progression, remediation, hints, transfer, writing, and self-review",
+        "opt-in save, reload, opt-out, scoped removal, export, valid import, rejected invalid imports, and clear",
+        "simulated browser-storage denial recovery",
+        "blocked network requests, reduced motion, and a 390-pixel no-overflow layout"
+      ],
+      "does_not_cover": [
+        "Safari or Firefox",
+        "real-device or assistive-technology behavior",
+        "200% zoom or manual visual-regression review",
+        "learner transfer, retention, mastery, or efficacy"
       ]
     }
   }

@@ -1,0 +1,12 @@
+{
+  "name": "personal-growth-copilot-browser-acceptance",
+  "private": true,
+  "version": "0.5.0-alpha.1",
+  "description": "Browser acceptance tooling for the portable Personal Growth Copilot learning player",
+  "scripts": {
+    "test:learning-browser": "node scripts/run_learning_browser_acceptance.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.63.0"
+  }
+}

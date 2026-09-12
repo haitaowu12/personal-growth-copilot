@@ -74,17 +74,18 @@ class OutcomeEvaluationTests(unittest.TestCase):
         remove_with_value["persistence"]["exact_proposed_delta"][0]["op"] = "remove"
         self.assertTrue(list(validator.iter_errors(remove_with_value)))
 
-    def test_strong_comparators_remain_design_only_and_match_capabilities(self) -> None:
+    def test_strong_comparators_are_governed_and_match_capabilities(self) -> None:
         for comparator_id in ("strong_generalist", "minimal_visible_model"):
             comparator = yaml.safe_load(
                 (ROOT / f"evals/comparators/{comparator_id}.yaml").read_text(encoding="utf-8")
             )
-            self.assertEqual(comparator["comparator_id"], comparator_id)
-            self.assertEqual(comparator["status"], "design-only-unexecuted")
+            self.assertEqual(comparator["system_id"], comparator_id)
+            self.assertEqual(comparator["status"], "governed-executable")
             self.assertTrue(comparator["same_model_required"])
             self.assertTrue(comparator["same_safety_policy_required"])
             self.assertTrue(comparator["same_context_access_required"])
-            self.assertEqual(comparator["memory_policy"], "READ_ONLY_USER_APPROVED")
+            self.assertEqual(comparator["context_policy"], "READ_ONLY_USER_APPROVED")
+            self.assertEqual(comparator["memory_policy"], "DISABLED")
 
 
 if __name__ == "__main__":

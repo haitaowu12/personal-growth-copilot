@@ -1,0 +1,78 @@
+{
+  "$schema": "./system-contract.schema.json",
+  "schema_version": "1.0",
+  "systems": [
+    {
+      "id": "target",
+      "role": "product",
+      "profile_path": "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md",
+      "bundle_paths": [
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/technique-registry.json",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/behavior-change-experiments.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/bilingual-dialogue.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/collaborative-inquiry.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/context-model.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/evidence-ledger.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/memory-and-continuity.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/record-store-contract.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/reflection-and-review.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/safety-and-scope.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/session-capsule.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/topic-learning.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/values-goals-and-motivation.md"
+      ],
+      "context_policy": "READ_ONLY_USER_APPROVED",
+      "memory_write_policy": "HOST_EXPLICIT_ONLY"
+    },
+    {
+      "id": "direct_assistant",
+      "role": "matched_direct_baseline",
+      "profile_path": "evals/baselines/direct_assistant.yaml",
+      "bundle_paths": [
+        "evals/baselines/direct_assistant.yaml",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/safety-and-scope.md"
+      ],
+      "context_policy": "CONVERSATION_ONLY",
+      "memory_write_policy": "DISABLED"
+    },
+    {
+      "id": "structured_reflection",
+      "role": "matched_noncoaching_baseline",
+      "profile_path": "evals/baselines/structured_reflection.yaml",
+      "bundle_paths": [
+        "evals/baselines/structured_reflection.yaml",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/safety-and-scope.md"
+      ],
+      "context_policy": "CONVERSATION_ONLY",
+      "memory_write_policy": "DISABLED"
+    },
+    {
+      "id": "strong_generalist",
+      "role": "same_capability_generalist_comparator",
+      "profile_path": "evals/comparators/strong_generalist.yaml",
+      "bundle_paths": [
+        "evals/comparators/strong_generalist.yaml",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/safety-and-scope.md"
+      ],
+      "context_policy": "READ_ONLY_USER_APPROVED",
+      "memory_write_policy": "DISABLED"
+    },
+    {
+      "id": "minimal_visible_model",
+      "role": "minimal_visible_model_comparator",
+      "profile_path": "evals/comparators/minimal_visible_model.yaml",
+      "bundle_paths": [
+        "evals/comparators/minimal_visible_model.yaml",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
+        "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/safety-and-scope.md"
+      ],
+      "context_policy": "READ_ONLY_USER_APPROVED",
+      "memory_write_policy": "DISABLED"
+    }
+  ]
+}

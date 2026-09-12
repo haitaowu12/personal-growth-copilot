@@ -1,7 +1,8 @@
 # Outcome Evaluation Contract
 
-Status: design-only and unexecuted. This contract does not qualify target
-behavior, user benefit, pilot readiness, or efficacy.
+Status: governed measurement design, unexecuted on real users and models. This
+contract does not qualify target behavior, user benefit, pilot readiness, or
+efficacy.
 
 ## Measurement layers
 
@@ -26,17 +27,18 @@ The current direct and structured-reflection systems remain ablations. They do
 not establish a strong comparison because both remove differentiated target
 capabilities.
 
-Two design-only definitions are added:
+Two governed execution profiles are included:
 
 - `strong_generalist`: same model, safety policy, and approved context access,
   without the Personal Growth Copilot method;
 - `minimal_visible_model`: facts, hypotheses, alternatives, unknowns, and one
   user-owned action without the extended coaching loop.
 
-These definitions are not governed execution slots yet. Before use, extend and
-freeze the suite, target config, provider profiles, run identities, result
-schemas, aggregation, reviewer requests, and attempt inventory. Re-run all
-mutation and omission tests. Until then, no comparator result is claimed.
+Both are frozen in `evals/system-contract.json`, included in the 610-run plan,
+accepted by target/result/reviewer/attempt schemas, and reported as descriptive
+paired differences by the campaign aggregator. Those outputs set
+`claim_made=false` and `claim_allowed=false`. No real comparator run, human
+review, delayed observation, or outcome result is claimed.
 
 ## Session capsule
 

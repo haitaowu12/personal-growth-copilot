@@ -10,10 +10,10 @@
     "frozen_at": {"type": "string", "format": "date-time"},
     "systems": {
       "type": "array",
-      "minItems": 3,
-      "maxItems": 3,
+      "minItems": 5,
+      "maxItems": 5,
       "uniqueItems": true,
-      "items": {"enum": ["target", "direct_assistant", "structured_reflection"]}
+      "items": {"enum": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"]}
     },
     "provider": {
       "type": "object",

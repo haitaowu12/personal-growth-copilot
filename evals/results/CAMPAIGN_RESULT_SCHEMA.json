@@ -27,14 +27,16 @@
     "system_summaries": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["target", "direct_assistant", "structured_reflection"],
+      "required": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"],
       "properties": {
         "target": {"$ref": "#/$defs/systemSummary"},
         "direct_assistant": {"$ref": "#/$defs/systemSummary"},
-        "structured_reflection": {"$ref": "#/$defs/systemSummary"}
+        "structured_reflection": {"$ref": "#/$defs/systemSummary"},
+        "strong_generalist": {"$ref": "#/$defs/systemSummary"},
+        "minimal_visible_model": {"$ref": "#/$defs/systemSummary"}
       }
     },
-    "case_summaries": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/caseSummary"}},
+    "case_summaries": {"type": "array", "minItems": 5, "items": {"$ref": "#/$defs/caseSummary"}},
     "comparisons": {"$ref": "#/$defs/comparisons"},
     "acceptance": {"$ref": "#/$defs/acceptance"},
     "aggregate_sha256": {"$ref": "#/$defs/hash"}
@@ -47,7 +49,7 @@
       "required": ["case_id", "system_id", "variant_id", "repetition"],
       "properties": {
         "case_id": {"type": "string"},
-        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"]},
         "variant_id": {"type": "string"},
         "repetition": {"type": "integer", "minimum": 1}
       }
@@ -84,7 +86,7 @@
       "additionalProperties": false,
       "required": ["system_id", "run_count", "automated_pass_runs", "automated_fail_runs", "hard_failure_runs", "quality_pass_runs", "quality_fail_runs", "review_turn_count", "agreement_estimable", "agreement", "dimension_means", "dimension_medians", "dimension_p10"],
       "properties": {
-        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"]},
         "run_count": {"type": "integer", "minimum": 1},
         "automated_pass_runs": {"type": "integer", "minimum": 0},
         "automated_fail_runs": {"type": "integer", "minimum": 0},
@@ -105,7 +107,7 @@
       "required": ["case_id", "system_id", "risk", "language", "run_count", "automated_fail_runs", "hard_failure_runs", "dimension_means"],
       "properties": {
         "case_id": {"type": "string"},
-        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"]},
         "risk": {"enum": ["low", "medium", "high", "critical"]},
         "language": {"enum": ["en", "zh", "mixed"]},
         "run_count": {"type": "integer", "minimum": 1},
@@ -117,7 +119,7 @@
     "comparisons": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["direct_noninferiority", "structured_benefit"],
+      "required": ["direct_noninferiority", "structured_benefit", "strong_generalist", "minimal_visible_model"],
       "properties": {
         "direct_noninferiority": {
           "type": "object",
@@ -141,7 +143,40 @@
             "claim_allowed": {"const": false},
             "reason": {"type": "string", "minLength": 1, "maxLength": 500}
           }
-        }
+        },
+        "strong_generalist": {"$ref": "#/$defs/descriptiveComparator"},
+        "minimal_visible_model": {"$ref": "#/$defs/descriptiveComparator"}
+      }
+    },
+    "descriptiveComparator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["comparator_id", "paired_run_count", "target_minus_comparator_mean_differences", "input_runs_valid", "claim_made", "claim_allowed", "reason"],
+      "properties": {
+        "comparator_id": {"enum": ["strong_generalist", "minimal_visible_model"]},
+        "paired_run_count": {"type": "integer", "minimum": 1},
+        "target_minus_comparator_mean_differences": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["contract_and_focus", "reflective_accuracy", "inquiry_quality", "context_model_integrity", "recommendation_fit", "experiment_quality", "agency_and_challenge", "continuity_and_privacy", "language_and_specificity", "anti_dependence", "safety_and_scope"],
+          "properties": {
+            "contract_and_focus": {"type": "number", "minimum": -4, "maximum": 4},
+            "reflective_accuracy": {"type": "number", "minimum": -4, "maximum": 4},
+            "inquiry_quality": {"type": "number", "minimum": -4, "maximum": 4},
+            "context_model_integrity": {"type": "number", "minimum": -4, "maximum": 4},
+            "recommendation_fit": {"type": "number", "minimum": -4, "maximum": 4},
+            "experiment_quality": {"type": "number", "minimum": -4, "maximum": 4},
+            "agency_and_challenge": {"type": "number", "minimum": -4, "maximum": 4},
+            "continuity_and_privacy": {"type": "number", "minimum": -4, "maximum": 4},
+            "language_and_specificity": {"type": "number", "minimum": -4, "maximum": 4},
+            "anti_dependence": {"type": "number", "minimum": -4, "maximum": 4},
+            "safety_and_scope": {"type": "number", "minimum": -4, "maximum": 4}
+          }
+        },
+        "input_runs_valid": {"type": "boolean"},
+        "claim_made": {"const": false},
+        "claim_allowed": {"const": false},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 500}
       }
     },
     "acceptance": {

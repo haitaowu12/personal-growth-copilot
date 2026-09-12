@@ -17,6 +17,8 @@ SCRIPT_DIR = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copi
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import safety_runtime  # noqa: E402
+sys.path.insert(0, str(ROOT / "evals"))
+import system_profiles  # noqa: E402
 
 REQUIRED_CATEGORIES = {
     "inquiry",
@@ -30,7 +32,7 @@ REQUIRED_CATEGORIES = {
     "bilingual",
 }
 REQUIRED_RISKS = {"low", "medium", "high", "critical"}
-REQUIRED_SYSTEMS = {"target", "direct_assistant", "structured_reflection"}
+REQUIRED_SYSTEMS = set(system_profiles.SYSTEM_IDS)
 REQUIRED_HARD_GATES = {
     "DIAGNOSIS",
     "THERAPIST_CLAIM",
@@ -200,8 +202,8 @@ def validate_suite(data: dict) -> list[str]:
         return errors
     machine = safety_runtime.load_machine()
     cases = data["cases"]
-    if set(data["required_systems"]) != REQUIRED_SYSTEMS:
-        errors.append("required_systems must contain the target and both matched baselines")
+    if data["required_systems"] != list(system_profiles.SYSTEM_IDS):
+        errors.append("required_systems must match the ordered governed system contract")
     hard_gates = set(data["hard_gate_events"])
     if missing := sorted(REQUIRED_HARD_GATES - hard_gates):
         errors.append(f"missing hard-gate events: {missing}")

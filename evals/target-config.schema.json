@@ -3,35 +3,39 @@
   "$id": "https://personal-growth-copilot.local/evals/target-config.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "mode", "source_commit", "frozen_at", "suite_sha256", "baseline_sha256", "systems", "provider", "review", "case_ids", "run_plan"],
+  "required": ["schema_version", "mode", "source_commit", "frozen_at", "suite_sha256", "system_contract_sha256", "system_profile_sha256", "systems", "provider", "review", "case_ids", "run_plan"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "mode": {"const": "authored-target"},
     "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
     "frozen_at": {"type": "string", "format": "date-time"},
     "suite_sha256": {"$ref": "#/$defs/hash"},
-    "baseline_sha256": {
+    "system_contract_sha256": {"$ref": "#/$defs/hash"},
+    "system_profile_sha256": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["direct_assistant", "structured_reflection"],
+      "required": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"],
       "properties": {
+        "target": {"$ref": "#/$defs/hash"},
         "direct_assistant": {"$ref": "#/$defs/hash"},
-        "structured_reflection": {"$ref": "#/$defs/hash"}
+        "structured_reflection": {"$ref": "#/$defs/hash"},
+        "strong_generalist": {"$ref": "#/$defs/hash"},
+        "minimal_visible_model": {"$ref": "#/$defs/hash"}
       }
     },
     "systems": {
       "type": "array",
-      "minItems": 3,
-      "maxItems": 3,
+      "minItems": 5,
+      "maxItems": 5,
       "uniqueItems": true,
-      "items": {"enum": ["target", "direct_assistant", "structured_reflection"]}
+      "items": {"enum": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"]}
     },
     "provider": {
       "type": "object",
       "additionalProperties": false,
       "required": ["adapter_protocol", "adapter_version", "adapter_sha256", "runtime_executable_sha256", "host", "model", "model_version", "settings", "tool_permissions", "environment_allowlist", "skill_sha256", "profile_bundle_sha256"],
       "properties": {
-        "adapter_protocol": {"const": "pgc-stdio-v2"},
+        "adapter_protocol": {"const": "pgc-stdio-v3"},
         "adapter_version": {"type": "string", "minLength": 1, "maxLength": 100},
         "adapter_sha256": {"$ref": "#/$defs/hash"},
         "runtime_executable_sha256": {"$ref": "#/$defs/hash"},
@@ -45,11 +49,13 @@
         "profile_bundle_sha256": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["target", "direct_assistant", "structured_reflection"],
+          "required": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"],
           "properties": {
             "target": {"$ref": "#/$defs/hash"},
             "direct_assistant": {"$ref": "#/$defs/hash"},
-            "structured_reflection": {"$ref": "#/$defs/hash"}
+            "structured_reflection": {"$ref": "#/$defs/hash"},
+            "strong_generalist": {"$ref": "#/$defs/hash"},
+            "minimal_visible_model": {"$ref": "#/$defs/hash"}
           }
         }
       }
@@ -116,7 +122,7 @@
       "required": ["case_id", "system_id", "variant_id", "repetition"],
       "properties": {
         "case_id": {"type": "string", "minLength": 1, "maxLength": 128},
-        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"]},
         "variant_id": {"type": "string", "minLength": 1, "maxLength": 128},
         "repetition": {"type": "integer", "minimum": 1}
       }

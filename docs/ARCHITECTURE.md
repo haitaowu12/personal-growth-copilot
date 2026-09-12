@@ -54,7 +54,7 @@ Visible working model -> chosen experiment -> review
 - host-classified exact-question consent, material-question gating, saturation,
   user-approved scale definitions, host-attested score entry, temporal status,
   and user-owned decisions;
-- branch execution, variants, repetitions, baseline slots, transcript/result
+- branch execution, variants, repetitions, governed system slots, transcript/result
   hashing, and hard-gate aggregation in the evaluation harness.
 - byte-snapshotted stdio-provider identity, reserved-environment denial,
   preregistered run matrix, resumable target capture, opaque review-packet
@@ -127,7 +127,7 @@ permanent profile. Review-due material must be reconfirmed before use.
 1. structural repository and skill validation;
 2. deterministic growth-record tests;
 3. executable safety controls and branchable harness conformance;
-4. authored target/baseline transcript execution and calibrated review;
+4. authored five-system transcript execution and calibrated review;
 5. calibrated human review and bilingual adjudication;
 6. untouched holdouts;
 7. consented privacy-safe pilot;
@@ -139,8 +139,8 @@ to the exact candidate; every role requires a distinct trusted key, and the
 configured policy must match an owner-distributed out-of-band hash. The default
 trust policy is unconfigured, so local code cannot self-promote.
 
-The current alpha completes layers 1–3 on synthetic controls and implements a
-development-only transport/review/campaign protocol needed by layer 4. The stdio
+The current alpha completes layers 1–3 on synthetic controls and implements the
+five-system transport/review/campaign protocol needed by layer 4. The stdio
 adapter is a trusted executable with the ambient filesystem and network rights
 of its host process; the runtime does not provide an OS sandbox or verify the
 remote model identity. Imported reviewer identities remain externally
@@ -156,5 +156,8 @@ source identity, schema, prerequisites, and question keys; one JavaScript reduce
 progression, evidence labels, review timing, and imported-history replay. The same
 reducer runs under Node during development checks. The player renders plain text under
 a restrictive CSP, makes no network requests, and saves only after a user selects
-browser saving or export. This educational store does not qualify the coaching store
-or sensitive-state persistence. See `LEARNING_RELEASE.md` for the acceptance boundary.
+browser saving or export. A separate Playwright Core runner opens the packaged HTML
+from a file URL and checks the complete journey, persistence controls, import failures,
+storage denial, reduced motion, and narrow layout. This educational store does not
+qualify the coaching store, sensitive-state persistence, cross-browser compatibility,
+or learning outcomes. See `LEARNING_RELEASE.md` for the acceptance boundary.

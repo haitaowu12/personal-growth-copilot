@@ -24,7 +24,8 @@ Use the declared Python environment below. Open the HTML in a modern browser. Ex
 progress before closing if device saving is off. See `docs/TOPIC_PACKS.md` for source
 provenance, update compatibility, and distribution. Build the complete portable bundle
 with `python3 scripts/package_learning.py --out build/learning-candidate.zip`. Read
-`docs/LEARNING_ACCEPTANCE.md` for verified scope and pending browser checks. Learning efficacy and production
+`docs/LEARNING_ACCEPTANCE.md` for the automated packaged-file browser evidence and its
+cross-browser, real-device, and outcome limits. Learning efficacy and production
 qualification remain unproven.
 
 ## Install
@@ -65,18 +66,18 @@ interaction decisions. Overlap is allowed; activation remains explicit.
 - evidence-linked methods for motivation, goal design, small experiments, and
   review;
 - community-pattern provenance without copying donor implementations;
-- a 13-case, 58-turn authored development suite with alternate branches,
-  paraphrases, repetitions, both matched baseline slots, per-turn events, and
-  state assertions;
+- a 25-case, 106-turn authored development suite with 49 entry variants,
+  alternate branches, paraphrases, repetitions, five governed system slots,
+  per-turn events, and state assertions;
 - an executable five-state safety control, sticky crisis memory freeze, and a
   current-resource resolver interface that fails without fabricating contacts;
-- a deterministic 309-run harness-conformance artifact with complete synthetic
+- a deterministic 610-run harness-conformance artifact with complete synthetic
   transcripts and result hashes;
 - an executable context control for host-attested inquiry consent and
   materiality, one-question flow, saturation, exact user-approved scale and
   score actions, and user-owned choice;
-- a development-only, secret-free provider protocol with byte-snapshotted
-  execution, a frozen suite/baseline/run matrix, resumable capture, opaque
+- a development-only, secret-free stdio-v3 provider protocol with byte-snapshotted
+  execution, a frozen suite/system-profile/run matrix, resumable capture, opaque
   externally-unverified reviewer packets, quality floors, hard-failure
   preservation, and deterministic target-run replay;
 - a cumulative blinded review-request artifact covering all eleven governed
@@ -92,7 +93,7 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   completions, failures, final results, and campaign sealing in a stateful
   external Ed25519 witness chain, then reconciles every signed event against
   the exact verified result files and an out-of-band current head/count;
-- a development-only Codex CLI adapter with complete target/baseline profile
+- a development-only Codex CLI adapter with complete governed system-profile
   hashes and event-stream rejection of tool activity; it still requires a
   dedicated restricted host and credentials;
 - a create-only canonical release-packet builder and role-scoped Ed25519 receipt
@@ -120,11 +121,18 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   encryption, declared-sync, and backup observations without retaining raw
   command output. It cannot generate a privacy PASS, authorize persistence, or
   convert unexecuted lifecycle and incident controls from `UNKNOWN`.
-- a design-only outcome contract that separates process, proximal, delayed,
+- a nonqualifying outcome contract that separates process, proximal, delayed,
   burden, and dependence measures; fixes two primary outcome IDs before target
-  execution; defines two stronger same-capability comparators; and validates a
-  user-readable explicit-save session capsule. None is executed outcome
-  evidence yet.
+  execution; executes two stronger same-capability comparator profiles as
+  governed run slots; and validates a user-readable explicit-save session
+  capsule. No real comparator or outcome evidence has been collected yet.
+- a governed eight-technique registry with explicit eligibility,
+  contraindications, burden, review signals, alternatives, and evidence-source
+  bindings rather than free-form method selection;
+- a packaged-file browser acceptance runner covering keyboard entry and focus,
+  remediation, hints, transfer, all three written applications, opt-in storage,
+  reload and opt-out, export/import/rejection/clear, storage denial, offline
+  operation, reduced motion, and 390-pixel layout without network requests.
 
 The copilot may feel conversationally similar to a thoughtful coach. It must
 not claim to be a therapist, simulate a clinical relationship, diagnose, mine
@@ -142,6 +150,10 @@ Run local checks with:
 python3 -m venv .venv
 .venv/bin/pip install --require-hashes -r requirements/ci.txt
 .venv/bin/python scripts/run_deterministic_qualification.py
+npm ci --ignore-scripts --no-audit --no-fund
+.venv/bin/python scripts/package_learning.py --out build/learning-candidate.zip
+.venv/bin/python -c "import zipfile; zipfile.ZipFile('build/learning-candidate.zip').extractall('build/learning-package')"
+npm run test:learning-browser -- --html build/learning-package/requirements-writing.html --evidence build/evidence/learning-browser-acceptance.json
 ```
 
 The qualification command refuses to emit passing evidence from a dirty tree.
@@ -149,13 +161,15 @@ Its artifact is deterministic-controls evidence only, not behavioral, privacy,
 pilot, efficacy, or release evidence.
 
 The evidence ladder is intentionally non-cumulative: repository integrity,
-deterministic controls, authored target/baseline evaluation, independent
+deterministic controls, authored five-system evaluation, independent
 holdouts, named-host privacy/security preflight, controlled pilot, independent
 release review, and owner promotion each require their own exact evidence.
 Synthetic expected-event fixtures prove only that the harness works.
 The target adapter, review, and campaign tests prove only that the evidence path
 fails closed; no real target-model run or human qualification is claimed yet.
-The strong-generalist and minimal-visible-model comparators remain
-design-only; current schemas do not execute them as governed run slots.
+The strong-generalist and minimal-visible-model comparators are governed run
+slots with descriptive paired outputs that explicitly prohibit benefit claims.
+They have not been run against a real model, reviewed by humans, or promoted as
+behavioral or outcome evidence.
 See `docs/OUTCOME_EVALUATION.md` for the measurement and comparator boundary.
 See `docs/RELEASE_EVIDENCE.md` for the signed external-evidence contract.

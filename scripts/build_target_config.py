@@ -132,19 +132,18 @@ def main() -> int:
         reviewer_roster = roster_document["reviewers"]
         suite = json.loads((ROOT / "evals/cases.json").read_text(encoding="utf-8"))
         case_ids = args.case_id or [case["id"] for case in suite["cases"]]
-        systems = ["target", "direct_assistant", "structured_reflection"]
+        systems = list(target_session.system_profiles.SYSTEM_IDS)
         config = {
             "schema_version": "1.0",
             "mode": "authored-target",
             "source_commit": source_identity(),
             "frozen_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "suite_sha256": target_session._digest(suite),
-            "baseline_sha256": {
-                name: file_hash(path) for name, path in target_session.BASELINES.items()
-            },
+            "system_contract_sha256": target_session.system_profiles.contract_sha256(),
+            "system_profile_sha256": target_session.system_profiles.profile_sha256(),
             "systems": systems,
             "provider": {
-                "adapter_protocol": "pgc-stdio-v2",
+                "adapter_protocol": "pgc-stdio-v3",
                 "adapter_version": args.adapter_version,
                 "adapter_sha256": file_hash(adapter),
                 "runtime_executable_sha256": file_hash(runtime_executable),

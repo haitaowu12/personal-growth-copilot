@@ -5,9 +5,9 @@ It invokes one fresh ephemeral Codex CLI turn with an empty declared tool set,
 a no-tools prompt, and a read-only sandbox; it rejects the turn if the Codex
 event stream records a command, MCP call, web search, or other non-message
 item, contains a malformed line, or omits a provider thread ID. It loads the
-exact committed target or baseline profile from the same bytes it hashes,
+exact committed governed system profile and bundle from the same bytes it hashes,
 verifies and snapshots the exact inference executable before use, and emits
-stdio-v2. This is evidence enforcement after the model turn, not protection
+stdio-v3. This is evidence enforcement after the model turn, not protection
 against a tool accessing readable host data before rejection. The adapter does
 not prove the remote model's immutable backend identity, provide a network
 sandbox, or make human labels independent.

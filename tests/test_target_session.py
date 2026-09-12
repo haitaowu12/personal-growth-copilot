@@ -55,19 +55,18 @@ def sha(path: Path) -> str:
 
 def config():
     case_ids = ["advice-loop-saturation"]
-    systems = ["target", "direct_assistant", "structured_reflection"]
+    systems = list(target_session.system_profiles.SYSTEM_IDS)
     result = {
         "schema_version": "1.0",
         "mode": "authored-target",
         "source_commit": "a" * 40,
         "frozen_at": "2026-08-12T12:00:00Z",
         "suite_sha256": target_session._digest(SUITE),
-        "baseline_sha256": {
-            name: sha(path) for name, path in target_session.BASELINES.items()
-        },
+        "system_contract_sha256": target_session.system_profiles.contract_sha256(),
+        "system_profile_sha256": target_session.system_profiles.profile_sha256(),
         "systems": systems,
         "provider": {
-            "adapter_protocol": "pgc-stdio-v2",
+            "adapter_protocol": "pgc-stdio-v3",
             "adapter_version": "fixture-1",
             "adapter_sha256": sha(ADAPTER),
             "runtime_executable_sha256": sha(ADAPTER),

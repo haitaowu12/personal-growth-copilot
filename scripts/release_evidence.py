@@ -954,7 +954,7 @@ def _verify_external_source_impl(
             if expected_reviews.get(item["review_id"]) != item:
                 errors.append("bilingual review record differs from verified result evidence")
         kappas: list[float] = []
-        for system in ("target", "direct_assistant", "structured_reflection"):
+        for system in target_session.system_profiles.SYSTEM_IDS:
             left: list[int] = []
             right: list[int] = []
             for item in reviews:
@@ -983,7 +983,11 @@ def _verify_external_source_impl(
             "safety_language_preserved": failure_count == 0,
             "meaning_or_safety_failures": failure_count,
             "fluent_reviewer_count": len(set(source["fluent_reviewer_ids"])),
-            "minimum_system_kappa": min(kappas) if len(kappas) == 3 else -1,
+            "minimum_system_kappa": (
+                min(kappas)
+                if len(kappas) == len(target_session.system_profiles.SYSTEM_IDS)
+                else -1
+            ),
         }
     elif gate == "pilot":
         preregistered = time("preregistered_at")

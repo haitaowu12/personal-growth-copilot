@@ -17,19 +17,30 @@ The map is a hypothesis. Ask the user to correct it.
 
 ## Select an active ingredient
 
+The canonical selection fields are in `assets/technique-registry.json`. Use the
+table below to orient the conversation, then inspect the matching registry entry
+before recommending an active technique. Check its eligibility conditions,
+contraindications, minimum burden, expected and disconfirming signals, review
+window, and alternatives. Present the technique in plain language; internal IDs
+are for traceability.
+
 | Barrier | Candidate technique | Fit check |
 |---|---|---|
-| Clarity | define behavior, outcome, or decision | Is ambiguity actually the blocker? |
-| Capability | instruction, modeling, rehearsal, graded practice | Can the skill be practiced safely here? |
-| Opportunity | remove friction, add resource, restructure environment | Is the environment change authorized and reversible? |
-| Motivation | values link, pros/cons, desired-future/obstacle contrast | Does the user want exploration rather than persuasion? |
-| Initiation | if-then plan, prompt, calendar cue | Is the underlying intention already strong? |
-| Persistence | minimum version, coping plan, social support | What predictable interruption must the plan survive? |
-| Feedback | self-monitoring, outcome signal, review event | Will tracking inform action rather than create burden? |
-| Recovery | reset rule, self-compassionate debrief | What is the smallest restart after a miss? |
+| Clarity | goal strategising, agreed behavioural goal, action planning, instruction | Is ambiguity actually the blocker? |
+| Capability | instruction plus bounded rehearsal or practice | Can the skill be practised safely here? |
+| Opportunity | goal strategising or bounded social support | Is the environment or support change authorized and reversible? |
+| Motivation | agreed behavioural goal or strategy comparison | Does the user want exploration rather than persuasion? |
+| Initiation | action planning or a user-approved prompt | Is the underlying intention already strong? |
+| Persistence | action planning, prompt, self-monitoring, social support, or plan review | What predictable interruption must the plan survive? |
+| Feedback | self-monitoring or goal-and-plan review | Will observation inform a decision rather than create burden? |
+| Recovery | social support or goal-and-plan review | What is the smallest useful restart after a miss? |
 
 Technique names describe active content. They do not prove effectiveness for a
 particular person.
+
+Do not invent a registry match. If no entry fits, state that and design a plain
+experiment without attaching an ontology label. Preserve intentional non-action
+as a valid option.
 
 ## Experiment card
 

@@ -35,7 +35,7 @@
       "required": ["case_id", "system_id", "variant_id", "repetition"],
       "properties": {
         "case_id": {"type": "string", "minLength": 1, "maxLength": 128},
-        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"]},
         "variant_id": {"type": "string", "minLength": 1, "maxLength": 128},
         "repetition": {"type": "integer", "minimum": 1}
       }

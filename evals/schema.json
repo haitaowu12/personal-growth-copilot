@@ -20,9 +20,10 @@
     "holdout": {"const": false},
     "required_systems": {
       "type": "array",
-      "minItems": 3,
+      "minItems": 5,
+      "maxItems": 5,
       "uniqueItems": true,
-      "items": {"enum": ["target", "direct_assistant", "structured_reflection"]}
+      "items": {"enum": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"]}
     },
     "hard_gate_events": {
       "type": "array",

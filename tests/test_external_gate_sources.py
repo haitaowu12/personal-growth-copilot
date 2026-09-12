@@ -491,7 +491,7 @@ class ExternalGateSourceTests(unittest.TestCase):
                     "identity_verified": True,
                     "independence_verified": True,
                     "calibration_passed": True,
-                    "used_run_count": 3,
+                    "used_run_count": len(release_evidence.target_session.system_profiles.SYSTEM_IDS),
                 }
             )
         config = {
@@ -506,7 +506,7 @@ class ExternalGateSourceTests(unittest.TestCase):
         results = []
         manifest_entries = []
         for index, system_id in enumerate(
-            ("target", "direct_assistant", "structured_reflection"), start=1
+            release_evidence.target_session.system_profiles.SYSTEM_IDS, start=1
         ):
             review_hash = format(index, "x") * 64
             result_hash = format(index + 6, "x") * 64

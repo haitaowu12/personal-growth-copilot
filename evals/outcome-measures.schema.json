@@ -32,15 +32,15 @@
     "comparator_plan": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["current_ablations", "planned_strong_comparators"],
+      "required": ["matched_baselines", "governed_strong_comparators"],
       "properties": {
-        "current_ablations": {
+        "matched_baselines": {
           "type": "array",
           "minItems": 2,
           "uniqueItems": true,
           "items": {"enum": ["direct_assistant", "structured_reflection"]}
         },
-        "planned_strong_comparators": {
+        "governed_strong_comparators": {
           "type": "array",
           "minItems": 2,
           "uniqueItems": true,

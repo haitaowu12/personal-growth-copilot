@@ -92,6 +92,14 @@
       "limitation": "A classification system, not evidence that every technique works for every user or context."
     },
     {
+      "id": "bcio-search-ontology",
+      "type": "official-ontology",
+      "citation": "Human Behaviour Change Project. Behaviour Change Intervention Ontology (BCIO Search).",
+      "url": "https://www.bciosearch.org/",
+      "runtime_use": "Bind technique references to stable BCIO identifiers and labels so intervention content can be named and audited consistently.",
+      "limitation": "An ontology and search service, not evidence that a mapped technique is effective, appropriate, or sufficient for this product or user."
+    },
+    {
       "id": "lally-2010-habit",
       "type": "longitudinal-study",
       "citation": "Lally, P., van Jaarsveld, C. H. M., Potts, H. W. W., & Wardle, J. (2010). How are habits formed: Modelling habit formation in the real world.",

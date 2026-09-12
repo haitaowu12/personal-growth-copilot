@@ -29,7 +29,7 @@ response_id = hashlib.sha256(
 ).hexdigest()[:24]
 json.dump(
     {
-        "protocol": "pgc-stdio-v2",
+        "protocol": "pgc-stdio-v3",
         "request_sha256": request_sha256,
         "provider_identity_sha256": payload["provider_identity_sha256"],
         "text": f"Protocol fixture response {response_id}.",

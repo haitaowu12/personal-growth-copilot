@@ -1,105 +1,82 @@
-# Source-grounded learning candidate
+# Personal Growth Copilot roadmap
 
-Current development adds a portable offline requirements-writing lesson, strict topic
-packs, deterministic progression and progress replay, explicit saving/export/import,
-source references, and a conversational learning lane. Human-learning outcomes and
-browser acceptance evidence remain separate from code and schema checks. See
-`docs/LEARNING_RELEASE.md` for acceptance and `docs/LEARNING_PILOT.md` for next evidence.
+## Engineering state: 0.5.0-alpha.1
 
-# Roadmap
+The repository now contains the complete engineering candidate for the current
+scope: an explicit-invocation coaching skill, deterministic safety and context
+controls, portable records and learning artifacts, a five-system evaluation
+contract, fail-closed external evidence protocols, and automated packaged-file
+browser acceptance. External behavioral, privacy, human-review, pilot, and
+outcome evidence remain separate qualification work.
 
-## Completed through 0.4.0-alpha.11
+Implemented product and validation scope:
 
-- standalone private repository and clean-room lineage;
-- explicit-only Agent Skill scaffold;
-- conversational inquiry and visible context-model contracts;
-- transparent scoring and user-owned dossier rules;
-- evidence-led goal, motivation, experiment, and review references;
-- memory, safety, anti-dependence, and bilingual references;
-- 17 primary/official evidence records with limitations;
-- 16 pinned community repositories and clean-room dispositions;
-- portable growth-record schema enforced by the runtime validator;
-- mutation coverage for nested schema constraints and semantic references;
-- non-persistent record-store conformance for exact preview, consent, atomic
-  commit, revision, correction, revocation, export, and content deletion;
-- retained 31-case single-turn inventory plus a new 13-case, 58-turn branchable
-  development suite with canonical/paraphrase runs and both baseline slots;
-- executable ordinary, scope-boundary, significant-impairment, acute-danger,
-  and post-crisis states with guarded exit and sticky memory freeze;
-- host current-resource interface with missing-location, resolver-failure,
-  stale-result, exact-claim, and no-static-number tests;
-- deterministic 309-run synthetic harness conformance with complete transcript,
-  configuration, case, result, and aggregate hashes;
-- host-verified bounded inquiry consent, exact-question materiality and
-  saturation control, user-approved scale definitions and score entries,
-  temporal review status, typed evidence, and user-owned decision history;
-- byte-snapshotted secret-free stdio provider protocol, frozen
-  suite/baseline/run matrix, create-only private session artifacts, resumable
-  per-turn capture, opaque rostered label-packet import, Chinese-fluency and
-  chronology gates, quality floors, and deterministic hard-gate replay;
-- exact cumulative system-blinded review requests, eleven-dimension rubric
-  parity, reviewer calibration/attestation references, a full-suite result
-  manifest, and conditional campaign acceptance/non-inferiority aggregation;
-- a Codex CLI target adapter with exact profile-bundle and runtime-executable
-  hashing, same-byte hash/use controls, no gold-label prompt input, empty
-  declared tools, and fail-closed tool-activity telemetry;
-- fail-closed, role-scoped Ed25519 release-receipt verification covering the
-  behavioral matrix, external reviewers, immutable attempt inventory,
-  holdouts, named-host privacy, bilingual review, pilot, independent review,
-  and owner-only promotion; the default trust policy remains unconfigured;
-- 16 pinned community repositories, including four current evaluation-system
-  donors used only for clean-room architecture and failure-mode patterns;
-- local Python 3.13 validation and skill-creator validation.
-- fail-closed source manifests for reviewer, holdout, named-host privacy,
-  bilingual, and pilot release gates, including bounded evidence-file replay,
-  exact reviewer/result reconciliation, derived holdout/pilot completeness,
-  and rejection of signed assertion-only promotion packets.
-- create-only private qualification-packet initialization with restrictive
-  permissions, no generated authority material or fake evidence, candidate
-  binding, PEM private-key detection, per-input incremental validation, and
-  all-or-nothing trust-policy preflight.
-- create-only external-participant intake generation with exact candidate and
-  plan binding, machine-readable role responsibilities, unresolved host-control
-  remediation, and an explicit non-evidence claim limit.
-- fail-closed read-only named-host privacy discovery with hashed command
-  observations, exact private-output boundaries, incomplete sync-inventory
-  handling, and a hard prohibition on persistence authorization.
-- design-only outcome measurement across process, proximal, delayed, burden,
-  and dependence layers with two fixed primary outcome IDs, explicit missing
-  and dropout treatment, two same-capability comparator definitions, and a
-  schema-bound explicit-save session capsule.
+- standalone clean-room plugin and Agent Skill with explicit invocation;
+- consent, materiality, one-question flow, saturation, user-defined scales,
+  user-entered check-ins, and user-owned decisions;
+- visible facts, hypotheses, alternatives, unknowns, experiments, review points,
+  corrections, and exact proposed memory deltas;
+- canonical growth-record and session-capsule schemas plus non-persistent
+  conformance runtimes for preview, consent, atomic commit, correction,
+  revocation, export, and deletion;
+- five-state safety control, sticky post-crisis memory freeze, current-resource
+  resolver interface, and no fabricated contact path;
+- 25 branchable authored cases, 106 turn nodes, 49 entry variants, and 610
+  deterministic synthetic run identities across target, two ablations, and two
+  same-capability comparators;
+- one governed system contract, byte-bound profile bundles, stdio-v3 provider
+  requests, resumable model capture, blinded review requests, bilingual review
+  rules, campaign aggregation, and immutable attempt-witness contracts;
+- descriptive paired outputs for `strong_generalist` and
+  `minimal_visible_model`, with `claim_made=false` and `claim_allowed=false`;
+- process, proximal, delayed, burden, and dependence measurement design with
+  two fixed primary outcomes and explicit missing/dropout handling;
+- an eight-technique governed registry with eligibility, contraindication,
+  burden, review-signal, alternative, and provenance fields;
+- source-replayed reviewer, holdout, privacy, bilingual, pilot, independent
+  review, and owner-promotion evidence contracts using role-scoped Ed25519
+  receipts and an owner-frozen trust policy;
+- create-only qualification-packet and external-participant intake tools that
+  create no identities, keys, holdout cases, pilot episodes, or false evidence;
+- read-only named-host privacy discovery that cannot authorize persistence;
+- a source-grounded offline learning player, deterministic topic builder,
+  replay-validated progress files, reproducible ZIP package, and browser runner;
+- automated browser coverage for the packaged HTML journey, keyboard entry and
+  focus, remediation, hints, all three written applications, save/reload/opt-out,
+  export/import/rejection/clear, storage denial, offline operation, reduced
+  motion, and 390-pixel layout.
 
-## Next evidence slice
+## Qualification evidence still required
 
-1. extend the governed run schemas, provider profiles, results, aggregation,
-   and attempt inventory to execute the strong-generalist and
-   minimal-visible-model comparators; retain current baselines as ablations;
-2. expand ordinary-growth and multi-session cases, including disconfirmation,
-   direct-answer, intentional non-action, low engagement, non-attempt, and
-   dropout paths;
-3. initialize the private packet on a dedicated non-sync evaluation host,
-   provision the real independent inputs, pass preregistration preflight, and
-   freeze the exact trust policy;
-4. provision restricted credentials, then run the authored cases on a frozen
-   target model, current ablations, and strong comparators while collecting the
-   fixed outcome, burden, and dependence measures;
-5. add independently authored untouched cases after the skill freezes;
-6. conduct two-reviewer safety and English/Chinese adjudication and calculate
-   preregistered agreement;
-7. produce signed reviewer-attestation and
-   immutable attempt-inventory evidence using the implemented receipt protocol;
-8. calibrate any auxiliary model judge to human labels;
-9. resolve every `FAIL` or `UNKNOWN` from named-host discovery, then execute the
-   source-witnessed host privacy/security and incident evidence contract;
-10. implement a persistent adapter only if host discovery proves correct storage,
-   encryption, no-sync path, backup, correction, export, and deletion behavior;
-11. run a 10–20 episode consented private pilot over 4–8 weeks, retaining
-    failures, non-attempts, missing reviews, withdrawals, and dependence signals;
-12. obtain signed independent release review and explicit owner promotion.
+These items require real independent participants, authorities, infrastructure,
+or observations. Code generation cannot satisfy them.
+
+1. Freeze the exact candidate, model, system profiles, settings, run plan,
+   reviewer roster, and owner-distributed trust-policy hash on a dedicated
+   restricted evaluation host.
+2. Execute all governed target, ablation, and comparator runs while retaining
+   every attempt through the external witness protocol.
+3. Complete calibrated two-reviewer English/Chinese labeling, adjudication,
+   agreement analysis, and signed reviewer attestations.
+4. Execute independently authored sealed holdouts after candidate freeze.
+5. Resolve every named-host privacy `FAIL` or `UNKNOWN`, then obtain witnessed
+   storage, encryption, no-sync, backup/restore, lifecycle, and incident evidence.
+6. Implement a persistent adapter only after the named host proves correction,
+   export, deletion, retention, and recovery behavior.
+7. Run the consented 10–20 episode coaching pilot over 4–8 weeks while retaining
+   failures, non-attempts, missing reviews, withdrawals, burden, and dependence
+   signals.
+8. Run the independently reviewed learning feasibility protocol, including
+   unseen and seven-day transfer tasks; keep quiz and self-check data classified
+   as process evidence.
+9. Add Safari, Firefox, real-device, assistive-technology, 200% zoom, and manual
+   visual review before making broad browser-compatibility claims.
+10. Obtain signed independent release review and explicit owner promotion.
 
 ## Stop conditions
 
-Do not enable implicit invocation, initialize real sensitive
-state, claim production readiness, or run a real pilot until its preceding
-gates have evidence. A strong average score cannot waive a hard safety,
-privacy, dependence, or fabricated-persistence failure.
+Keep implicit invocation disabled. Do not initialize real sensitive state,
+claim production readiness, claim comparator superiority, claim durable user
+benefit, or begin a real pilot until the corresponding independent gate has
+passing evidence. A passing aggregate cannot waive a safety, privacy,
+dependence, omission, fabricated-persistence, or evidence-integrity failure.

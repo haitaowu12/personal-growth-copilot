@@ -11,6 +11,20 @@ import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "evals"))
+
+import system_profiles  # noqa: E402
+
+EXPECTED_TECHNIQUE_ONTOLOGY = {
+    "PGC-BCT-001": ("BCIO:007008", "goal strategising BCT"),
+    "PGC-BCT-002": ("BCIO:007004", "agree behaviour goal BCT"),
+    "PGC-BCT-003": ("BCIO:007010", "action planning BCT"),
+    "PGC-BCT-004": ("BCIO:007080", "prompt intended action BCT"),
+    "PGC-BCT-005": ("BCIO:007058", "instruct how to perform a behaviour BCT"),
+    "PGC-BCT-006": ("BCIO:007024", "self-monitor behaviour BCT"),
+    "PGC-BCT-007": ("BCIO:007028", "social support BCT"),
+    "PGC-BCT-008": ("BCIO:007299", "review behaviour goal plan BCT"),
+}
 
 
 def canonical_hash(value: object) -> str:
@@ -67,6 +81,8 @@ def validate() -> list[str]:
     qualification = json.loads(
         (ROOT / "release/qualification.json").read_text(encoding="utf-8")
     )
+    browser_package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+    browser_lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
     trust_policy = json.loads(
         (ROOT / "release/trust-policy.json").read_text(encoding="utf-8")
     )
@@ -83,6 +99,12 @@ def validate() -> list[str]:
     outcome_design = json.loads(
         (ROOT / "evals/outcome-measures.json").read_text(encoding="utf-8")
     )
+    technique_registry = json.loads(
+        (
+            ROOT
+            / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/technique-registry.json"
+        ).read_text(encoding="utf-8")
+    )
     if "TODO" in skill:
         errors.append("SKILL.md contains TODO")
     if "Use only after explicit invocation" not in skill:
@@ -95,6 +117,19 @@ def validate() -> list[str]:
         errors.append("plugin name mismatch")
     if plugin.get("version") != version:
         errors.append("plugin version mismatch")
+    if browser_package.get("version") != version:
+        errors.append("browser acceptance package version mismatch")
+    if browser_lock.get("version") != version:
+        errors.append("browser acceptance lock version mismatch")
+    if browser_package.get("devDependencies") != {"playwright-core": "1.63.0"}:
+        errors.append("browser acceptance dependency must remain exactly pinned")
+    if (
+        browser_lock.get("packages", {})
+        .get("node_modules/playwright-core", {})
+        .get("version")
+        != "1.63.0"
+    ):
+        errors.append("browser acceptance lock does not pin playwright-core 1.63.0")
     if plugin.get("skills") != "./skills/":
         errors.append("plugin skills path mismatch")
     if any(field in plugin for field in ("apps", "hooks", "mcpServers")):
@@ -136,6 +171,23 @@ def validate() -> list[str]:
         errors.append("qualification must remain blocked")
     if qualification.get("production_claim_allowed") is not False:
         errors.append("production claim must be false")
+    browser_gate = qualification.get("required_gates", {}).get(
+        "learning_browser_acceptance"
+    )
+    browser_contract = qualification.get("evidence_contract", {}).get(
+        "learning_browser_acceptance", {}
+    )
+    if browser_gate != "pass-local-chromium-file-origin":
+        errors.append("learning browser gate must state its local Chromium scope")
+    if browser_contract.get("status") != browser_gate:
+        errors.append("learning browser evidence status differs from the gate ledger")
+    if browser_contract.get("generator") != "scripts/run_learning_browser_acceptance.mjs":
+        errors.append("learning browser evidence must name the canonical generator")
+    deterministic_limits = qualification.get("evidence_contract", {}).get(
+        "deterministic_controls", {}
+    ).get("does_not_cover", [])
+    if "browser runtime behavior" not in deterministic_limits:
+        errors.append("deterministic qualification must exclude browser runtime behavior")
     if trust_policy.get("status") != "UNCONFIGURED" or trust_policy.get("authorities"):
         errors.append("committed release trust policy must remain unconfigured")
     if any(
@@ -199,6 +251,18 @@ def validate() -> list[str]:
         errors.append("branchable evaluation schema version must equal 2.0")
     if len(cases.get("cases", [])) < 8:
         errors.append("at least eight branchable multi-turn cases required")
+    try:
+        contract = system_profiles.load_contract()
+    except (OSError, json.JSONDecodeError, system_profiles.SystemContractError) as exc:
+        errors.append(f"governed system contract is invalid: {type(exc).__name__}")
+        contract = None
+    if contract is not None:
+        if cases.get("required_systems") != list(system_profiles.SYSTEM_IDS):
+            errors.append("evaluation suite systems differ from governed system contract")
+        if set(system_profiles.profile_sha256()) != set(system_profiles.SYSTEM_IDS):
+            errors.append("system profile hashes do not cover every governed system")
+        if set(system_profiles.profile_bundle_sha256()) != set(system_profiles.SYSTEM_IDS):
+            errors.append("system profile bundle hashes do not cover every governed system")
     if len(community.get("sources", [])) < 16:
         errors.append("at least 16 pinned community sources required")
     community_repositories: set[str] = set()
@@ -240,6 +304,9 @@ def validate() -> list[str]:
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/evidence-source-ids.json",
         ROOT / "requirements/ci.in",
         ROOT / "requirements/ci.txt",
+        ROOT / "package.json",
+        ROOT / "package-lock.json",
+        ROOT / "scripts/run_learning_browser_acceptance.mjs",
         ROOT / "scripts/lint_eval_manifest.py",
         ROOT / "evals/run.py",
         ROOT / "evals/schema.json",
@@ -265,6 +332,9 @@ def validate() -> list[str]:
         ROOT / "evals/comparators/minimal_visible_model.yaml",
         ROOT / "evals/outcome-measures.schema.json",
         ROOT / "evals/outcome-measures.json",
+        ROOT / "evals/system-contract.json",
+        ROOT / "evals/system-contract.schema.json",
+        ROOT / "evals/system_profiles.py",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/safety-state-machine.yaml",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/safety_runtime.py",
@@ -301,6 +371,8 @@ def validate() -> list[str]:
         ROOT / "scripts/qualification_packet.py",
         ROOT / "scripts/host_privacy_discovery.py",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/technique-registry.json",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/technique-registry.schema.json",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/session-capsule.md",
         ROOT / "examples/session-capsule.example.json",
     }
@@ -322,6 +394,7 @@ def validate() -> list[str]:
         ROOT / "evals/attempt-witness-receipt.schema.json",
         ROOT / "evals/attempt-inventory-index.schema.json",
         ROOT / "evals/outcome-measures.schema.json",
+        ROOT / "evals/system-contract.schema.json",
         ROOT / "providers/codex-output.schema.json",
         ROOT / "release/gate-artifact.schema.json",
         ROOT / "release/signed-receipt.schema.json",
@@ -339,6 +412,7 @@ def validate() -> list[str]:
         ROOT / "release/qualification-packet-plan.schema.json",
         ROOT / "release/qualification-external-intake.schema.json",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/technique-registry.schema.json",
     ):
         try:
             Draft202012Validator.check_schema(
@@ -360,6 +434,56 @@ def validate() -> list[str]:
     if list(Draft202012Validator(outcome_schema).iter_errors(outcome_design)):
         errors.append("outcome measurement design fails its schema")
     errors.extend(validate_outcome_design(outcome_design))
+    technique_schema = json.loads(
+        (
+            ROOT
+            / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/technique-registry.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    technique_schema_errors = list(
+        Draft202012Validator(
+            technique_schema, format_checker=FormatChecker()
+        ).iter_errors(technique_registry)
+    )
+    if technique_schema_errors:
+        errors.append("technique registry fails its schema")
+    else:
+        techniques = technique_registry["techniques"]
+        technique_ids = [technique["id"] for technique in techniques]
+        if len(technique_ids) != len(set(technique_ids)):
+            errors.append("technique registry ids must be unique")
+        known_techniques = set(technique_ids)
+        observed_ontology = {
+            technique["id"]: (technique["bcio_id"], technique["bcio_label"])
+            for technique in techniques
+        }
+        if observed_ontology != EXPECTED_TECHNIQUE_ONTOLOGY:
+            errors.append(
+                "technique registry BCIO identifiers and labels differ from the pinned ontology mapping"
+            )
+        known_barriers = {
+            "clarity",
+            "capability",
+            "opportunity",
+            "motivation",
+            "initiation",
+            "persistence",
+            "feedback",
+            "recovery",
+        }
+        observed_barriers: set[str] = set()
+        for technique in techniques:
+            observed_barriers.update(technique["candidate_barriers"])
+            if technique["id"] in technique["alternatives"]:
+                errors.append(f"technique may not name itself as an alternative: {technique['id']}")
+            if not set(technique["alternatives"]).issubset(known_techniques):
+                errors.append(f"technique has an unknown alternative: {technique['id']}")
+            if not set(technique["evidence_source_ids"]).issubset(evidence_ids):
+                errors.append(f"technique has an unknown evidence source: {technique['id']}")
+        if observed_barriers != known_barriers:
+            errors.append("technique registry must cover every governed barrier")
+        if technique_registry["ontology"]["evidence_source_id"] not in evidence_ids:
+            errors.append("technique registry ontology source is absent from provenance")
     capsule_schema = json.loads(
         (ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json").read_text(
             encoding="utf-8"
@@ -390,10 +514,10 @@ def validate() -> list[str]:
                 encoding="utf-8"
             )
         )
-        if comparator.get("comparator_id") != comparator_name:
-            errors.append(f"comparator id mismatch: {comparator_name}")
-        if comparator.get("status") != "design-only-unexecuted":
-            errors.append(f"comparator must remain design-only: {comparator_name}")
+        if comparator.get("system_id") != comparator_name:
+            errors.append(f"comparator system_id mismatch: {comparator_name}")
+        if comparator.get("status") != "governed-executable":
+            errors.append(f"comparator must be governed executable: {comparator_name}")
         for field in (
             "same_model_required",
             "same_safety_policy_required",
@@ -401,8 +525,10 @@ def validate() -> list[str]:
         ):
             if comparator.get(field) is not True:
                 errors.append(f"comparator may not weaken {field}: {comparator_name}")
-        if comparator.get("memory_policy") != "READ_ONLY_USER_APPROVED":
+        if comparator.get("context_policy") != "READ_ONLY_USER_APPROVED":
             errors.append(f"comparator context policy mismatch: {comparator_name}")
+        if comparator.get("memory_policy") != "DISABLED":
+            errors.append(f"comparator memory must be disabled: {comparator_name}")
     lock_text = (ROOT / "requirements/ci.txt").read_text(encoding="utf-8")
     input_requirements = {
         (match.group(1).lower().replace("_", "-"), match.group(2))
@@ -423,9 +549,16 @@ def validate() -> list[str]:
         errors.append("CI dependency install must enforce requirements hashes")
     if "multiturn-harness-conformance.json" not in workflow:
         errors.append("CI must upload the multi-turn harness conformance artifact")
+    if "learning-browser-acceptance.json" not in workflow:
+        errors.append("CI must upload the learning browser acceptance artifact")
     if "ubuntu-latest" in workflow:
         errors.append("CI runner label must not float on ubuntu-latest")
-    for action in ("actions/checkout@", "actions/setup-python@", "actions/upload-artifact@"):
+    for action in (
+        "actions/checkout@",
+        "actions/setup-python@",
+        "actions/setup-node@",
+        "actions/upload-artifact@",
+    ):
         lines = [line for line in workflow.splitlines() if action in line]
         if not lines or any(f"{action}v" in line for line in lines):
             errors.append(f"CI action is missing or not commit-pinned: {action}")

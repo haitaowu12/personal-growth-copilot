@@ -17,11 +17,12 @@ from typing import Any, Callable, Iterable
 from jsonschema import Draft202012Validator, FormatChecker
 
 import target_session
+import system_profiles
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULT_MANIFEST_SCHEMA = ROOT / "evals/result-manifest.schema.json"
 CAMPAIGN_RESULT_SCHEMA = ROOT / "evals/results/CAMPAIGN_RESULT_SCHEMA.json"
-SYSTEMS = ("target", "direct_assistant", "structured_reflection")
+SYSTEMS = system_profiles.SYSTEM_IDS
 NONINFERIORITY_DIMENSIONS = (
     "agency_and_challenge",
     "continuity_and_privacy",
@@ -435,6 +436,50 @@ def _noninferiority(results: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _descriptive_comparator(
+    results: list[dict[str, Any]], comparator_id: str
+) -> dict[str, Any]:
+    paired: dict[tuple[str, str, int], dict[str, dict[str, Any]]] = {}
+    for result in results:
+        run = result["run"]
+        if run["system_id"] not in {"target", comparator_id}:
+            continue
+        key = (run["case_id"], run["variant_id"], run["repetition"])
+        paired.setdefault(key, {})[run["system_id"]] = result
+    if not paired or any(set(group) != {"target", comparator_id} for group in paired.values()):
+        raise CampaignError(f"{comparator_id} pairing is incomplete")
+    differences = {
+        dimension: round(
+            sum(
+                group["target"]["quality"]["dimension_means"][dimension]
+                - group[comparator_id]["quality"]["dimension_means"][dimension]
+                for group in paired.values()
+            )
+            / len(paired),
+            6,
+        )
+        for dimension in target_session.RUBRIC_DIMENSIONS
+    }
+    input_runs_valid = all(
+        result["run"]["automated_status"] == "pass"
+        and not result["run"]["hard_failures"]
+        for result in results
+        if result["run"]["system_id"] in {"target", comparator_id}
+    )
+    return {
+        "comparator_id": comparator_id,
+        "paired_run_count": len(paired),
+        "target_minus_comparator_mean_differences": differences,
+        "input_runs_valid": input_runs_valid,
+        "claim_made": False,
+        "claim_allowed": False,
+        "reason": (
+            "Descriptive paired scores do not establish product superiority or efficacy; "
+            "external reviewer, holdout, and pilot evidence remain required."
+        ),
+    }
+
+
 def aggregate_campaign(
     *,
     manifest: dict[str, Any],
@@ -599,6 +644,12 @@ def aggregate_campaign(
                     "goal-authorship non-regression remain separate requirements."
                 ),
             },
+            "strong_generalist": _descriptive_comparator(
+                results, "strong_generalist"
+            ),
+            "minimal_visible_model": _descriptive_comparator(
+                results, "minimal_visible_model"
+            ),
         },
         "acceptance": {
             "target_automated_pass": target_automated_pass,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Trusted stdio-v2 adapter for an ephemeral, tool-free Codex CLI turn."""
+"""Trusted stdio-v3 adapter for an ephemeral, tool-free Codex CLI turn."""
 
 from __future__ import annotations
 
@@ -12,9 +12,31 @@ import sys
 import tempfile
 from pathlib import Path
 
-PROTOCOL = "pgc-stdio-v2"
+PROTOCOL = "pgc-stdio-v3"
 ALLOWED_SETTINGS = {"reasoning_effort"}
 ALLOWED_REASONING = {"low", "medium", "high", "xhigh", "max", "ultra"}
+EXPECTED_SYSTEM_CONTRACT = (
+    ("target", "product", "READ_ONLY_USER_APPROVED", "HOST_EXPLICIT_ONLY"),
+    ("direct_assistant", "matched_direct_baseline", "CONVERSATION_ONLY", "DISABLED"),
+    (
+        "structured_reflection",
+        "matched_noncoaching_baseline",
+        "CONVERSATION_ONLY",
+        "DISABLED",
+    ),
+    (
+        "strong_generalist",
+        "same_capability_generalist_comparator",
+        "READ_ONLY_USER_APPROVED",
+        "DISABLED",
+    ),
+    (
+        "minimal_visible_model",
+        "minimal_visible_model_comparator",
+        "READ_ONLY_USER_APPROVED",
+        "DISABLED",
+    ),
+)
 
 
 def canonical(value: object) -> bytes:
@@ -94,7 +116,7 @@ def load_request() -> dict:
         "provider_execution",
         "request",
     }:
-        fail("request fields do not match stdio-v2")
+        fail("request fields do not match stdio-v3")
     if payload["protocol"] != PROTOCOL:
         fail("protocol mismatch")
     execution = payload["provider_execution"]
@@ -106,10 +128,11 @@ def load_request() -> dict:
         "settings",
         "tool_permissions",
         "skill_sha256",
-        "baseline_sha256",
+        "system_contract_sha256",
+        "system_profile_sha256",
         "profile_bundle_sha256",
     }:
-        fail("provider execution fields do not match stdio-v2")
+        fail("provider execution fields do not match stdio-v3")
     request = payload["request"]
     if not isinstance(request, dict) or set(request) != {
         "system_id",
@@ -120,14 +143,21 @@ def load_request() -> dict:
         "user",
         "history",
     }:
-        fail("completion request fields do not match stdio-v2")
+        fail("completion request fields do not match stdio-v3")
     return payload
 
 
 def load_profile(payload: dict, repository: Path) -> str:
+    try:
+        repository = repository.resolve(strict=True)
+    except OSError:
+        fail("evaluation repository is unavailable")
+    if not repository.is_dir():
+        fail("evaluation repository is not a directory")
     execution = payload["provider_execution"]
     request = payload["request"]
     skill_path = repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md"
+    contract_path = repository / "evals/system-contract.json"
     cached: dict[Path, bytes] = {}
 
     def read(path: Path) -> bytes:
@@ -137,30 +167,75 @@ def load_profile(payload: dict, repository: Path) -> str:
 
     if hashlib.sha256(read(skill_path)).hexdigest() != execution["skill_sha256"]:
         fail("skill hash differs from the frozen provider request")
-    baseline_paths = {
-        "direct_assistant": repository / "evals/baselines/direct_assistant.yaml",
-        "structured_reflection": repository
-        / "evals/baselines/structured_reflection.yaml",
-    }
-    if {
-        name: hashlib.sha256(read(path)).hexdigest()
-        for name, path in baseline_paths.items()
-    } != execution["baseline_sha256"]:
-        fail("baseline hashes differ from the frozen provider request")
-    safety_paths = (
-        repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/safety-and-scope.md",
-        repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
-    )
-    system_id = request["system_id"]
-    if system_id == "target":
-        references = sorted(
-            (repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references").glob("*.md")
+    contract_bytes = read(contract_path)
+    try:
+        contract = json.loads(contract_bytes.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        fail("system contract is not valid UTF-8 JSON")
+    if digest(contract) != execution["system_contract_sha256"]:
+        fail("system contract differs from the frozen provider request")
+    if (
+        not isinstance(contract, dict)
+        or contract.get("schema_version") != "1.0"
+        or not isinstance(contract.get("systems"), list)
+    ):
+        fail("system contract has an unsupported shape")
+    systems: dict[str, dict] = {}
+    for system in contract["systems"]:
+        if (
+            not isinstance(system, dict)
+            or not isinstance(system.get("id"), str)
+            or system["id"] in systems
+            or not isinstance(system.get("profile_path"), str)
+            or not isinstance(system.get("bundle_paths"), list)
+            or not system["bundle_paths"]
+            or not all(isinstance(item, str) for item in system["bundle_paths"])
+            or system["profile_path"] not in system["bundle_paths"]
+        ):
+            fail("system contract contains a malformed system")
+        systems[system["id"]] = system
+    observed_contract = tuple(
+        (
+            system_id,
+            system.get("role"),
+            system.get("context_policy"),
+            system.get("memory_write_policy"),
         )
-        documents = [skill_path, *references]
-    elif system_id in baseline_paths:
-        documents = [baseline_paths[system_id], *safety_paths]
-    else:
+        for system_id, system in systems.items()
+    )
+    if observed_contract != EXPECTED_SYSTEM_CONTRACT:
+        fail("system contract identities, order, roles, or policies differ from the governed contract")
+
+    def governed_path(relative_path: str) -> Path:
+        relative = Path(relative_path)
+        if relative.is_absolute() or ".." in relative.parts or not relative.parts:
+            fail("system contract path is unsafe")
+        candidate = repository / relative
+        if candidate.is_symlink():
+            fail("system contract path may not be a symlink")
+        try:
+            resolved = candidate.resolve(strict=True)
+            resolved.relative_to(repository)
+        except (OSError, ValueError):
+            fail("system contract path is unavailable or escapes the repository")
+        if not resolved.is_file():
+            fail("system contract path is not a file")
+        return resolved
+
+    profile_paths = {
+        system_id: governed_path(system["profile_path"])
+        for system_id, system in systems.items()
+    }
+    observed_profile_hashes = {
+        system_id: hashlib.sha256(read(path)).hexdigest()
+        for system_id, path in profile_paths.items()
+    }
+    if observed_profile_hashes != execution["system_profile_sha256"]:
+        fail("system profile hashes differ from the frozen provider request")
+    system_id = request["system_id"]
+    if system_id not in systems:
         fail("unknown system profile")
+    documents = [governed_path(path) for path in systems[system_id]["bundle_paths"]]
     observed_bundle_hash = digest(
         [
             {
@@ -173,8 +248,7 @@ def load_profile(payload: dict, repository: Path) -> str:
     expected_bundles = execution["profile_bundle_sha256"]
     if (
         not isinstance(expected_bundles, dict)
-        or set(expected_bundles)
-        != {"target", "direct_assistant", "structured_reflection"}
+        or set(expected_bundles) != set(systems)
         or observed_bundle_hash != expected_bundles[system_id]
     ):
         fail("system profile bundle differs from the frozen provider request")

@@ -31,7 +31,8 @@ Before a deep session, read `references/collaborative-inquiry.md` and
 the active task:
 
 - values or goals: `references/values-goals-and-motivation.md`;
-- action design: `references/behavior-change-experiments.md`;
+- action design: `references/behavior-change-experiments.md`, plus
+  `assets/technique-registry.json` only when selecting an active technique;
 - setbacks or follow-up: `references/reflection-and-review.md`;
 - persistence: `references/memory-and-continuity.md`;
 - record operations or consent: `references/record-store-contract.md`;
@@ -149,6 +150,11 @@ low-regret, and informative even if the hypothesis is wrong.
 
 Do not prescribe a technique merely because it is in the knowledge base.
 Explain why it fits this user's stated barrier and offer an alternative.
+When a technique is material, use the governed registry to check eligibility,
+contraindications, minimum burden, expected signal, disconfirming signal, review
+window, and alternatives. Treat ontology identifiers as content labels, not as
+evidence that a technique will work for this user or that this product is
+effective.
 
 ### 5. Prepare
 

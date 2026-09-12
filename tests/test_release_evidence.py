@@ -50,8 +50,8 @@ class ReleaseEvidenceTests(unittest.TestCase):
                 "external_witness_receipts_verified": True,
                 "all_artifacts_preserved": True,
                 "omitted_attempt_count": 0,
-                "attempt_count": 309,
-                "submitted_result_count": 309,
+                "attempt_count": 610,
+                "submitted_result_count": 610,
             },
             "holdout": {
                 "sealed": True,

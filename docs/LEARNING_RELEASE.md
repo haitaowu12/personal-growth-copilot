@@ -11,7 +11,10 @@ approval, certification, or demonstrated product efficacy.
 
 The browser player is the supported reference host for this learning lane. It has
 no model, server, account, telemetry, network requests, or automatic persistence.
-Coaching safety and sensitive growth-record persistence retain their existing gates.
+The packaged-file Chrome journey is automated in
+`scripts/run_learning_browser_acceptance.mjs`; cross-browser and real-device
+coverage remain separate. Coaching safety and sensitive growth-record persistence
+retain their existing gates.
 
 Acceptance at the public seams:
 

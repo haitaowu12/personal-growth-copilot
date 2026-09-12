@@ -123,8 +123,8 @@
     }
   ],
   "comparator_plan": {
-    "current_ablations": ["direct_assistant", "structured_reflection"],
-    "planned_strong_comparators": ["strong_generalist", "minimal_visible_model"]
+    "matched_baselines": ["direct_assistant", "structured_reflection"],
+    "governed_strong_comparators": ["strong_generalist", "minimal_visible_model"]
   },
   "interpretation_rules": [
     "Primary outcomes are fixed before target execution and may not be replaced after observing results.",

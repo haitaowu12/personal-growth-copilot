@@ -1,6 +1,6 @@
 # Authored target execution
 
-This workflow captures target and matched-baseline behavior. The stdio request
+This workflow captures target, ablation, and same-capability comparator behavior. The stdio request
 does not contain expected events, forbidden labels, branches, or rubric scores.
 That protocol property is not an OS isolation claim: the trusted adapter keeps
 the ambient filesystem and network rights of its host process. It produces
@@ -22,7 +22,7 @@ pilot gates pass.
   allowlisted environment names may cross into the adapter process. Runtime and
   loader control names such as `PATH`, `PYTHONPATH`, `LD_*`, and `DYLD_*` are
   rejected.
-- The suite, both baseline definitions, selected cases, and every
+- The suite, five-system contract, profile bundles, selected cases, and every
   case/system/variant/repetition identity are frozen in a complete run plan.
   Authored-target validation also binds the supplied suite to the exact
   canonical `evals/cases.json` bytes in the clean source checkout; a
@@ -53,11 +53,11 @@ pilot gates pass.
 The executable reads exactly one JSON object from standard input and writes
 exactly one JSON object to standard output. It receives:
 
-- protocol `pgc-stdio-v2`;
+- protocol `pgc-stdio-v3`;
 - frozen provider-identity SHA-256;
-- frozen secret-free host/model/settings/tool metadata plus skill, baseline,
-  exact inference-runtime executable hash, and complete target/baseline
-  profile-bundle hashes, so the adapter cannot silently select an unbound
+- frozen secret-free host/model/settings/tool metadata plus skill, system
+  contract, exact inference-runtime executable hash, per-system profile hashes,
+  and complete profile-bundle hashes, so the adapter cannot silently select an unbound
   executable or model profile;
 - system, case, variant, repetition, and turn identifiers;
 - the current user turn and prior user/assistant history.
@@ -197,10 +197,12 @@ The aggregator refuses a selected case subset and cross-checks response-ID
 uniqueness across all submitted results. The campaign artifact reports
 all-system hard/automated failures, high/critical
 score floors, other-case median and tenth-percentile floors, Chinese meaning
-failures, per-system reviewer agreement, and paired direct-baseline
-non-inferiority. It deliberately makes no benefit claim over structured
-reflection without a separately preregistered paired bootstrap and
-goal-authorship test. A clean submitted matrix is only `conditional_pass`.
+failures, per-system reviewer agreement, paired direct-ablation non-inferiority,
+and descriptive target-minus-comparator differences for `strong_generalist`
+and `minimal_visible_model`. It deliberately makes no benefit claim for either
+strong comparator and makes no structured-reflection benefit claim without a
+separately preregistered paired bootstrap and goal-authorship test. A clean
+submitted matrix is only `conditional_pass`.
 Because this local workflow neither verifies an independent reviewer receipt
 nor inventories all attempts in an immutable external system, it always emits
 `campaign_complete: false`, `attempt_inventory_verified: false`, and

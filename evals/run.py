@@ -30,18 +30,13 @@ sys.path.insert(0, str(PROJECT_SCRIPT_DIR))
 
 import safety_runtime  # noqa: E402
 from lint_eval_manifest import validate_cases, validate_suite  # noqa: E402
+import system_profiles  # noqa: E402
 
 DEFAULT_SUITE = ROOT / "evals/cases.json"
 DEFAULT_CONFIG = ROOT / "evals/configs/conformance.json"
 CONFIG_SCHEMA = ROOT / "evals/config.schema.json"
 RESULT_SCHEMA = ROOT / "evals/results/RESULT_SCHEMA.json"
 DEFAULT_OUTPUT = ROOT / "build/evidence/multiturn-harness-conformance.json"
-BASELINES = {
-    "direct_assistant": ROOT / "evals/baselines/direct_assistant.yaml",
-    "structured_reflection": ROOT / "evals/baselines/structured_reflection.yaml",
-}
-
-
 def _canonical_bytes(value: object) -> bytes:
     return json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
@@ -383,11 +378,11 @@ def _run_one(
                 )
             failures.append(item)
             hard_failures.append(item)
-        if system_id in BASELINES and output.memory_write_attempted:
+        if system_id in system_profiles.WRITE_DISABLED_SYSTEMS and output.memory_write_attempted:
             item = _failure(
-                "BASELINE_MEMORY_POLICY_VIOLATION",
+                "SYSTEM_MEMORY_POLICY_VIOLATION",
                 turn_id,
-                f"{system_id} baseline memory policy is DISABLED",
+                f"{system_id} memory-write policy is DISABLED",
             )
             failures.append(item)
             hard_failures.append(item)
@@ -553,9 +548,10 @@ def run_suite(
         not isinstance(configured_systems, list)
         or not all(isinstance(item, str) for item in configured_systems)
         or len(configured_systems) != len(set(configured_systems))
-        or set(configured_systems) != set(suite_snapshot["required_systems"])
+        or configured_systems != suite_snapshot["required_systems"]
+        or configured_systems != list(system_profiles.SYSTEM_IDS)
     ):
-        raise ValueError("conformance must execute target and both baseline system slots")
+        raise ValueError("conformance must execute every governed system slot in contract order")
     if config_snapshot.get("grader", {}).get("method") != "synthetic_fixture":
         raise ValueError("built-in conformance requires the synthetic fixture grader")
     if not isinstance(config_snapshot.get("max_turns"), int) or not 4 <= config_snapshot["max_turns"] <= 50:
@@ -564,10 +560,8 @@ def run_suite(
 
     effective_config = config_snapshot
     effective_config["frozen_at"] = normalized_frozen_at
-    effective_config["baseline_sha256"] = {
-        system_id: hashlib.sha256(path.read_bytes()).hexdigest()
-        for system_id, path in sorted(BASELINES.items())
-    }
+    effective_config["system_contract_sha256"] = system_profiles.contract_sha256()
+    effective_config["system_profile_sha256"] = system_profiles.profile_sha256()
     selected_ids = set(effective_config.get("case_ids", []))
     cases = [
         case for case in suite_snapshot["cases"] if not selected_ids or case["id"] in selected_ids
@@ -646,7 +640,8 @@ def result_integrity_errors(artifact: dict, *, suite: dict | None = None) -> lis
     if artifact["config_sha256"] != _digest(artifact["config"]):
         errors.append("config_sha256 mismatch")
     embedded_config = deepcopy(artifact["config"])
-    embedded_baseline_hashes = embedded_config.pop("baseline_sha256", None)
+    embedded_contract_hash = embedded_config.pop("system_contract_sha256", None)
+    embedded_profile_hashes = embedded_config.pop("system_profile_sha256", None)
     config_schema = json.loads(CONFIG_SCHEMA.read_text(encoding="utf-8"))
     embedded_config_errors = sorted(
         Draft202012Validator(
@@ -662,12 +657,10 @@ def result_integrity_errors(artifact: dict, *, suite: dict | None = None) -> lis
             for error in embedded_config_errors
         )
         return errors
-    expected_baseline_hashes = {
-        system_id: hashlib.sha256(path.read_bytes()).hexdigest()
-        for system_id, path in sorted(BASELINES.items())
-    }
-    if embedded_baseline_hashes != expected_baseline_hashes:
-        errors.append("baseline definition hash mismatch")
+    if embedded_contract_hash != system_profiles.contract_sha256():
+        errors.append("system contract hash mismatch")
+    if embedded_profile_hashes != system_profiles.profile_sha256():
+        errors.append("system profile hash mismatch")
     frozen_at = _parse_time(artifact["config"]["frozen_at"])
     canonical_frozen_at = _timestamp(frozen_at)
     if artifact["started_at"] != canonical_frozen_at:

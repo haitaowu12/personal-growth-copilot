@@ -150,8 +150,8 @@ class CampaignTests(unittest.TestCase):
             self.assertFalse(artifact["campaign_complete"])
             self.assertTrue(artifact["run_plan_coverage_complete"])
             self.assertFalse(artifact["attempt_inventory_verified"])
-            self.assertEqual(artifact["planned_run_count"], 3)
-            self.assertEqual(artifact["received_run_count"], 3)
+            self.assertEqual(artifact["planned_run_count"], len(cfg["systems"]))
+            self.assertEqual(artifact["received_run_count"], len(cfg["systems"]))
             self.assertEqual(artifact["behavioral_status"], "conditional_pass")
             self.assertEqual(artifact["evidence_status"], "blocked")
             self.assertEqual(

@@ -222,7 +222,7 @@
       "properties": {
         "review_id": {"$ref": "#/$defs/hash"},
         "run_id": {"type": "string", "pattern": "^run-[0-9a-f]{24}$"},
-        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection"]},
+        "system_id": {"enum": ["target", "direct_assistant", "structured_reflection", "strong_generalist", "minimal_visible_model"]},
         "language": {"enum": ["zh", "mixed"]},
         "result_sha256": {"$ref": "#/$defs/hash"},
         "primary_1_reviewer_id": {"$ref": "#/$defs/reviewerId"},

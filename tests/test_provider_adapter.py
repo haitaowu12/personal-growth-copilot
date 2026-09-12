@@ -121,14 +121,17 @@ output.write_text(json.dumps({
             shadow = directory / "shadow"
             for relative in (
                 "plugins/personal-growth-copilot",
-                "evals/baselines",
+                "evals",
                 "providers",
             ):
                 source = ROOT / relative
                 destination = shadow / relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(source, destination)
-            changed = shadow / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/context-model.md"
+            changed = (
+                shadow
+                / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/context-model.md"
+            ).resolve()
             changed.write_text(changed.read_text(encoding="utf-8") + "\nchanged\n")
             cfg = self.adapter_config(fake_codex)
             session = target_session.TargetSession(
@@ -163,7 +166,7 @@ output.write_text(json.dumps({
             shadow = directory / "shadow"
             for relative in (
                 "plugins/personal-growth-copilot",
-                "evals/baselines",
+                "evals",
                 "providers",
             ):
                 source = ROOT / relative
@@ -183,7 +186,10 @@ output.write_text(json.dumps({
             payload = target_session.FrozenStdioProvider.request_payload(
                 session.pending_request(), cfg
             )
-            changed = shadow / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/context-model.md"
+            changed = (
+                shadow
+                / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/context-model.md"
+            ).resolve()
             original_reader = codex_cli_adapter.read_regular_bytes
             mutated = False
 

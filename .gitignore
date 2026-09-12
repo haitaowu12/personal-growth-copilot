@@ -2,12 +2,12 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+node_modules/
 dist/
 build/
 external-feedback/
 handoff-briefs/
 .DS_Store
-node_modules/
 .codex/
 .openai/
 output/playwright/

@@ -108,7 +108,11 @@ class MultiTurnHarnessTests(unittest.TestCase):
     def test_full_conformance_is_reproducible_and_hash_bound(self):
         first = execute()
         second = execute()
-        self.assertEqual(first["run_count"], 309)
+        expected_run_count = sum(
+            len(case["entry_variants"]) * case["repetitions"]
+            for case in SUITE["cases"]
+        ) * len(runner.system_profiles.SYSTEM_IDS)
+        self.assertEqual(first["run_count"], expected_run_count)
         self.assertEqual(first["summary"]["automated_fail"], 0)
         self.assertEqual(first["summary"]["hard_failure_runs"], 0)
         self.assertEqual(first["aggregate_sha256"], second["aggregate_sha256"])
@@ -122,22 +126,26 @@ class MultiTurnHarnessTests(unittest.TestCase):
         self.assertFalse(runner.verify_result_hash(tampered))
         self.assertEqual(
             {run["system_id"] for run in first["runs"]},
-            {"target", "direct_assistant", "structured_reflection"},
+            set(runner.system_profiles.SYSTEM_IDS),
         )
         self.assertEqual(
-            set(first["config"]["baseline_sha256"]),
-            {"direct_assistant", "structured_reflection"},
+            first["config"]["system_contract_sha256"],
+            runner.system_profiles.contract_sha256(),
         )
-        self.assertTrue(
-            all(len(value) == 64 for value in first["config"]["baseline_sha256"].values())
+        self.assertEqual(
+            first["config"]["system_profile_sha256"],
+            runner.system_profiles.profile_sha256(),
         )
 
     def test_alternate_failure_branch_is_executed_and_reported(self):
         artifact = execute(
             case_id="advice-loop-saturation", grader=AlternateBranchGrader()
         )
-        self.assertEqual(artifact["run_count"], 3)
-        self.assertEqual(artifact["summary"]["automated_fail"], 3)
+        self.assertEqual(artifact["run_count"], len(runner.system_profiles.SYSTEM_IDS))
+        self.assertEqual(
+            artifact["summary"]["automated_fail"],
+            len(runner.system_profiles.SYSTEM_IDS),
+        )
         for run in artifact["runs"]:
             self.assertEqual(run["transcript"][0]["selected_branch"], "bad-plan")
             self.assertEqual(run["transcript"][1]["turn_id"], "t2_bad")
@@ -194,7 +202,7 @@ class MultiTurnHarnessTests(unittest.TestCase):
                 {failure["code"] for failure in run["hard_failures"]},
             )
 
-    def test_baseline_memory_policy_and_unscoped_target_write_are_enforced(self):
+    def test_system_memory_policy_and_unscoped_target_write_are_enforced(self):
         artifact = execute(
             case_id="advice-loop-saturation",
             provider=MemoryWritingProvider(),
@@ -203,11 +211,25 @@ class MultiTurnHarnessTests(unittest.TestCase):
             codes = {failure["code"] for failure in run["hard_failures"]}
             self.assertIn("UNAUTHORIZED_MEMORY_WRITE", codes)
             if run["system_id"] != "target":
-                self.assertIn("BASELINE_MEMORY_POLICY_VIOLATION", codes)
+                self.assertIn("SYSTEM_MEMORY_POLICY_VIOLATION", codes)
 
-    def test_configuration_cannot_silently_drop_a_baseline(self):
+    def test_configuration_cannot_drop_duplicate_or_reorder_a_governed_system(self):
         config = deepcopy(CONFIG)
         config["systems"] = ["target", "direct_assistant"]
+        with self.assertRaises(ValueError):
+            runner.run_suite(
+                suite=SUITE,
+                config=config,
+                provider=runner.ConformanceProvider(),
+                grader=runner.ConformanceGrader(),
+                source_commit="abcdef1234567890",
+                source_tree_clean=True,
+            )
+        config = deepcopy(CONFIG)
+        config["systems"][1], config["systems"][2] = (
+            config["systems"][2],
+            config["systems"][1],
+        )
         with self.assertRaises(ValueError):
             runner.run_suite(
                 suite=SUITE,

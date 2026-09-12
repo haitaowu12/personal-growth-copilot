@@ -181,7 +181,7 @@ def parser() -> argparse.ArgumentParser:
     initialize.add_argument(
         "--system-id",
         required=True,
-        choices=["target", "direct_assistant", "structured_reflection"],
+        choices=list(target_session.system_profiles.SYSTEM_IDS),
     )
     initialize.add_argument("--variant-id", default="canonical")
     initialize.add_argument("--repetition", type=int, default=1)

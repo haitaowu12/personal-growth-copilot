@@ -25,6 +25,7 @@ from typing import Any, Callable, Mapping
 from jsonschema import Draft202012Validator, FormatChecker
 
 import run as harness
+import system_profiles
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET_CONFIG_SCHEMA = ROOT / "evals/target-config.schema.json"
@@ -46,14 +47,6 @@ RUBRIC_DIMENSIONS = (
     "safety_and_scope",
 )
 HUMAN_HARD_FAILURE_CODES = {"HUMAN_OBSERVED_HARM"}
-BASELINES = {
-    "direct_assistant": ROOT / "evals/baselines/direct_assistant.yaml",
-    "structured_reflection": ROOT / "evals/baselines/structured_reflection.yaml",
-}
-SAFETY_PROFILE_FILES = (
-    ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/safety-and-scope.md",
-    ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
-)
 RESERVED_ENVIRONMENT_NAMES = {"PATH", "LANG", "LC_ALL", "ENV", "BASH_ENV", "IFS"}
 RESERVED_ENVIRONMENT_PREFIXES = (
     "PYTHON",
@@ -110,31 +103,7 @@ def _file_sha256(path: Path) -> str:
 
 
 def profile_bundle_sha256() -> dict[str, str]:
-    skill_path = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md"
-    target_paths = [
-        skill_path,
-        *sorted((ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references").glob("*.md")),
-    ]
-    bundles = {
-        "target": target_paths,
-        "direct_assistant": [BASELINES["direct_assistant"], *SAFETY_PROFILE_FILES],
-        "structured_reflection": [
-            BASELINES["structured_reflection"],
-            *SAFETY_PROFILE_FILES,
-        ],
-    }
-    return {
-        name: _digest(
-            [
-                {
-                    "path": path.relative_to(ROOT).as_posix(),
-                    "sha256": _file_sha256(path),
-                }
-                for path in paths
-            ]
-        )
-        for name, paths in bundles.items()
-    }
+    return system_profiles.profile_bundle_sha256()
 
 
 def _timestamp(value: datetime) -> str:
@@ -211,11 +180,12 @@ def validate_target_config(config: dict[str, Any], suite: dict[str, Any]) -> lis
     known_cases = {case["id"] for case in suite["cases"]}
     if unknown := set(config["case_ids"]) - known_cases:
         errors.append(f"unknown case ids: {sorted(unknown)}")
-    expected_baselines = {
-        name: _file_sha256(path) for name, path in BASELINES.items()
-    }
-    if config["baseline_sha256"] != expected_baselines:
-        errors.append("baseline_sha256 does not match both governed baselines")
+    if config["systems"] != list(system_profiles.SYSTEM_IDS):
+        errors.append("systems do not match the ordered governed system contract")
+    if config["system_contract_sha256"] != system_profiles.contract_sha256():
+        errors.append("system_contract_sha256 does not match the governed contract")
+    if config["system_profile_sha256"] != system_profiles.profile_sha256():
+        errors.append("system_profile_sha256 does not match governed profile files")
     if not unknown:
         expected_plan = expected_run_plan(
             suite, config["case_ids"], config["systems"]
@@ -364,7 +334,7 @@ class FrozenStdioProvider:
         request: harness.CompletionRequest, config: dict[str, Any]
     ) -> dict[str, Any]:
         return {
-            "protocol": "pgc-stdio-v2",
+            "protocol": "pgc-stdio-v3",
             "provider_identity_sha256": provider_identity(config),
             "provider_execution": {
                 "host": config["provider"]["host"],
@@ -376,7 +346,8 @@ class FrozenStdioProvider:
                 "settings": deepcopy(config["provider"]["settings"]),
                 "tool_permissions": list(config["provider"]["tool_permissions"]),
                 "skill_sha256": config["provider"]["skill_sha256"],
-                "baseline_sha256": deepcopy(config["baseline_sha256"]),
+                "system_contract_sha256": config["system_contract_sha256"],
+                "system_profile_sha256": deepcopy(config["system_profile_sha256"]),
                 "profile_bundle_sha256": deepcopy(
                     config["provider"]["profile_bundle_sha256"]
                 ),
@@ -435,7 +406,7 @@ class FrozenStdioProvider:
         }
         if not isinstance(response, dict) or set(response) != allowed_keys:
             raise ProviderProtocolError("adapter response fields do not match the protocol")
-        if response["protocol"] != "pgc-stdio-v2":
+        if response["protocol"] != "pgc-stdio-v3":
             raise ProviderProtocolError("adapter protocol mismatch")
         if response["request_sha256"] != request_sha256:
             raise ProviderProtocolError("adapter did not bind the request")

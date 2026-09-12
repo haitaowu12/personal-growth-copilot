@@ -2,58 +2,72 @@
 
 Candidate: `0.5.0-alpha.1`; topic: `requirements-writing@1.0.0`.
 
-## Implemented and checked locally
+## Implemented and checked
 
-- Source-linked topic format, explicit prerequisites, cycle/reference/answer checks.
-- Distinct diagnostic, practice, transfer, and delayed-review scenarios.
-- Shared deterministic reducer, remediation, first-attempt history, assistance labels,
-  written application, explicit self-review, and scheduled retrieval.
-- Strict event replay, content/version binding, byte limits, clock checks, and no
-  imported derived score or independent-mastery assertion.
-- Portable HTML compiler with escaped data and CSP; JavaScript syntax checks.
-- Reproducible ZIP from an explicit source allowlist, per-file checksums, and rebuild
-  parity from only the packaged skill outside the repository.
-- Existing coaching, safety, record, provider, and release tests retained.
+- Source-linked topic format with explicit prerequisites, cycle/reference/answer
+  checks, and HTTPS-only source links.
+- Distinct diagnostic, remediation, practice, transfer, writing, self-review,
+  and delayed-review stages.
+- Shared deterministic reducer with immutable first attempts, visible assistance,
+  bounded written applications, strict event replay, content/version binding,
+  byte limits, clock checks, and no imported derived score or mastery claim.
+- Portable HTML compiler with escaped data, a restrictive CSP, no remote fonts or
+  imagery, and a reproducible ZIP assembled from an explicit allowlist.
+- Package rebuild parity from only the distributed skill folder outside the
+  repository.
+- Packaged-file browser acceptance using Playwright Core and an installed
+  Chromium browser. The runner blocks HTTP and HTTPS requests, records console
+  and page errors, and emits a JSON evidence receipt.
 
-Reproduce:
+The local run on September 11, 2026 (America/Vancouver) used Google Chrome
+`152.0.7977.83` on macOS and passed these scenarios:
+
+1. Keyboard entry into practice and keyboard answer submission with feedback
+   focus; wrong diagnostic remediation; wrong then correct practice; transfer;
+   all three written applications and self-reviews; one hinted path.
+2. Opt-in browser saving, reload/resume, opt-out, scoped removal, and fresh reload.
+3. Export, valid import, malformed JSON rejection, wrong-version rejection,
+   future-timestamp rejection, unchanged current progress, and clear.
+4. Simulated storage denial for both save and delete paths, with in-tab recovery
+   and user-visible failure messages.
+5. Direct `file://` execution from the extracted release ZIP at 390 pixels with
+   reduced motion, no horizontal overflow, no console/page errors, and no network
+   requests.
+
+## Reproduce
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install --require-hashes -r requirements/ci.txt
-# Node.js 22 is a development prerequisite.
+npm ci --ignore-scripts --no-audit --no-fund
 .venv/bin/python scripts/run_deterministic_qualification.py
 .venv/bin/python scripts/package_learning.py --out build/learning-candidate.zip
+.venv/bin/python -c "import zipfile; zipfile.ZipFile('build/learning-candidate.zip').extractall('build/learning-package')"
+npm run test:learning-browser -- \
+  --html build/learning-package/requirements-writing.html \
+  --evidence build/evidence/learning-browser-acceptance.json
 ```
 
-The qualification command binds results to the current clean commit. Its JSON receipt
-is the authority for exact counts and hashes. A package checksum proves byte identity,
-not learning quality.
+Set `PGC_BROWSER_EXECUTABLE` when Chrome, Edge, or Chromium is installed outside
+the runner's known paths. The GitHub workflow runs this browser check once on the
+pinned Ubuntu image rather than repeating it across the Python matrix.
 
-## Required acceptance still open
+The deterministic qualification command binds its receipt to the current clean
+commit. The browser receipt binds the exact HTML bytes and observed browser
+version. Package and HTML hashes establish byte identity, not learning quality.
 
-Browser inspection was requested during development but host browser security policy
-reported that the user declined localhost access. No alternate browser path was used.
-Desktop/mobile screenshots, keyboard/focus checks, actual storage failures,
-export/import/clear UI behavior, and end-to-end browser evidence remain **unverified**.
-Browser support is an implementation target, not an observed compatibility claim.
+## Remaining evidence limits
 
-Required next browser scenarios:
+This candidate has one local Chromium-engine result. It has no observed Safari,
+Firefox, real-phone, screen-reader, switch-control, 200% browser-zoom, or manual
+visual-regression evidence. Storage denial was induced by replacing the browser
+storage methods before page load; that exercises the product path but does not
+represent every operating-system or browser storage failure. CI browser evidence
+becomes available only after the workflow runs on the committed candidate.
 
-1. Fresh session with saving off; keyboard-only start and diagnostic answer.
-2. Wrong diagnostic -> example -> wrong/correct practice -> transfer -> writing ->
-   self-review -> next concept; verify actual feedback and first-attempt counts.
-3. Correct diagnostic skips remediation; use a hint and verify assistance remains
-   visible; complete all three written applications.
-4. Enable saving, reload, resume; disable saving and verify scoped removal.
-5. Export/import a real progress file; reject wrong-version, malformed, oversized,
-   future-timestamp, and inconsistent-result files without losing current work.
-6. Clear this topic; verify wording and behavior when browser storage is denied.
-7. Exercise 390-pixel and desktop layouts, long drafts, zoom, focus, reduced motion,
-   offline operation, console health, and zero unexpected requests.
-8. Open the packaged HTML directly, not just from a development server. Confirm
-   portable exports where file-origin storage is unavailable.
-
-Independent source/answer-key review and actual learner transfer/retention evidence
-also remain open. See `LEARNING_PILOT.md`. Coaching behavioral comparison, untouched
-holdouts, bilingual review, host privacy, pilot, and owner promotion stay blocked.
-No production or learning-efficacy claim is authorized by this candidate.
+Independent source and answer-key review, usability with real learners, unseen
+transfer, seven-day retention, and learning-effectiveness evidence remain open.
+Coaching behavioral comparison, untouched holdouts, bilingual human review,
+named-host privacy, controlled pilot, independent release review, and owner
+promotion remain blocked. No production, broad browser-compatibility, mastery,
+or learning-efficacy claim is authorized by this candidate.
