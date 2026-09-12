@@ -22,6 +22,8 @@ const htmlPath = resolve(args.get("html") || "build/learning-package/requirement
 const evidencePath = resolve(
   args.get("evidence") || "build/evidence/learning-browser-acceptance.json",
 );
+const sentinelKey = "pgc-browser-acceptance-unrelated";
+const sentinelValue = "preserve-this-value";
 if (!existsSync(htmlPath)) throw new Error(`Learning HTML is absent: ${htmlPath}`);
 
 function browserExecutable() {
@@ -235,6 +237,10 @@ try {
     const { context, page, signals } = await loadPage(browser);
     try {
       const pack = await currentPack(page);
+      await page.evaluate(
+        ([key, value]) => localStorage.setItem(key, value),
+        [sentinelKey, sentinelValue],
+      );
       const save = page.getByLabel("Save progress on this device");
       await save.check();
       await waitForNotice(page, "Progress is saved in this browser");
@@ -245,10 +251,22 @@ try {
       await expectText(page.locator("#workspace"), "Continue practice");
       await page.getByLabel("Save progress on this device").uncheck();
       await waitForNotice(page, "browser copy was removed");
-      check((await page.evaluate(() => localStorage.length)) === 0, "Scoped browser record remains after opt-out");
+      check(
+        (await page.evaluate((key) => localStorage.getItem(key), sentinelKey)) === sentinelValue,
+        "Opt-out removed unrelated browser storage",
+      );
+      check(
+        (await page.evaluate(() => localStorage.length)) === 1,
+        "Scoped browser record remains after opt-out",
+      );
       await page.reload({ waitUntil: "domcontentloaded" });
       await expectText(page.locator("#workspace"), "Start practice");
+      check(
+        (await page.evaluate((key) => localStorage.getItem(key), sentinelKey)) === sentinelValue,
+        "Unrelated browser storage did not survive reload",
+      );
       await assertHealthy(signals, "save and reload");
+      return { unrelated_storage_preserved: true };
     } finally {
       await context.close();
     }
@@ -291,6 +309,10 @@ try {
 
     const imported = await loadPage(browser);
     try {
+      await imported.page.evaluate(
+        ([key, value]) => localStorage.setItem(key, value),
+        [sentinelKey, sentinelValue],
+      );
       const input = imported.page.locator("#import");
       await input.setInputFiles(exportedPath);
       await waitForNotice(imported.page, "Imported into this tab");
@@ -305,8 +327,12 @@ try {
       await imported.page.getByRole("button", { name: "Clear progress" }).click();
       await waitForNotice(imported.page, "progress cleared");
       await expectText(imported.page.locator("#workspace"), "Start practice");
+      check(
+        (await imported.page.evaluate((key) => localStorage.getItem(key), sentinelKey)) === sentinelValue,
+        "Clear progress removed unrelated browser storage",
+      );
       await assertHealthy(imported.signals, "import and clear");
-      return { rejected_imports: 3 };
+      return { rejected_imports: 3, unrelated_storage_preserved: true };
     } finally {
       await imported.context.close();
     }
