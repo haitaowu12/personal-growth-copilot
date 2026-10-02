@@ -18,6 +18,13 @@ correct answer key.
 
 ## Author/update workflow
 
+Use the portable [authoring recipe and worked intake](../plugins/personal-growth-copilot/skills/personal-growth-copilot/references/topic-authoring.md).
+`scripts/review_learning.py` inside the skill prepares an exact-topic review
+worksheet and a readable dossier covering every source, concept, answer key and
+writing rubric. Its checker detects stale or incomplete records; it cannot verify
+human independence or the truth of recorded judgments. Review records stay outside
+the learner ZIP. See the recipe for commands and review exit codes.
+
 1. Inspect the actual source. Record selected sections, date, claim, and limitations.
 2. Write original explanations and tasks; review source fidelity and permissions.
 3. Validate and build with the installed `scripts/build_learning.py`.
