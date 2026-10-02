@@ -51,6 +51,15 @@ Use only the active concept and its dependencies. Let the user pause, skip an
 exercise, change pace, or stop. Browser prerequisite gating is a default curriculum
 sequence, not a prohibition on answering a user's direct question.
 
+Choose the next interaction from the observed gap. If the claim is misunderstood,
+return to its source passage. If the answer is right but the reasoning is unclear,
+ask for the decisive assumption or evidence. If the mechanism is understood, change
+one decisive assumption or offer a case outside its scope and ask whether the
+conclusion still follows. For missing information, accept a supported conditional
+answer; do not reward unnecessary abstention. Use one useful question at a time,
+and let the response change the next step. These are teaching adaptations, not a
+validated adaptive model or automatic mastery assessment.
+
 ## Other topics and source distillation
 
 Use the user's supplied source or verified public source. If Second Brain's
@@ -69,6 +78,10 @@ artifacts. The portable skill must also work without the vault.
 - Validate a new pack with `scripts/build_learning.py --pack /path/topic.json --check`.
   Human/content review must check answer keys, ambiguity, and source fidelity before
   distribution. Schema validation cannot establish semantic correctness.
+
+For repeatable authoring and an item-level reviewer worksheet, read
+`references/topic-authoring.md`. The worksheet includes teaching answer keys; keep
+it out of learner pretests and separately reserved outcome assessments.
 
 The first shipped pack is English. Do not claim translated packs or bilingual
 assessment quality. Conversational translation can assist understanding, with the
