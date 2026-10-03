@@ -204,3 +204,56 @@ test("a delayed first review does not inherit assistance from the original lesso
   s = action(s, "answer", { choice: "a" }, "2026-09-14T12:00:00.000Z");
   assert.equal(s.events.at(-1).helped, false);
 });
+
+test("worked writing example exposure is replayable and stays separate from quiz assistance", () => {
+  let s = completeFirst();
+  s = action(s, "writing-example");
+  const row = core.summary(pack, s, epoch)[0];
+  assert.equal(row.writing_example_views, 1);
+  assert.equal(row.assisted, 0);
+  assert.equal(row.writing_after_example, false);
+  s = action(s, "write", {text: "A synthetic revision made after opening the worked writing answer."});
+  assert.equal(core.summary(pack, s, epoch)[0].writing_after_example, true);
+  assert.deepEqual(core.importSession(pack, digest, JSON.stringify(s), epoch), s);
+  const forged = structuredClone(s);
+  forged.events[4].approved = true;
+  assert.throws(() => core.importSession(pack, digest, JSON.stringify(forged), epoch));
+  assert.throws(() => action(core.createSession(pack, digest, epoch), "writing-example"));
+});
+
+for (const helpType of ["study", "writing-example"]) {
+  test(`${helpType} before a later writing self-review remains support for the originally due recall`, () => {
+    let s = completeFirst();
+    const nearDue = "2026-09-14T11:59:50.000Z";
+    const due = "2026-09-14T12:00:00.000Z";
+    s = action(s, "write", {
+      text: "The booking service shall issue a revised confirmation.",
+    }, nearDue);
+    s = action(s, helpType, {}, nearDue);
+    s = action(s, "write", {
+      text: "The booking service shall issue an example-supported confirmation.",
+    }, nearDue);
+    s = action(s, "self-review", { criteria: ["subject", "single"] }, nearDue);
+    assert.equal(core.status(pack, s, "obligation", nearDue).due, due);
+    s = action(s, "answer", { choice: "a" }, due);
+    assert.equal(s.events.at(-1).helped, true);
+    assert.deepEqual(core.importSession(pack, digest, JSON.stringify(s), due), s);
+    const forged = structuredClone(s);
+    forged.events.at(-1).helped = false;
+    assert.throws(() => core.importSession(pack, digest, JSON.stringify(forged), due),
+      /inconsistent assessment metadata/);
+  });
+}
+
+test("original worked-writing exposure does not carry into the first delayed interval", () => {
+  let s = core.createSession(pack, digest, epoch);
+  s = action(s, "answer", { choice: "a" });
+  s = action(s, "answer", { choice: "c" });
+  s = action(s, "write", { text: "The booking service shall issue a confirmation." });
+  s = action(s, "writing-example");
+  s = action(s, "self-review", { criteria: ["subject", "single"] });
+  const due = "2026-09-14T12:00:00.000Z";
+  s = action(s, "answer", { choice: "a" }, due);
+  assert.equal(s.events.at(-1).helped, false);
+  assert.deepEqual(core.importSession(pack, digest, JSON.stringify(s), due), s);
+});

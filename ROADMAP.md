@@ -8,8 +8,10 @@ browser acceptance evidence remain separate from code and schema checks. See
 
 ## Current learning follow-through
 
-Implemented topic 1.0.1 corrections, exact-byte review tooling and portable packaging,
-plus an all-concept single-arm feasibility protocol and 0–10 rubric. Next operational
+Implemented topic 1.0.2 corrections, recorded writing-example exposure, recovery
+dialogs, storage-conflict detection, draft rescue and portable packaging after an
+independent model rehearsal. Protocol and rubric 1.2 remain draft human-review
+inputs; see `docs/LEARNING_REHEARSAL.md`. Next operational
 gates: independent 21-item content approval, named outcome custodian and scorers,
 consent/retention freeze, pilot-device rehearsal and actual learner observations.
 These are not satisfied by model review or deterministic tests. No additional topics,

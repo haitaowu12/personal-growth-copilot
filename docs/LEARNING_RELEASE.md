@@ -5,13 +5,17 @@
 Deliver one complete, offline learning journey for writing verifiable requirements,
 plus a reusable topic-pack format and explicit conversational learning lane. The
 learner diagnoses a defect, receives targeted feedback, studies a worked example
-when needed, solves a different scenario, writes a requirement, checks a rubric,
+when needed, solves a different scenario, sees writing criteria, writes a requirement, completes a self-review,
 and returns for delayed retrieval. This is educational practice, not engineering
 approval, certification, or demonstrated product efficacy.
 
-Topic `requirements-writing@1.0.1` corrects provisional criteria, equivalent measurement
-methods and intended-use reasoning. The protocol is an all-concept, single-arm
-feasibility design with a public 0–10 human rubric; content approval remains pending.
+Topic `requirements-writing@1.0.2` clarifies question alternatives and preserves
+observed use failures alongside timing passes. Version 1.0.1 introduced corrections
+for provisional criteria, equivalent measurement methods and intended-use reasoning.
+The all-concept, single-arm feasibility design remains
+`requirements-writing-feasibility/1.2`, bound at freeze to the current topic and
+public 0–10 human rubric `requirements-writing-application/1.2`. Human content
+approval remains pending.
 
 The browser player is the supported reference host for this learning lane. It has
 no model, server, account, telemetry, network requests, or automatic persistence.
@@ -25,8 +29,10 @@ Acceptance at the public seams:
    skill folder. No source file outside that folder is required.
 3. The reducer selects remediation after a wrong diagnostic and a new application
    after a correct one; hints and repeated attempts remain visible.
-4. First attempts remain immutable. Feedback uses authored rationales. Free text
-   receives an explicit self-review rubric, never fabricated automated grading.
+4. First attempts remain immutable. Feedback uses authored rationales. Writing
+   criteria appear before drafting, and opening a writing example is recorded in
+   practice progress. Self-review records the learner's checks and does not grade
+   the free-text response.
 5. Delayed review cannot complete before its due time. Progress binds exact topic
    bytes; imports validate and replay events, never trust derived scores.
 6. Users can resume, export, import, and clear progress. Device storage is opt-in;
@@ -59,8 +65,9 @@ No duplicate curriculum or second coaching record store is introduced.
 
 ## Evidence boundaries
 
-Selection accuracy, help use, and attempt history describe observed practice.
-Writing checks are self-reported. Review intervals (7 days, then 21 days) are a
+Selection accuracy, help use, writing-example exposure, and attempt history describe
+observed practice. Writing checks are self-reported, not independent application
+scores. Review intervals (7 days, then 21 days) are a
 configurable product policy, not an empirically optimized personal schedule.
 The browser clock and imported files are user controlled. No certificates,
 anti-cheating claims, independent mastery claims, or efficacy promotion are made.

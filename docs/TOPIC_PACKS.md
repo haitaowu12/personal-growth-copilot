@@ -1,6 +1,6 @@
 # Topic packs and distribution
 
-The first pack is `requirements-writing` version `1.0.1`, in the installed skill's
+The first pack is `requirements-writing` version `1.0.2`, in the installed skill's
 `assets/learning/` folder. It is an original educational synthesis with anchored
 NASA guidance. Numbers and project facts in exercises are invented assumptions.
 
@@ -32,9 +32,13 @@ the learner ZIP. See the recipe for commands and review exit codes.
 2. Write original explanations and tasks; review source fidelity and permissions.
 3. Validate and build with the installed `scripts/build_learning.py`.
 4. Run the shared reducer tests and representative browser paths before distribution.
-5. Increment the topic version for changed teaching content. Hash binds exact file
+5. Increment the topic version for changed published teaching content. Hash binds exact file
    bytes, including source corrections. Older progress is intentionally incompatible;
    open it with the older lesson rather than presenting it as new-version evidence.
+   Changes to event-replay semantics also require a topic-version increment, even
+   when teaching text is unchanged. Preserve matching old runtime/HTML and exports;
+   do not rewrite their identity fields to make them appear compatible. The current
+   1.0.2 increment separates this revision from the earlier runtime contract.
 6. Release the source pack, self-contained player, compatible skill, and checksums.
    Keep learner exports outside the distribution package.
 
@@ -54,15 +58,47 @@ checks: Node.js 22. No Node.js installation is required to use the finished HTML
 The skill and browser lane share concept content; only the browser makes deterministic
 selection-score and saved-progress claims. Tutor judgment remains separately labelled.
 
+The browser presents writing criteria before the learner drafts a response and
+records writing-example exposure in practice progress. Self-review records the
+learner's own checks; it does not grade the written answer. Neither exposure records
+nor completed self-checks establish independent application or learner benefit.
+
+## Version 1.0.2 correction
+
+Version 1.0.2 removes ambiguous acceptance alternatives in the obligation review,
+adds relevant but insufficient evidence alternatives to timing and intended-use
+practice, and explicitly retains an observed use failure alongside a timing pass.
+Its final pre-release corrections preserve the cancellation obligation from service
+acceptance through display removal, align archiving terminology, explicitly label
+the compliance/use misconception and distinguish accessibility support from
+corrective destination help in the kiosk example.
+Answer keys and source records are unchanged; no new source inspection or human
+approval is implied. The [human application rubric](LEARNING_SCORING.md) is now
+`requirements-writing-application/1.2`; its scoring clarifications do not establish
+scorer reliability. The single-arm feasibility design remains; protocol 1.2 adds
+operational timing, assistance, missingness, history de-identification and workload
+rules. Those defaults remain pending human freeze, with exact topic/protocol/rubric
+versions and hashes recorded together.
+
+Version 1.0.2 is unreleased. Its further pre-release corrections change the topic
+hash without changing this version string. Earlier rehearsal receipts for 1.0.2
+remain evidence for their prior bytes only; they do not cover the final hash.
+Rebuild and repeat affected checks against the final candidate. After publication,
+changed teaching content requires another version increment.
+
+Do not import 1.0.0 or 1.0.1 progress into 1.0.2. Keep each older HTML with its exports
+to inspect or finish that version. Review worksheets must be regenerated for the
+new topic bytes; earlier judgments do not approve this revision.
+
 ## Version 1.0.1 correction
 
-The topic now distinguishes provisional criteria from approved commitments, accepts
-adequate measurement and allocation alternatives, and asks for an observable
+Version 1.0.1 distinguished provisional criteria from approved commitments, accepted
+adequate measurement and allocation alternatives, and asked for an observable
 intended-use success basis. Public questions remain practice. The authoring agent
 reinspected the named NASA web sections on 2026-10-03; human acceptance remains
 pending. New source dates do not establish historical inspection events.
 
-Do not import 1.0.0 progress into this revision. Keep the old HTML and its exports
+Do not import 1.0.0 progress into 1.0.1. Keep the old HTML and its exports
 together to finish or inspect that version. The published baseline remains
 recoverable at Git commit `0223f99c7ab92d34bb92b07abba433dca645393d`; package that
 commit in a separate checkout rather than changing version fields in old progress.

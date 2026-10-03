@@ -117,17 +117,19 @@
         const q = c.questions[s.stage];
         if (!q.choices.some((x) => x.id === action.choice))
           fail("Choose a listed answer.");
-        const reviewAnchor =
-          s.stage === "review"
-            ? prior.findLastIndex(
-                (e) =>
-                  e.type === "self-review" ||
-                  (e.type === "answer" && e.stage === "review"),
-              )
-            : -1;
+        // Match the due-date interval: later writing self-reviews must not
+        // erase help received since the first self-review or latest recall.
+        const lastRecall = prior.findLastIndex(
+          (e) => e.type === "answer" && e.stage === "review",
+        );
+        const reviewAnchor = s.stage === "review"
+          ? lastRecall >= 0
+            ? lastRecall
+            : prior.findIndex((e) => e.type === "self-review")
+          : -1;
         const current = prior.slice(reviewAnchor + 1);
         const helped =
-          current.some((e) => e.type === "study") ||
+          current.some((e) => ["study", "writing-example"].includes(e.type)) ||
           current.some((e) => e.type === "hint" && e.stage === s.stage) ||
           prior.some((e) => e.type === "answer" && e.stage === s.stage);
         event = { ...action, stage: s.stage, helped, at: now };
@@ -142,6 +144,12 @@
       case "study":
         exact(action, ["type", "concept"]);
         // Study is always an explicit learner action. It marks later responses assisted.
+        event = { ...action, at: now };
+        break;
+      case "writing-example":
+        exact(action, ["type", "concept"]);
+        if (!prior.some((e) => e.type === "write"))
+          fail("Save a draft before opening a worked writing response.");
         event = { ...action, at: now };
         break;
       case "write":
@@ -253,6 +261,9 @@
         ).length,
         first_total: first.length,
         assisted: answers.filter((e) => e.helped).length,
+        writing_example_views: events.filter((e) => e.type === "writing-example").length,
+        writing_after_example: events.some((e, i) => e.type === "write" &&
+          events.slice(0, i).some((prior) => prior.type === "writing-example")),
         written: events.some((e) => e.type === "write"),
         reviewed: hasReview(session, c.id),
       };
