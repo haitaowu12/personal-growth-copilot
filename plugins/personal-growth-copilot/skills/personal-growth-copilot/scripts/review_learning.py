@@ -51,7 +51,7 @@ def prepare(raw: bytes) -> dict:
     def add(item_id, kind, content):
         items.append({
             "id": item_id, "kind": kind, "content": content,
-            "checks": CHECKS[kind], "decision": "pending", "notes": "",
+            "checks": list(CHECKS[kind]), "decision": "pending", "notes": "",
         })
 
     for source in pack["sources"]:

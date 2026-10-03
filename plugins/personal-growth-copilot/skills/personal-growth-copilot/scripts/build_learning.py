@@ -101,7 +101,16 @@ def validate_pack(pack: object) -> list[str]:
 def load_pack(raw: bytes) -> dict:
     if len(raw) > MAX_PACK_BYTES:
         raise ValueError("Topic pack exceeds 500 KB.")
-    pack = json.loads(raw.decode("utf-8"))
+
+    def unique_fields(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError(f"Duplicate topic field: {key}")
+            value[key] = item
+        return value
+
+    pack = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_fields)
     errors = validate_pack(pack)
     if errors:
         raise ValueError("\n".join(errors))
