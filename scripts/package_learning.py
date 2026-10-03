@@ -55,6 +55,8 @@ Browser storage on file URLs varies; JSON export/import is the portable resume p
     for name in (
         "LEARNING_RELEASE.md",
         "LEARNING_PILOT.md",
+        "LEARNING_SCORING.md",
+        "LEARNING_PILOT_RUN_SHEET.md",
         "TOPIC_PACKS.md",
         "LEARNING_ACCEPTANCE.md",
     ):

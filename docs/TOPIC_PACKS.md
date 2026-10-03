@@ -1,6 +1,6 @@
 # Topic packs and distribution
 
-The first pack is `requirements-writing` version `1.0.0`, in the installed skill's
+The first pack is `requirements-writing` version `1.0.1`, in the installed skill's
 `assets/learning/` folder. It is an original educational synthesis with anchored
 NASA guidance. Numbers and project facts in exercises are invented assumptions.
 
@@ -53,3 +53,16 @@ Build: Python 3.11–3.14 with the skill's pinned Python packages. Development r
 checks: Node.js 22. No Node.js installation is required to use the finished HTML.
 The skill and browser lane share concept content; only the browser makes deterministic
 selection-score and saved-progress claims. Tutor judgment remains separately labelled.
+
+## Version 1.0.1 correction
+
+The topic now distinguishes provisional criteria from approved commitments, accepts
+adequate measurement and allocation alternatives, and asks for an observable
+intended-use success basis. Public questions remain practice. The authoring agent
+reinspected the named NASA web sections on 2026-10-03; human acceptance remains
+pending. New source dates do not establish historical inspection events.
+
+Do not import 1.0.0 progress into this revision. Keep the old HTML and its exports
+together to finish or inspect that version. The published baseline remains
+recoverable at Git commit `0223f99c7ab92d34bb92b07abba433dca645393d`; package that
+commit in a separate checkout rather than changing version fields in old progress.

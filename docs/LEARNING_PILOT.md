@@ -1,78 +1,108 @@
-# Learning pilot and evidence boundary
+# Requirements-writing feasibility protocol
 
-Status: prospective protocol. No participants, learner outcomes, or efficacy results
-are claimed. Existing personal-growth qualification gates remain in force. This
-educational topic pilot does not initialize sensitive growth records.
+Protocol: `requirements-writing-feasibility/1.1`. Topic: `requirements-writing@1.0.1`.
+Status: implementation-ready protocol; recruitment is blocked until the human
+sign-offs and candidate-specific rehearsal below are recorded. No participants,
+outcomes, human approvals or efficacy results are claimed.
 
-## Pre-recruitment review hold
+## Scope and question
 
-The [2026-10-03 independent model review](https://chatgpt.com/c/6ac0aeb9-6d50-83e9-a811-e06a3570eba2) identified
-unresolved measurement and allocation decisions. The current 0–8 measure excludes
-intended-use reasoning; counterbalancing alone does not resolve learning carryover.
-Resolve and freeze the intervention lane, claim coverage, allocation, scoring and
-delayed-before-review order before recruitment. The protocol below remains a draft,
-not an approved study or authorization to recruit.
+Use the offline player, with all three concepts: clear obligation, observable
+acceptance boundary, and intended-use reasoning. The first study is single-arm
+feasibility with 6–10 consenting adults. Can participants complete the workflow,
+produce assessable work, and return for delayed assessment? Describe performance
+and friction; do not attribute improvement causally to the player.
 
-## Question
-
-Does source-grounded practice help adults write independently checkable requirements
-with less assistance than a comparable source-reading session?
+Conversational tutoring is outside this intervention. There is no source-reading
+comparison or crossover in this protocol. A comparative study needs its own frozen
+allocation, matched materials and analysis plan after feasibility. Six to ten
+participants cannot establish efficacy, mastery or optimal spacing.
 
 ## Freeze before recruitment
 
-Record the candidate commit, topic byte hash, player hash, answer keys, scoring rubric,
-comparison materials, reviewer identities, consent wording, and analysis plan. Use
-only invented project scenarios. Preserve failures, withdrawals, and missing follow-up.
-Do not tune against the held-out transfer prompts after examining responses.
+Complete the [run sheet](LEARNING_PILOT_RUN_SHEET.md): commit, topic/player/package
+hashes, protocol/rubric version, device/browser scope, human content approval,
+source/reuse disposition, two scorers, outcome custodian, consent and retention
+terms, reserved-task identifiers and analysis plan. No unexplained blanks may be
+treated as approval. The current candidate has no independent human acceptance.
 
-## Feasibility phase
+The independent custodian maintains three distinct, unexposed task forms for
+baseline, immediate and delayed performance. Each must permit scoring all five
+criteria in the [public rubric](LEARNING_SCORING.md), using invented project facts.
+Counterbalance task-form order across participants, recording allocation before
+exposure; this balances forms, not teaching effects. Keep questions, model answers,
+scoring keys and exposure records outside the implementation repository and model
+tuning conversations. Once used for tuning, a form is no longer untouched.
 
-Recruit 6–10 consenting adult learners with varied requirements-writing experience.
-This is a usability/feasibility sample, not a powered efficacy study. Ask participants
-to complete a fresh task without assistance, then a 20-minute learning session, an
-unseen transfer task, and a delayed transfer task seven days later. Capture actual
-completion time, help use, friction, and refusals separately from performance.
+## Session sequence
 
-Counterbalance two content-matched scenario sets across the player and a concise
-source-reading comparison, with equal available study time. Record order and prior
-experience; acknowledge carryover. A later causal study needs an independently
-reviewed design and sample-size calculation based on a meaningful effect.
+1. Obtain consent and a pseudonymous ID. Record prior requirements-writing
+   experience, domain knowledge, language familiarity and chosen accommodations.
+2. Show the public rubric and collect the reserved baseline task without conceptual
+   assistance. Record elapsed time, attempted work and any help rather than forcing
+   completion. Do not release scored feedback before delayed assessment.
+3. Offer a 20-minute learning session in the offline player. This is an estimate,
+   not a validated duration. Record actual time, early stopping, navigation friction,
+   source access, hints, example use, repetitions and substantive human help.
+4. Close the lesson and collect the reserved immediate task. The public rubric may
+   remain visible, identically at every timepoint. No lesson, sources, prior answer,
+   AI, examples or conceptual hints are available during an unassisted outcome.
+5. Invite a delayed task at seven days, with a prespecified 6–9-day window. Record
+   actual elapsed hours and intervening learning. Administer it **before** opening
+   the player's day-seven review or supplying any outcome feedback. An early lesson
+   review or substantive help flags that outcome as exposed/assisted; retain it
+   separately. Late work is retained and labelled outside-window.
+6. After the delayed task, allow lesson review and debriefing. Ask about effort,
+   confidence, useful aspects and confusing feedback. Do not promise competence.
 
-## Fixed primary measures
+An accommodation such as screen reading, enlarged text, a break or motor assistance
+that adds no conceptual answer is not conceptual help. Record its nature and use
+consistently where practical. Resolve ambiguous assistance before scoring; report
+assisted outcomes separately, never silently relabel them unassisted.
 
-1. Unassisted transfer quality, scored on four visible criteria: responsible product,
-   single obligation, stated condition/result/acceptance boundary, and aligned
-   verification evidence. Score each as 0 (absent/incorrect), 1 (partial/uncertain),
-   or 2 (sufficient). Unsupported invented thresholds cannot score 2.
-2. Seven-day transfer quality using a distinct task and the same 0–8 rubric.
+## Scoring and reporting
 
-Secondary measures: time to complete, help use, confidence versus observed result,
-misconceptions retained, completion/dropout, and user-reported effort. Immediate
-quiz accuracy and self-check counts are process evidence only. Do not replace the
-primary measures with more favorable secondary results.
+The primary descriptive measures are immediate and delayed unassisted application
+quality on five 0–2 criteria, totaling **0–10**. Report each criterion as well as the
+total; baseline is context, not a causal control. Earlier protocol 0–8 scores omit
+purpose and must not be pooled or rescaled into this series.
 
-Have two reviewers score de-identified artifacts without condition labels. Record
-agreement before adjudication and retain disagreements. Model feedback may assist
-review but cannot replace independent labels or create participant evidence.
+Two human scorers calibrate on public practice examples, not reserved tasks. The
+custodian removes participant identifiers and player/condition labels, randomizes
+artifact order and conceals timepoint where feasible. Retain both original ratings,
+criterion-level agreement/disagreement and adjudicated scores with reasons. Small
+sample agreement is a feasibility observation, not validated scorer reliability.
 
-## Go/no-go for a larger pilot
+Report all enrolled learners, withdrawals, missing baseline/immediate/delayed work,
+assisted/exposed work and outside-window follow-ups. Missing work is missing, not
+zero and not success. Use descriptive distributions and counts with denominators;
+do not substitute more favorable quiz scores or self-checks for application scores.
+Secondary observations: time, assistance, confidence versus work, misconceptions,
+friction, effort and follow-up practicality. No automated grading is introduced.
 
-Before any learner session, require a clean build, complete desktop/mobile/keyboard
-browser journey, correct answer keys, tested save/resume/export/import/clear flows,
-and zero known content-injection or unintended-network defects. Block on misleading
-feedback, irreversible loss of unsaved work without a warning, unauthorized storage,
-or false claims of assessment, persistence, or completion.
+## Rehearsal and decision gates
 
-After the feasibility phase, proceed only if critical issues are resolved, participants
-can complete the intended workflow, and retained evidence supports the selected next
-question. Report outcome distributions and missingness, not an efficacy verdict.
-A positive small sample does not authorize production qualification of the coaching
-product or broad learning-effectiveness claims.
+Before inviting learners, use synthetic public practice to rehearse consent,
+timing, accommodation handling, exports, de-identification, scoring and withdrawal.
+The named pilot devices must pass the actual candidate's keyboard, narrow-view,
+save/resume/export/import/clear and unsaved-draft paths. Test storage-denial handling;
+record simulated failures separately from real device evidence. Historical browser
+receipts do not establish the current candidate's behavior.
+
+Block on misleading feedback, lost unsaved work without warning, unauthorized
+storage, content injection, unexplained network behavior, contaminated reserved
+forms, absent owners/consent, or unreviewed content. After feasibility, resolve
+critical issues and decide which next question the retained evidence supports.
+A successful feasibility run does not promote the wider coaching product.
 
 ## Data handling
 
-Device saving is off by default. The user chooses whether to export. Exports contain
-written exercises; inspect and de-identify them before any authorized transfer. No
-automatic collection, external reviewer submission, reminders, or background work.
-Record consent and withdrawal procedures before recruitment. Browser deletion clears
-only the selected topic's local copy; downloaded files and backups need separate action.
+Device saving is off by default; learners choose exports. No telemetry or automatic
+collection is added. Consent must name who receives written artifacts, purpose,
+retention period, storage location, withdrawal deadline and contact, and deletion
+limits. Use invented scenarios; de-identify before any separately authorized transfer.
+Keep the participant identity key separately under the custodian's control. Record
+withdrawal handling without pressuring the learner to finish. Clearing the browser
+cannot delete downloaded files, sent copies or backups; disclose and handle them
+under the agreed retention plan. No learner data is sent to model services by this
+protocol. Recruitment, reminders and external transfers require their own authority.

@@ -6,6 +6,15 @@ source references, and a conversational learning lane. Human-learning outcomes a
 browser acceptance evidence remain separate from code and schema checks. See
 `docs/LEARNING_RELEASE.md` for acceptance and `docs/LEARNING_PILOT.md` for next evidence.
 
+## Current learning follow-through
+
+Implemented topic 1.0.1 corrections, exact-byte review tooling and portable packaging,
+plus an all-concept single-arm feasibility protocol and 0–10 rubric. Next operational
+gates: independent 21-item content approval, named outcome custodian and scorers,
+consent/retention freeze, pilot-device rehearsal and actual learner observations.
+These are not satisfied by model review or deterministic tests. No additional topics,
+adaptive engine or automatic promotion is planned before those observations.
+
 # Roadmap
 
 ## Completed through 0.4.0-alpha.11

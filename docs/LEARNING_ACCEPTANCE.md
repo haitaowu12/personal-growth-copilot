@@ -1,6 +1,17 @@
 # Learning candidate acceptance
 
-Candidate: `0.5.0-alpha.1`; topic: `requirements-writing@1.0.0`.
+Candidate: `0.5.0-alpha.1`; current topic: `requirements-writing@1.0.1`.
+
+## Version 1.0.1 scope
+
+The revised lesson and portable review tooling are integrated on the published
+learning baseline, excluding unrelated coaching/persistence development changes.
+The 2026-10-03 Pro review is advisory. All 21 human content decisions must be
+reassessed against the new topic hash. The feasibility protocol and 0–10 scoring
+rubric are complete drafts with named human sign-offs still pending.
+
+The historical checks below apply to topic 1.0.0; they are not current-version
+browser acceptance. Current candidate observations are recorded separately.
 
 ## Implemented and checked locally
 

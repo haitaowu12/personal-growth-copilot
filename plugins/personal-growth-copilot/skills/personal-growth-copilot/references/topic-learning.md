@@ -99,3 +99,13 @@ progress imports. Preserve the old lesson for users finishing that version.
 Do not optimize for return visits, disclosure, or conversation length. No lesson
 update, global skill rewrite, or claimed learning benefit follows automatically
 from one user response.
+
+## Scope of observed learning
+
+The public selection questions are instructional near-transfer practice; correct
+answers, especially after hints, are not independent writing evidence. Version
+1.0.1 accepts justified allocation and measurement alternatives, distinguishes
+provisional thresholds from approved promises, and permits shared observations
+for verification and validation. Ask what intended-use outcome and success basis
+would support the learner's conclusion. Do not equate user participation alone
+with validation. The separate offline-player pilot cannot validate tutor behavior.
