@@ -4,6 +4,15 @@ Status: prospective protocol. No participants, learner outcomes, or efficacy res
 are claimed. Existing personal-growth qualification gates remain in force. This
 educational topic pilot does not initialize sensitive growth records.
 
+## Pre-recruitment review hold
+
+The [2026-10-03 independent model review](https://chatgpt.com/c/6ac0aeb9-6d50-83e9-a811-e06a3570eba2) identified
+unresolved measurement and allocation decisions. The current 0–8 measure excludes
+intended-use reasoning; counterbalancing alone does not resolve learning carryover.
+Resolve and freeze the intervention lane, claim coverage, allocation, scoring and
+delayed-before-review order before recruitment. The protocol below remains a draft,
+not an approved study or authorization to recruit.
+
 ## Question
 
 Does source-grounded practice help adults write independently checkable requirements

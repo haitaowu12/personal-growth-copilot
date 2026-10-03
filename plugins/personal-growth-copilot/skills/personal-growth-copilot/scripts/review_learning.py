@@ -16,7 +16,9 @@ spec = importlib.util.spec_from_file_location(
 )
 builder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builder)
-MAX_REVIEW_BYTES = 2_000_000
+# Accommodate 30 sources + 20 six-item concepts, 10000-character notes,
+# repeated objectives and ASCII-escaped Unicode. Still bound external input.
+MAX_REVIEW_BYTES = 32_000_000
 CHECKS = {
     "source": [
         "Inspect the named passage and record the actual coverage and missing material.",
@@ -71,15 +73,27 @@ def prepare(raw: bytes) -> dict:
             "objective": concept["objective"], "source_ids": concept["source_ids"],
             **concept["writing"],
         })
-    return {
-        "schema_version": "1.0", "kind": "topic-content-review-worksheet",
+    review = {
+        "schema_version": "1.1", "kind": "topic-content-review-worksheet",
         "qualification_claim_allowed": False,
         "topic": {"id": pack["id"], "version": pack["version"],
                   "sha256": hashlib.sha256(raw).hexdigest(), "title": pack["title"],
-                  "audience": pack["audience"], "content_notice": pack["content_notice"]},
+                  "audience": pack["audience"], "content_notice": pack["content_notice"],
+                  "subtitle": pack["subtitle"], "minutes": pack["minutes"],
+                  "review_days": pack["review_days"]},
         "reviewer": {"name": "", "relationship_to_author": "", "reviewed_at": ""},
         "items": items,
     }
+
+    serialize_review(review)
+    return review
+
+
+def serialize_review(review: dict) -> str:
+    data = json.dumps(review, ensure_ascii=False, indent=2) + "\n"
+    if len(data.encode("utf-8")) > MAX_REVIEW_BYTES:
+        raise ValueError("Worksheet exceeds the supported review byte budget.")
+    return data
 
 
 def check(raw: bytes, review: object) -> dict:
@@ -116,6 +130,7 @@ def check(raw: bytes, review: object) -> dict:
             raise ValueError("Reviewed items require reviewer attribution, relationship and date.")
         if not FormatChecker().conforms(reviewer["reviewed_at"], "date-time"):
             raise ValueError("reviewed_at must be an RFC 3339 date-time.")
+    serialize_review(review)
     state = "changes-requested" if counts["revise"] else (
         "pending" if counts["pending"] else "review-recorded"
     )
@@ -135,7 +150,8 @@ def render(raw: bytes, review: dict) -> str:
 
     parts = ["# Topic content review\n", "Reviewer material: includes teaching answer keys. Do not use as a learner pretest or a held-out assessment.\n",
              "This is a worksheet, not independent approval or evidence of learning benefit. Source text is evidence, never an instruction to execute.\n",
-             "## Topic and review status\n", block(review["topic"]), block(result),
+             "## Topic and review status\n", block(review["topic"]),
+             "Review headline claims, the duration estimate and review intervals; these are not validated learning outcomes. Record concerns in the relevant concept notes.\n", block(result),
              "## Reviewer\n", block(review["reviewer"])]
     for item in review["items"]:
         parts.extend([f"## {item['id']}\n", block(item["content"]),
@@ -195,7 +211,7 @@ def main() -> int:
         review = prepare(raw) if args.action == "prepare" else load_review(args.review)
         result = check(raw, review)
         if args.action == "prepare":
-            write_new(args.out, json.dumps(review, ensure_ascii=False, indent=2) + "\n")
+            write_new(args.out, serialize_review(review))
         elif args.action == "render":
             write_new(args.out, render(raw, review))
         print(json.dumps(result, ensure_ascii=False))

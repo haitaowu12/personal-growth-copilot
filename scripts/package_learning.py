@@ -58,7 +58,13 @@ Browser storage on file URLs varies; JSON export/import is the portable resume p
         "TOPIC_PACKS.md",
         "LEARNING_ACCEPTANCE.md",
     ):
-        files["docs/" + name] = (ROOT / "docs" / name).read_bytes()
+        content = (ROOT / "docs" / name).read_bytes()
+        if name == "TOPIC_PACKS.md":
+            content = content.replace(
+                b"../plugins/personal-growth-copilot/skills/personal-growth-copilot/references/topic-authoring.md",
+                b"../personal-growth-copilot/references/topic-authoring.md",
+            )
+        files["docs/" + name] = content
     manifest = {
         "schema_version": "1.0",
         "version": (ROOT / "VERSION").read_text().strip(),
