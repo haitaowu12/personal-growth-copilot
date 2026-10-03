@@ -4,6 +4,7 @@ import copy
 import importlib.util
 import io
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -84,6 +85,42 @@ class LearningReviewTests(unittest.TestCase):
             for consume in (reviewer.prepare, reviewer.builder.render):
                 with self.subTest(consumer=consume.__name__), self.assertRaisesRegex(ValueError, "Duplicate topic field"):
                     consume(raw)
+
+    def test_review_exposes_pack_claims(self):
+        pack = json.loads(self.raw)
+        for key in ("subtitle", "minutes", "review_days"):
+            self.assertEqual(self.review["topic"][key], pack[key])
+        self.assertEqual(self.review["schema_version"], "1.1")
+
+    def test_large_completed_unicode_worksheet_round_trips(self):
+        pack = json.loads(self.raw)
+        template = pack["concepts"][0]
+        pack["concepts"] = []
+        for index in range(20):
+            concept = copy.deepcopy(template)
+            concept.update(id=f"concept-{index}", prerequisites=[], objective="😀" * 4000)
+            pack["concepts"].append(concept)
+        raw = json.dumps(pack, ensure_ascii=False).encode()
+        self.assertLessEqual(len(raw), reviewer.builder.MAX_PACK_BYTES)
+        record = reviewer.prepare(raw)
+        record["reviewer"] = self.accepted()["reviewer"]
+        for item in record["items"]:
+            item.update(decision="accept", notes="😀" * 10000)
+        for ascii_only in (False, True):
+            with self.subTest(ascii_only=ascii_only), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "review.json"
+                data = json.dumps(record, ensure_ascii=ascii_only, indent=2)
+                self.assertGreater(len(data.encode()), 2_000_000)
+                reviewer.write_new(path, data)
+                loaded = reviewer.load_review(path)
+                self.assertEqual(reviewer.check(raw, loaded)["state"], "review-recorded")
+
+    def test_duplicate_visible_choices_rejected(self):
+        pack = json.loads(self.raw)
+        choices = pack["concepts"][0]["questions"]["diagnostic"]["choices"]
+        choices[1]["text"] = "  " + choices[0]["text"].upper() + "  "
+        with self.assertRaisesRegex(ValueError, "Duplicate visible choice"):
+            reviewer.builder.load_pack(json.dumps(pack).encode())
 
     def test_changed_topic_bytes_invalidate_review_even_with_same_version(self):
         with self.assertRaisesRegex(ValueError, "exact topic"):
@@ -177,6 +214,10 @@ class LearningReviewTests(unittest.TestCase):
             with zipfile.ZipFile(io.BytesIO(packager.package_bytes())) as archive:
                 self.assertFalse(any(name.endswith("review.json") for name in archive.namelist()))
                 archive.extractall(root)
+            for doc in (root / "docs").glob("*.md"):
+                for target in re.findall(r"\[[^\]]+\]\(([^)]+)\)", doc.read_text()):
+                    if "://" not in target and not target.startswith("#"):
+                        self.assertTrue((doc.parent / target.split("#")[0]).exists(), f"{doc.name}: {target}")
             skill = root / "personal-growth-copilot"
             self.assertTrue((skill / "references/topic-authoring.md").is_file())
             command = [sys.executable, str(skill / "scripts/review_learning.py")]

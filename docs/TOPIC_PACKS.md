@@ -22,7 +22,10 @@ Use the portable [authoring recipe and worked intake](../plugins/personal-growth
 `scripts/review_learning.py` inside the skill prepares an exact-topic review
 worksheet and a readable dossier covering every source, concept, answer key and
 writing rubric. Its checker detects stale or incomplete records; it cannot verify
-human independence or the truth of recorded judgments. Review records stay outside
+human independence or the truth of recorded judgments. Worksheet schema 1.1 also
+displays headline claims, estimated duration and review intervals. Regenerate older
+worksheets with the current tool and have the reviewer reassess them; do not silently
+migrate their judgments. Review JSON input is bounded to 32 MB, including notes. Review records stay outside
 the learner ZIP. See the recipe for commands and review exit codes.
 
 1. Inspect the actual source. Record selected sections, date, claim, and limitations.
