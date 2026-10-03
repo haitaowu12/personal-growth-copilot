@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "id": "requirements-writing",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "title": "Write requirements you can verify",
   "subtitle": "Turn a vague request into an observable obligation. Practice applying it and checking its intended use.",
   "audience": "Adults new to requirements writing. No systems engineering background required.",
@@ -65,7 +65,7 @@
           "choices": [
             {
               "id": "a",
-              "text": "Split display behavior from log retention.",
+              "text": "Split departure display behavior from maintenance-log archiving.",
               "feedback": "Yes. Each obligation can fail while the other succeeds. Separate them before defining detailed acceptance criteria."
             },
             {
@@ -127,22 +127,22 @@
           "hint": "Which outcomes would you need to observe before accepting the kiosk?"
         },
         "review": {
-          "prompt": "A new draft says: “The pump shall report pressure and alert an operator when pressure is low.” What do you check first?",
+          "prompt": "A new draft says: “The pump shall report pressure and alert an operator when pressure is low.” What is the appropriate next step?",
           "choices": [
             {
               "id": "a",
-              "text": "Whether reporting and alerting have separate acceptance evidence.",
-              "feedback": "Yes. Distinct outcomes need clear boundaries and evidence."
+              "text": "Check the acceptance evidence needed for reporting and alerting separately.",
+              "feedback": "Yes. Each independently failing outcome needs evidence. A single trial can provide both observations."
             },
             {
               "id": "b",
-              "text": "Whether one successful pressure reading is enough to accept the combined statement.",
+              "text": "Accept one successful pressure reading as evidence that both behaviors work.",
               "feedback": "A pressure reading does not demonstrate alert behavior. Check the evidence needed for each independently failing outcome."
             },
             {
               "id": "c",
-              "text": "Whether assigning both behaviors to the same pump makes a single check sufficient.",
-              "feedback": "A shared responsible product does not make reporting and alerting the same outcome. Each can fail independently."
+              "text": "Treat a shared responsible product as sufficient reason to accept both behaviors together.",
+              "feedback": "A shared responsible product does not establish that either behavior works. Each independently failing outcome needs evidence."
             }
           ],
           "correct": "a",
@@ -165,8 +165,8 @@
             "text": "Unknown criteria are named as open issues, not hidden assumptions."
           }
         ],
-        "example": "ROOM-01: The booking service shall send a confirmation to the requester after accepting a booking. ROOM-02: The room display shall remove a booking after receiving its cancellation. Open issues: agree timing and confirmation content with the service owner.",
-        "notes": "The service/display allocation is illustrative; a justified system-level allocation can also satisfy these criteria. Compare the observable obligations and open issues, not exact wording. This self-check does not approve an engineering baseline."
+        "example": "ROOM-01: The booking service shall send a confirmation to the requester after accepting a booking. ROOM-02: After accepting a booking cancellation, the booking service shall remove that booking from the room display. Open issues: agree timing and confirmation content with the service owner.",
+        "notes": "This example treats the booking service as the system responsible for the displayed outcome, including cancellation propagation. A justified component allocation is also valid if it preserves the obligation from service acceptance of the cancellation through removal from the display. Starting only when the display receives a cancellation leaves undelivered cancellations uncovered. Compare the observable obligations and open issues, not exact wording. This self-check does not approve an engineering baseline."
       }
     },
     {
@@ -237,8 +237,8 @@
           "choices": [
             {
               "id": "a",
-              "text": "The scanner’s purchase invoice.",
-              "feedback": "Purchase evidence does not measure response time."
+              "text": "Elapsed time from the scan to transmission of the update request, without observing the counter update.",
+              "feedback": "This stops at an intermediate event. It does not measure the full interval from the scan to the required counter update."
             },
             {
               "id": "b",
@@ -313,7 +313,7 @@
         "nasa-validation"
       ],
       "explanation": "Verification checks the product against specified requirements. Product validation examines intended use and stakeholder expectations in the relevant environment. They answer different questions against different criteria; evidence and trials may overlap.",
-      "misconception": "A product can meet a stated requirement while failing the actual user need.",
+      "misconception": "A common mistake is assuming that meeting a stated requirement proves that the product fulfills the actual user need. Instead, check intended use: a product can meet the requirement while failing that need.",
       "example": {
         "before": "The receipt arrives within 5 seconds, so the service is useful.",
         "after": "Verification: measure receipt timing. Product validation: observe whether requesters can use the receipt to track the right request in their real workflow.",
@@ -343,12 +343,12 @@
           "hint": "What exactly did the timing test establish?"
         },
         "practice": {
-          "prompt": "Which activity directly examines intended use?",
+          "prompt": "Which activity directly examines the intended use of helping users reach their booked room?",
           "choices": [
             {
               "id": "a",
-              "text": "Checking the software version string.",
-              "feedback": "Version identification supports configuration control, not this use claim."
+              "text": "Checking that the confirmation arrives within its specified time limit, without observing whether users reach the room.",
+              "feedback": "This checks timing compliance but does not establish whether the confirmation helps users identify and reach their booked room."
             },
             {
               "id": "b",
@@ -396,8 +396,8 @@
             },
             {
               "id": "b",
-              "text": "The speed check passed; useful route guidance needs additional evidence about intended use.",
-              "feedback": "Yes. Separate the supported compliance claim from the unresolved use claim."
+              "text": "The speed check passed, but route guidance failed for these workers in the stated scenario; investigate the causes and intended context.",
+              "feedback": "Yes. Preserve both the timing pass and the observed inability to follow the instructions. Investigate the causes and relevant operating conditions without generalizing beyond this scenario."
             },
             {
               "id": "c",
@@ -425,8 +425,8 @@
             "text": "The answer does not equate a timing pass with complete operational success."
           }
         ],
-        "example": "Verification: measure from accepted valid sign-in to pass issuance and compare with 15 seconds. Product validation: observe representative visitors, including people with relevant accessibility needs, signing in and using the pass to reach the correct activity in the intended setting. For this teaching scenario, success means reaching that activity with a valid pass without staff correcting the destination; record failures and help. Agree the real acceptance basis with stakeholders. One trial may provide both timing and intended-use observations; a timing pass alone is insufficient.",
-        "notes": "These are original teaching scenarios. State the intended-use outcome, conditions and success basis; merely watching a user is insufficient. Alternative observable checks are valid. This exercise does not replace a project validation plan or stakeholder acceptance."
+        "example": "Verification: measure from accepted valid sign-in to pass issuance and compare with 15 seconds. Product validation: observe representative visitors, including people with relevant accessibility needs, signing in and using the pass to reach the correct activity in the intended setting. For this teaching scenario, success means reaching that activity with a valid pass and any agreed accessibility support, without staff correcting a destination error caused by the kiosk or pass. Record legitimate support separately from corrective help and failures. Agree the real acceptance basis with stakeholders. One trial may provide both timing and intended-use observations; a timing pass alone is insufficient.",
+        "notes": "These are original teaching scenarios. State the intended-use outcome, conditions and success basis; merely watching a user is insufficient. Designed assistance and accessibility support can be part of successful intended use; needing any help is not automatically failure. Alternative observable checks are valid. This exercise does not replace a project validation plan or stakeholder acceptance."
       }
     }
   ]

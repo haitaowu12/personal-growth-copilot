@@ -59,6 +59,7 @@ Browser storage on file URLs varies; JSON export/import is the portable resume p
         "LEARNING_PILOT_RUN_SHEET.md",
         "TOPIC_PACKS.md",
         "LEARNING_ACCEPTANCE.md",
+        "LEARNING_REHEARSAL.md",
     ):
         content = (ROOT / "docs" / name).read_bytes()
         if name == "TOPIC_PACKS.md":

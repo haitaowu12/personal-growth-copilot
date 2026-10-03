@@ -10,7 +10,9 @@
     saved = false,
     selected = null,
     dirtyDraft = false,
-    displayedStage = null;
+    displayedStage = null,
+    storageSnapshot,
+    storageWarning = null;
   const main = document.getElementById("workspace"),
     nav = document.getElementById("navigation"),
     aside = document.getElementById("context");
@@ -28,17 +30,90 @@
     return b;
   }
   function tell(text, error = false) {
-    notice.textContent = text;
-    notice.className = error ? "error" : "";
+    notice.textContent = storageWarning && text !== storageWarning
+      ? `${storageWarning}\n${text}` : text;
+    notice.className = error || storageWarning ? "error" : "";
   }
   function last(type, id) {
     return session.events.findLast((e) => e.type === type && e.concept === id);
   }
-  function confirmLeave() {
-    return (
-      !dirtyDraft ||
-      window.confirm("Your unsaved draft will be lost. Leave this exercise?")
+  let confirmationOpen = false;
+  function confirmAction(title, message, acceptLabel) {
+    if (confirmationOpen) return Promise.resolve(false);
+    confirmationOpen = true;
+    const previousFocus = document.activeElement;
+    const dialog = el("dialog", undefined, "confirmation");
+    const heading = el("h2", title), description = el("p", message);
+    heading.id = "confirmation-title";
+    description.id = "confirmation-description";
+    dialog.setAttribute("aria-labelledby", heading.id);
+    dialog.setAttribute("aria-describedby", description.id);
+    const cancel = button("Cancel", () => dialog.close("cancel"));
+    const accept = button(acceptLabel, () => dialog.close("accept"), "primary");
+    const actions = el("div", undefined, "actions");
+    actions.append(cancel, accept);
+    dialog.append(heading, description, actions);
+    document.body.append(dialog);
+    return new Promise((resolve) => {
+      dialog.addEventListener("close", () => {
+        const accepted = dialog.returnValue === "accept";
+        dialog.remove();
+        confirmationOpen = false;
+        if (previousFocus?.isConnected) previousFocus.focus();
+        resolve(accepted);
+      }, { once: true });
+      try {
+        dialog.showModal();
+        cancel.focus();
+      } catch (_) {
+        dialog.remove();
+        confirmationOpen = false;
+        if (previousFocus?.isConnected) previousFocus.focus();
+        tell("This browser could not open the confirmation. Your progress has not changed.", true);
+        resolve(false);
+      }
+    });
+  }
+  async function confirmLeave() {
+    return !dirtyDraft || await confirmAction(
+      "Leave this exercise?",
+      "Your unsaved draft will be lost. Cancel to keep editing or save it first.",
+      "Discard draft and leave",
     );
+  }
+  function storageProblem(message) {
+    saved = false;
+    storageWarning = message;
+    storageUI();
+    tell(message, true);
+  }
+  function writeBrowserCopy() {
+    try {
+      // This detects changed snapshots; localStorage read/write is not an
+      // atomic transaction and does not guarantee simultaneous-writer safety.
+      if (storageSnapshot === undefined || localStorage.getItem(key) !== storageSnapshot) {
+        storageProblem("Browser progress changed or could not be compared. Saving is off; this tab's work remains here. Export it, then reload to review the browser copy. No browser copy was overwritten.");
+        return false;
+      }
+      const bytes = JSON.stringify(session);
+      localStorage.setItem(key, bytes);
+      storageSnapshot = bytes;
+      return true;
+    } catch (_) {
+      storageProblem("Saving failed. This tab may have newer progress than the browser copy. Saving is off; export before closing.");
+      return false;
+    }
+  }
+  function removeBrowserCopy() {
+    try {
+      if (storageSnapshot === undefined || localStorage.getItem(key) !== storageSnapshot)
+        return "changed";
+      localStorage.removeItem(key);
+      storageSnapshot = null;
+      return "removed";
+    } catch (_) {
+      return "failed";
+    }
   }
   function storageUI() {
     const box = document.getElementById("storage");
@@ -49,31 +124,27 @@
     input.checked = saved;
     input.addEventListener("change", () => {
       if (input.checked) {
-        try {
-          localStorage.setItem(key, JSON.stringify(session));
+        if (writeBrowserCopy()) {
           saved = true;
+          storageWarning = null;
           tell(
             "Progress is saved in this browser. Written exercises are included. Exports and browser backups are separate copies.",
-          );
-        } catch (_) {
-          saved = false;
-          tell(
-            "Browser storage is unavailable. Progress remains in this tab; export it before closing.",
-            true,
           );
         }
       } else {
         // Opt-out takes effect even if the browser refuses deletion.
         saved = false;
-        try {
-          localStorage.removeItem(key);
+        const removal = removeBrowserCopy();
+        if (removal === "removed") {
+          storageWarning = null;
           tell(
             "This lesson’s browser copy was removed. Current tab progress remains. Downloaded files and backups are unchanged.",
           );
-        } catch (_) {
-          tell(
-            "Saving is off for this tab, but the old browser copy could not be removed. Use browser site-data controls to remove it before reopening.",
-            true,
+        } else {
+          storageProblem(
+            removal === "changed"
+              ? "Saving is off for this tab. A changed or unverified browser copy was retained. Export this tab's work, then reload to review that copy."
+              : "Saving is off for this tab, but the browser copy could not be removed. Export this tab's work; use browser site-data controls to remove the browser copy.",
           );
         }
       }
@@ -87,16 +158,7 @@
   }
   function persist() {
     if (!saved) return;
-    try {
-      localStorage.setItem(key, JSON.stringify(session));
-    } catch (_) {
-      saved = false;
-      storageUI();
-      tell(
-        "Saving failed. This tab has newer progress than the browser copy. Export before closing.",
-        true,
-      );
-    }
+    writeBrowserCopy();
   }
   function act(action) {
     try {
@@ -120,8 +182,8 @@
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  function go(id) {
-    if (!confirmLeave()) return;
+  async function go(id) {
+    if (!(await confirmLeave())) return;
     dirtyDraft = false;
     selected = id;
     render();
@@ -183,7 +245,7 @@
       aside.append(
         el(
           "p",
-          `${r.first_correct}/${r.first_total} first answers correct · ${r.assisted} supported or repeated attempts`,
+          `${r.first_correct}/${r.first_total} first quiz answers correct · ${r.assisted} supported or repeated quiz attempts`,
         ),
       );
       aside.append(
@@ -192,6 +254,9 @@
           "Writing checks are your own assessment. Quiz results do not establish independent writing skill.",
         ),
       );
+      if (r.writing_example_views) {
+        aside.append(el("p", `Worked writing response opened ${r.writing_example_views} time(s). ${r.writing_after_example ? "At least one draft was saved after viewing an example." : "No later draft has been saved."} This is assisted practice context, not independent writing evidence.`));
+      }
       aside.append(el("h3", "Source notes"));
       for (const id of c.source_ids) {
         const s = pack.sources.find((x) => x.id === id),
@@ -460,6 +525,12 @@
   }
   function writing(c, edit = false) {
     main.append(el("p", c.writing.prompt, "intro"));
+    const criteriaPreview = el("section", undefined, "criteria-preview");
+    criteriaPreview.append(el("h3", "What to include"));
+    const criteriaList = el("ul");
+    for (const criterion of c.writing.criteria) criteriaList.append(el("li", criterion.text));
+    criteriaPreview.append(criteriaList, el("p", c.writing.notes, "meta"));
+    main.append(criteriaPreview);
     const label = el("label", "Your response");
     label.htmlFor = "draft";
     const draft = el("textarea");
@@ -468,6 +539,7 @@
     draft.value = last("write", c.id)?.text || "";
     draft.addEventListener("input", () => {
       dirtyDraft = true;
+      recovery.disabled = false;
     });
     main.append(
       label,
@@ -478,12 +550,29 @@
         "meta",
       ),
     );
+    const recovery = button("Download unsaved draft", () => {
+      if (!dirtyDraft) return;
+      download(`${pack.id}-${c.id}-unsaved-draft.json`, JSON.stringify({
+        type: "draft-recovery",
+        notice: "Unsaved text recovery only. This is not a replayable progress file and cannot be imported as lesson progress.",
+        topic: pack.id,
+        version: pack.version,
+        digest,
+        concept: c.id,
+        text: draft.value,
+        created_at: now(),
+      }, null, 2));
+      tell("Unsaved draft recovery file prepared for download. It is not replayable progress. Your draft remains unsaved in this tab; export recorded progress separately if needed.");
+    }, "quiet");
+    recovery.disabled = !dirtyDraft;
+    main.append(recovery);
     const reviewArea = el("section");
     const save = button(
       "Save draft & self-review",
       () => {
         if (!act({ type: "write", concept: c.id, text: draft.value })) return;
         dirtyDraft = false;
+        recovery.disabled = true;
         renderChecks();
         tell(
           saved
@@ -518,6 +607,8 @@
         button(
           "Compare a worked response",
           () => {
+            if (!act({ type: "writing-example", concept: c.id })) return;
+            evidence(c);
             example.replaceChildren(
               el("p", c.writing.example),
               el("p", c.writing.notes, "meta"),
@@ -643,14 +734,14 @@
     go(null);
   });
   document.getElementById("export").addEventListener("click", () => {
+    download(`${pack.id}-progress.json`, JSON.stringify(session));
     if (dirtyDraft) {
       tell(
-        "Save your draft before exporting; unsaved text is not included.",
+        "Recorded progress file prepared for download. Your unsaved draft is not included and remains in this tab. Use Download unsaved draft separately before closing. Neither download saves that text into lesson progress.",
         true,
       );
       return;
     }
-    download(`${pack.id}-progress.json`, JSON.stringify(session));
     tell(
       "Progress file prepared for download. It includes written exercises. Keep it private or remove text before sharing.",
     );
@@ -668,9 +759,11 @@
         now(),
       );
       if (
-        !window.confirm(
-          "Replace current tab progress with this imported record? Device saving will be turned off.",
-        )
+        !(await confirmAction(
+          "Replace tab progress?",
+          "Replace current tab progress, including unsaved text, with this imported record? Device saving will be turned off. Any existing browser copy stays unchanged.",
+          "Replace tab progress",
+        ))
       )
         return;
       // Do not mutate a previously saved browser copy during import.
@@ -692,31 +785,41 @@
       e.target.value = "";
     }
   });
-  document.getElementById("clear").addEventListener("click", () => {
+  document.getElementById("clear").addEventListener("click", async () => {
     if (
-      !window.confirm(
+      !(await confirmAction(
+        "Clear this topic?",
         "Clear this topic’s progress from this tab and browser? Downloaded files, other topic versions, and backups will remain.",
-      )
+        "Clear topic progress",
+      ))
     )
       return;
-    let removed = true;
-    try {
-      localStorage.removeItem(key);
-    } catch (_) {
-      removed = false;
-    }
+    const removal = removeBrowserCopy();
     session = core.createSession(pack, digest, now());
     saved = false;
     selected = null;
     dirtyDraft = false;
     storageUI();
     render();
-    tell(
-      removed
-        ? "This topic’s tab and browser progress cleared. Other copies remain unchanged."
-        : "Tab progress cleared. The browser copy could not be removed; use browser site-data controls. Downloaded files and backups remain.",
-      !removed,
-    );
+    if (removal === "removed") {
+      storageWarning = null;
+      tell("This topic’s tab and browser progress cleared. Other copies remain unchanged.");
+    } else {
+      storageProblem(removal === "changed"
+        ? "Tab progress cleared. A changed or unverified browser copy was retained; reload to review it. Downloaded files and backups remain."
+        : "Tab progress cleared. The browser copy could not be removed; use browser site-data controls. Downloaded files and backups remain.");
+    }
+  });
+  window.addEventListener("storage", (event) => {
+    if (event.key !== null && event.key !== key) return;
+    try {
+      if (event.storageArea && event.storageArea !== localStorage) return;
+      // Read current bytes rather than a possibly queued, older event value.
+      if (localStorage.getItem(key) === storageSnapshot) return;
+    } catch (_) {
+      // An unreadable browser copy is also unsafe to overwrite.
+    }
+    storageProblem("Browser progress changed in another tab or window. Saving is off; this tab's work remains here. Export it, then reload to review the browser copy. Changes are not merged automatically.");
   });
   window.addEventListener("beforeunload", (e) => {
     if (dirtyDraft || (!saved && session.events.length)) {
@@ -726,14 +829,14 @@
   });
   try {
     const stored = localStorage.getItem(key);
+    storageSnapshot = stored;
     if (stored) {
       session = core.importSession(pack, digest, stored, now());
       saved = true;
     }
   } catch (error) {
-    tell(
+    storageProblem(
       `Saved progress could not be loaded: ${error.message} Start in this tab or import a valid export.`,
-      true,
     );
   }
   storageUI();

@@ -499,3 +499,18 @@ legend,
 p {
   white-space: pre-line;
 }
+
+.confirmation {
+  width: min(32rem, calc(100vw - 48px));
+  box-sizing: border-box;
+  padding: 24px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.confirmation::backdrop { background: rgb(0 0 0 / 45%); }
+.confirmation .actions { flex-wrap: wrap; }
+.confirmation h2 { margin-top: 0; }
+.criteria-preview { margin-block: 24px; }
+.criteria-preview li { margin-block: 8px; }

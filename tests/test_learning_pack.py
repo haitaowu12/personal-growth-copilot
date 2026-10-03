@@ -74,7 +74,8 @@ class SharedLearningReducerTests(unittest.TestCase):
             )
             self.assertEqual(syntax.returncode, 0, syntax.stderr)
         result = subprocess.run(
-            [node, "--test", str(ROOT / "tests/learning_core.test.cjs")],
+            [node, "--test", str(ROOT / "tests/learning_core.test.cjs"),
+             str(ROOT / "tests/learning_player.test.cjs")],
             capture_output=True,
             text=True,
             cwd=ROOT,
