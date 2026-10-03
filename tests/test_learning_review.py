@@ -60,6 +60,31 @@ class LearningReviewTests(unittest.TestCase):
         record["items"][1]["decision"] = "pending"
         self.assertEqual(reviewer.check(self.raw, record)["state"], "changes-requested")
 
+    def test_returned_checklists_cannot_change_validation_contract(self):
+        original = copy.deepcopy(reviewer.CHECKS)
+        try:
+            self.review["items"][0]["checks"].clear()
+            self.assertEqual(reviewer.CHECKS, original)
+            with self.assertRaises(ValueError):
+                reviewer.check(self.raw, self.review)
+            fresh = reviewer.prepare(self.raw)
+            self.assertEqual(fresh["items"][0]["checks"], original["source"])
+        finally:
+            reviewer.CHECKS.clear()
+            reviewer.CHECKS.update(original)
+
+    def test_duplicate_topic_keys_rejected_before_review_or_html(self):
+        cases = (
+            self.raw.replace(b'"id": "requirements-writing",',
+                             b'"id": "wrong-first-value", "id": "requirements-writing",', 1),
+            self.raw.replace(b'"correct": "a",', b'"correct": "b", "correct": "a",', 1),
+        )
+        for raw in cases:
+            self.assertNotEqual(raw, self.raw)
+            for consume in (reviewer.prepare, reviewer.builder.render):
+                with self.subTest(consumer=consume.__name__), self.assertRaisesRegex(ValueError, "Duplicate topic field"):
+                    consume(raw)
+
     def test_changed_topic_bytes_invalidate_review_even_with_same_version(self):
         with self.assertRaisesRegex(ValueError, "exact topic"):
             reviewer.check(self.raw + b"\n", self.accepted())
