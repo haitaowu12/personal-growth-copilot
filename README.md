@@ -9,7 +9,7 @@ Current version: `0.5.0-alpha.1`
 ## Learn through practice
 
 The current development candidate adds a source-grounded requirements-writing lesson:
-three concepts, twelve scenario questions, worked examples, written applications,
+topic `requirements-writing@1.0.1`: three concepts, twelve scenario questions, worked examples, written applications,
 self-review, and delayed retrieval. It runs offline with no account or model. Source
 links open only on request; progress saving is opt-in.
 
@@ -25,7 +25,9 @@ progress before closing if device saving is off. See `docs/TOPIC_PACKS.md` for s
 provenance, update compatibility, and distribution. Build the complete portable bundle
 with `python3 scripts/package_learning.py --out build/learning-candidate.zip`. Read
 `docs/LEARNING_ACCEPTANCE.md` for verified scope and pending browser checks. Learning efficacy and production
-qualification remain unproven.
+qualification remain unproven. The [feasibility protocol](docs/LEARNING_PILOT.md),
+[0–10 scoring rubric](docs/LEARNING_SCORING.md) and [run sheet](docs/LEARNING_PILOT_RUN_SHEET.md)
+are supplied for human review before recruitment.
 
 ## Install
 

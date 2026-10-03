@@ -151,7 +151,7 @@
       diagnostic: "Start with a question",
       lesson: "Worked example",
       practice: "Practise the method",
-      transfer: "Apply in a new setting",
+      transfer: "Practice in a similar setting",
       writing: "Write and self-review",
       review: "Review is due",
       complete: "Practice complete",
@@ -308,7 +308,7 @@
       el("p", pack.subtitle, "intro"),
       el(
         "p",
-        `${pack.minutes}-minute starting session · ${pack.concepts.length} concepts · source-grounded examples`,
+        `About ${pack.minutes} minutes to start (estimate) · ${pack.concepts.length} concepts · source-grounded examples`,
         "meta",
       ),
     );
