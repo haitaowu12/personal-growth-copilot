@@ -1,6 +1,34 @@
 # Learning candidate acceptance
 
-Candidate: `0.5.0-alpha.1`; topic: `requirements-writing@1.0.0`.
+Candidate: `0.5.0-alpha.1`; current topic: `requirements-writing@1.0.1`.
+
+## Version 1.0.1 scope
+
+The revised lesson and portable review tooling are integrated on the published
+learning baseline, excluding unrelated coaching/persistence development changes.
+The 2026-10-03 Pro review is advisory. All 21 human content decisions must be
+reassessed against the new topic hash. The feasibility protocol and 0–10 scoring
+rubric are complete drafts with named human sign-offs still pending.
+
+The historical checks below apply to topic 1.0.0; they are not current-version
+browser acceptance. Current candidate observations follow below.
+
+## In-app browser observations, 2026-10-03
+
+The extracted topic 1.0.1 HTML was served on loopback and inspected in the Codex
+in-app browser. Observed: desktop layout; topic version and revised source dates;
+keyboard entry, radio selection and answer submission; focused corrective feedback;
+wrong-diagnostic worked example; subsequent practice; hint-labelled application;
+and writing entry. These are synthetic operational checks, not learner observations.
+
+The unsaved-draft navigation confirmation stalled in the host browser. Its dialog
+API returned no accessible dialog; native Codex app control was denied by the tool's
+safety restriction. No alternate browser or native-control workaround was used.
+A request to dismiss the dialog was sent to the owner. This path is **blocked**, not
+passed and not yet attributed to a product defect. Subsequent full-journey,
+save/resume, import/export/clear, denied-storage, narrow-screen and file-origin
+checks remain open for this candidate. Deterministic reducer/package checks do not
+substitute for these UI observations.
 
 ## Implemented and checked locally
 
@@ -31,11 +59,10 @@ not learning quality.
 
 ## Required acceptance still open
 
-Browser inspection was requested during development but host browser security policy
-reported that the user declined localhost access. No alternate browser path was used.
-Desktop/mobile screenshots, keyboard/focus checks, actual storage failures,
-export/import/clear UI behavior, and end-to-end browser evidence remain **unverified**.
-Browser support is an implementation target, not an observed compatibility claim.
+The original 1.0.0 development attempt was blocked by host localhost policy. That
+historical restriction does not describe the current successful loopback access.
+Current partial observations and the dialog blockage are recorded above. Browser
+support remains an implementation target, not a broad compatibility claim.
 
 Required next browser scenarios:
 

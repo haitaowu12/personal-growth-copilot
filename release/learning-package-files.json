@@ -23,6 +23,7 @@
     "references/resource-resolver-interface.md",
     "references/safety-and-scope.md",
     "references/session-capsule.md",
+    "references/topic-authoring.md",
     "references/topic-learning.md",
     "references/values-goals-and-motivation.md",
     "scripts/build_learning.py",
@@ -30,6 +31,7 @@
     "scripts/growth_record.py",
     "scripts/record_store.py",
     "scripts/requirements.txt",
+    "scripts/review_learning.py",
     "scripts/safety_runtime.py"
   ]
 }

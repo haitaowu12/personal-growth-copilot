@@ -8,6 +8,7 @@ import html
 import json
 import re
 import sys
+import unicodedata
 from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -86,6 +87,10 @@ def validate_pack(pack: object) -> list[str]:
             ids = [x["id"] for x in question["choices"]]
             if len(set(ids)) != len(ids) or question["correct"] not in ids:
                 errors.append("Invalid question answer IDs.")
+            visible = [" ".join(unicodedata.normalize("NFKC", x["text"]).casefold().split())
+                       for x in question["choices"]]
+            if len(set(visible)) != len(visible):
+                errors.append("Duplicate visible choice text.")
             prompts.append(question["prompt"])
         if len(set(prompts)) != len(prompts):
             errors.append(
@@ -101,7 +106,16 @@ def validate_pack(pack: object) -> list[str]:
 def load_pack(raw: bytes) -> dict:
     if len(raw) > MAX_PACK_BYTES:
         raise ValueError("Topic pack exceeds 500 KB.")
-    pack = json.loads(raw.decode("utf-8"))
+
+    def unique_fields(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError(f"Duplicate topic field: {key}")
+            value[key] = item
+        return value
+
+    pack = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_fields)
     errors = validate_pack(pack)
     if errors:
         raise ValueError("\n".join(errors))
@@ -167,7 +181,8 @@ def main() -> int:
     )
     args = parser.parse_args()
     try:
-        raw = args.pack.read_bytes()
+        with args.pack.open("rb") as stream:
+            raw = stream.read(MAX_PACK_BYTES + 1)
         pack = load_pack(raw)
         if args.out:
             artifact = render(raw).encode()
