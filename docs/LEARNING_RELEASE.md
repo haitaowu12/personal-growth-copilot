@@ -9,6 +9,10 @@ when needed, solves a different scenario, writes a requirement, checks a rubric,
 and returns for delayed retrieval. This is educational practice, not engineering
 approval, certification, or demonstrated product efficacy.
 
+Topic `requirements-writing@1.0.1` corrects provisional criteria, equivalent measurement
+methods and intended-use reasoning. The protocol is an all-concept, single-arm
+feasibility design with a public 0–10 human rubric; content approval remains pending.
+
 The browser player is the supported reference host for this learning lane. It has
 no model, server, account, telemetry, network requests, or automatic persistence.
 Coaching safety and sensitive growth-record persistence retain their existing gates.

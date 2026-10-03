@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "id": "requirements-writing",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Write requirements you can verify",
-  "subtitle": "Turn a vague request into an observable obligation. Then prove you can use the method.",
+  "subtitle": "Turn a vague request into an observable obligation. Practice applying it and checking its intended use.",
   "audience": "Adults new to requirements writing. No systems engineering background required.",
   "minutes": 20,
   "review_days": [
@@ -15,34 +15,34 @@
       "id": "nasa-c",
       "title": "NASA Systems Engineering Handbook — Appendix C",
       "url": "https://www.nasa.gov/reference/appendix-c-how-to-write-a-good-requirement/",
-      "section": "C.1; C.2 Product Requirement; C.4 Clarity and Verifiability/Testability",
-      "accessed": "2026-09-07",
+      "section": "C.1; C.2 Product Requirement; C.3; C.4 Clarity, Completeness, Correctness, Performance and Verifiability/Testability",
+      "accessed": "2026-10-03",
       "coverage": "selected-sections",
       "claim": "A requirement names its responsible product, states one obligation, and supports an objective compliance check. Ambiguous terms and unjustified assumptions weaken it.",
-      "limits": "Selected guidance, not a complete requirements standard or approval checklist. Local project rules and justified design constraints still apply."
+      "limits": "Selected guidance, not a complete requirements standard or approval checklist. Local project rules and justified design constraints still apply. Web edition inspected by the authoring agent on 2026-10-03; no independent human source approval is claimed."
     },
     {
       "id": "nasa-v",
       "title": "NASA Systems Engineering Handbook — Product Verification",
       "url": "https://www.nasa.gov/reference/5-3-product-verification/",
-      "section": "5.3 Product Verification, introduction and process description",
-      "accessed": "2026-09-07",
+      "section": "5.3 introduction; 5.3.1.1 Inputs; 5.3.1.2.1 Product Verification Preparation, Methods of Verification",
+      "accessed": "2026-10-03",
       "coverage": "selected-sections",
       "claim": "Verification compares a realized product with its specified requirements using planned evidence. Inspection, analysis, demonstration, and test can contribute.",
-      "limits": "The appropriate evidence method depends on the requirement and product. A measurement example here is not a full test procedure."
+      "limits": "The appropriate evidence method depends on the requirement and product. A measurement example here is not a full test procedure. Web edition inspected by the authoring agent on 2026-10-03; no independent human source approval is claimed."
     },
     {
       "id": "nasa-validation",
       "title": "NASA Systems Engineering Handbook — Product Validation",
       "url": "https://www.nasa.gov/reference/5-4-product-validation/",
-      "section": "5.4 Product Validation, introduction and process description",
-      "accessed": "2026-09-07",
+      "section": "5.4 introduction; 5.4.1.1 Inputs; 5.4.1.2 Process Activities and Methods of Validation",
+      "accessed": "2026-10-03",
       "coverage": "selected-sections",
       "claim": "Product validation examines whether the product fulfills its intended use and stakeholder expectations in the relevant environment.",
-      "limits": "Passing a specified threshold alone does not establish fitness for the real use. Requirements validation and product validation are distinct activities."
+      "limits": "Passing a specified threshold alone does not establish fitness for the real use. Requirements validation and product validation are distinct activities. Web edition inspected by the authoring agent on 2026-10-03; no independent human source approval is claimed. Appendix C.4 addresses requirements validation; this page concerns the realized product."
     }
   ],
-  "content_notice": "Original instructional examples and exercises informed by the linked NASA guidance. All numerical thresholds and project facts are invented teaching assumptions, not NASA requirements. No endorsement or certification is implied.",
+  "content_notice": "Original, AI-assisted instructional synthesis and invented exercises informed by the linked NASA guidance; source text and media are not redistributed. Numerical thresholds and project facts are teaching assumptions, not NASA requirements. No NASA endorsement, certification or independent human content approval is implied. Source links identify the inspected guidance.",
   "concepts": [
     {
       "id": "obligation",
@@ -124,7 +124,7 @@
             }
           ],
           "correct": "c",
-          "hint": "Imagine the receipt prints correctly but data remains."
+          "hint": "Which outcomes would you need to observe before accepting the kiosk?"
         },
         "review": {
           "prompt": "A new draft says: “The pump shall report pressure and alert an operator when pressure is low.” What do you check first?",
@@ -136,13 +136,13 @@
             },
             {
               "id": "b",
-              "text": "Whether both verbs use the same number of letters.",
-              "feedback": "Word shape does not affect the required behavior."
+              "text": "Whether one successful pressure reading is enough to accept the combined statement.",
+              "feedback": "A pressure reading does not demonstrate alert behavior. Check the evidence needed for each independently failing outcome."
             },
             {
               "id": "c",
-              "text": "Whether “intelligently” would make the requirement stronger.",
-              "feedback": "A descriptive adverb does not resolve the obligations."
+              "text": "Whether assigning both behaviors to the same pump makes a single check sufficient.",
+              "feedback": "A shared responsible product does not make reporting and alerting the same outcome. Each can fail independently."
             }
           ],
           "correct": "a",
@@ -166,7 +166,7 @@
           }
         ],
         "example": "ROOM-01: The booking service shall send a confirmation to the requester after accepting a booking. ROOM-02: The room display shall remove a booking after receiving its cancellation. Open issues: agree timing and confirmation content with the service owner.",
-        "notes": "Compare your wording against the criteria. Many answers are valid. This self-check does not approve an engineering baseline."
+        "notes": "The service/display allocation is illustrative; a justified system-level allocation can also satisfy these criteria. Compare the observable obligations and open issues, not exact wording. This self-check does not approve an engineering baseline."
       }
     },
     {
@@ -180,7 +180,7 @@
         "nasa-c",
         "nasa-v"
       ],
-      "explanation": "Replace vague performance words with an observable result and its conditions. Choose a threshold only when the scenario supplies it or its owner has agreed it. Record unresolved values explicitly.",
+      "explanation": "Replace vague performance words with an observable result and its conditions. Trace an approved threshold to the scenario or an agreed stakeholder basis. During drafting, a justified provisional estimate may be marked for resolution with its rationale, responsible owner and resolution date. Do not present it as an approved commitment; confirm assumptions before baselining.",
       "misconception": "An exact number is not evidence that the number is justified.",
       "example": {
         "before": "The desk service shall respond quickly.",
@@ -226,7 +226,7 @@
             {
               "id": "c",
               "text": "After connectivity returns, the client shall upload its queued offline events within 60 seconds.",
-              "feedback": "Yes. The condition, result, and time boundary come from the stated assumption."
+              "feedback": "Yes. This is the best checkable draft under the stated assumption: it retains the trigger, result and 60-second boundary. A complete test specification would also define conditions such as backlog and connectivity."
             }
           ],
           "correct": "c",
@@ -294,10 +294,10 @@
           },
           {
             "id": "evidence",
-            "text": "The check compares acceptance and display timestamps."
+            "text": "The proposed method measures the interval from scan acceptance to the displayed update adequately for the 3-second boundary; timestamps are one possible method."
           }
         ],
-        "example": "PARCEL-01: After a parcel scan is accepted, the operator display shall show that parcel’s updated status within 3 seconds. Compare the acceptance and display timestamps using a measurement method suited to this limit. The limit is a teaching assumption.",
+        "example": "PARCEL-01: After a parcel scan is accepted, the operator display shall show that parcel’s updated status within 3 seconds. Measure elapsed time between acceptance and the displayed update using a method with adequate resolution and uncertainty for this boundary, such as synchronized event records or a suitable video timing measurement. The limit is a teaching assumption.",
         "notes": "Real verification planning also defines instrumentation, conditions, sample coverage, and uncertainty. This exercise covers the basic evidence link."
       }
     },
@@ -312,7 +312,7 @@
         "nasa-v",
         "nasa-validation"
       ],
-      "explanation": "Check compliance with the specified requirement, then examine intended use. These questions need different evidence even when one trial contributes to both.",
+      "explanation": "Verification checks the product against specified requirements. Product validation examines intended use and stakeholder expectations in the relevant environment. They answer different questions against different criteria; evidence and trials may overlap.",
       "misconception": "A product can meet a stated requirement while failing the actual user need.",
       "example": {
         "before": "The receipt arrives within 5 seconds, so the service is useful.",
@@ -353,7 +353,7 @@
             {
               "id": "b",
               "text": "Watching representative users identify and reach their booked room using the confirmation.",
-              "feedback": "Yes. The activity examines the outcome in a relevant user workflow."
+              "feedback": "Yes. This examines the intended outcome in a relevant workflow. The purpose and acceptance basis distinguish validation from verification; either can involve users."
             },
             {
               "id": "c",
@@ -396,7 +396,7 @@
             },
             {
               "id": "b",
-              "text": "The speed check passed; useful route guidance needs separate evidence.",
+              "text": "The speed check passed; useful route guidance needs additional evidence about intended use.",
               "feedback": "Yes. Separate the supported compliance claim from the unresolved use claim."
             },
             {
@@ -418,15 +418,15 @@
           },
           {
             "id": "validate",
-            "text": "Validation observes a representative visitor completing the intended sign-in workflow."
+            "text": "Validation identifies the intended visitor outcome, representative users and conditions, and an observable basis for judging success."
           },
           {
             "id": "limits",
             "text": "The answer does not equate a timing pass with complete operational success."
           }
         ],
-        "example": "Verification: measure from accepted valid sign-in to pass issuance and compare with 15 seconds. Product validation: observe representative visitors locating the kiosk, signing in, and using the issued pass to reach the intended activity, including accessibility needs. Retain issues even if timing passes.",
-        "notes": "These are original teaching scenarios. They do not replace a project validation plan or stakeholder acceptance."
+        "example": "Verification: measure from accepted valid sign-in to pass issuance and compare with 15 seconds. Product validation: observe representative visitors, including people with relevant accessibility needs, signing in and using the pass to reach the correct activity in the intended setting. For this teaching scenario, success means reaching that activity with a valid pass without staff correcting the destination; record failures and help. Agree the real acceptance basis with stakeholders. One trial may provide both timing and intended-use observations; a timing pass alone is insufficient.",
+        "notes": "These are original teaching scenarios. State the intended-use outcome, conditions and success basis; merely watching a user is insufficient. Alternative observable checks are valid. This exercise does not replace a project validation plan or stakeholder acceptance."
       }
     }
   ]
