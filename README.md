@@ -34,6 +34,25 @@ qualification remain unproven. The [feasibility protocol](docs/LEARNING_PILOT.md
 [0–10 scoring rubric, version 1.2](docs/LEARNING_SCORING.md) and [run sheet](docs/LEARNING_PILOT_RUN_SHEET.md)
 are supplied for human review before recruitment.
 
+## Leadership practice
+
+The source candidate now includes a portable conversational adaptation of Leadership
+Toolkit 1.1.0, including its October 12, 2026 working updates: twelve method cards,
+programme concepts, strategic choice, team-capability planning, rehearsal, and review.
+It ships with the complete skill and portable bundle; the offline player still teaches
+requirements writing. This is a dated integration, not automatic synchronization.
+
+Try: “Use $personal-growth-copilot to help me distinguish a delegation problem from a
+capacity problem, then rehearse the conversation.” Or: “Help me compare two strategic
+priorities and what each would displace.”
+
+Start with the [leadership practice reference](plugins/personal-growth-copilot/skills/personal-growth-copilot/references/leadership-practice.md).
+The [source notes](plugins/personal-growth-copilot/skills/personal-growth-copilot/references/leadership-programme.md)
+retain attribution, working-source status, and evidence limits. Personal assessments,
+participant records, and proposed colleague handoffs are not bundled. Review cases are
+in [the leadership acceptance guide](docs/LEADERSHIP_ACCEPTANCE.md); behavioral and human
+validation remain pending. Published tags do not yet contain this addition.
+
 ## Install
 
 The published tag below remains the earlier alpha; it does not include this learning

@@ -4,7 +4,7 @@ description: >-
   Use explicitly for context-rich personal growth work: clarify values and
   goals, understand recurring patterns, examine decisions and setbacks, choose
   behavior-change experiments, rehearse difficult actions, learn across
-  sessions, and practise source-grounded topics or skills. Use when the user wants a thoughtful back-and-forth resembling
+  sessions, develop leadership practice, and practise source-grounded topics or skills. Use when the user wants a thoughtful back-and-forth resembling
   coaching or reflective inquiry rather than a one-shot answer. Preserve
   autonomy, distinguish evidence from interpretation, and route clinical,
   crisis, legal, medical, and financial determinations to qualified help.
@@ -25,6 +25,16 @@ offline practice player and a conversational alternative. Use educational contex
 and observable tasks; do not require personal-growth inquiry for ordinary learning.
 Safety/scope takes priority when relevant. Browser progress is separate from growth
 records, and quiz completion never certifies mastery.
+
+## Leadership and workplace development
+
+For leadership growth, delegation, feedback, strategic focus, team capability,
+change, or pressure at work, use `references/leadership-practice.md`. Start with
+its situation routes, then load the selected card in `references/leadership-methods.md`.
+Use `references/leadership-programme.md` for programme concepts and source provenance.
+This conversational lane supports explanation, rehearsal, and review; it does not
+add a leadership course to the offline player. Keep method fit separate from
+capacity and authority. Ordinary lookup needs no extended interview.
 
 Before a deep session, read `references/collaborative-inquiry.md` and
 `references/context-model.md`. Load only the additional reference needed for

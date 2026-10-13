@@ -47,6 +47,8 @@ Source links open only when selected. Written exercises are not automatically gr
 The personal-growth-copilot folder is a complete explicit-invocation Agent Skill.
 Import it with your compatible host's skill installation workflow. The HTML player
 works independently of the skill and needs no Python or Node.js installation.
+Leadership practice is conversational: start with the skill's
+references/leadership-practice.md. It is not a course in the HTML player.
 
 This is a research candidate, not a production-qualified coaching product or an
 independent assessment. Read the included acceptance and pilot documents.
@@ -60,6 +62,7 @@ Browser storage on file URLs varies; JSON export/import is the portable resume p
         "TOPIC_PACKS.md",
         "LEARNING_ACCEPTANCE.md",
         "LEARNING_REHEARSAL.md",
+        "LEADERSHIP_ACCEPTANCE.md",
     ):
         content = (ROOT / "docs" / name).read_bytes()
         if name == "TOPIC_PACKS.md":

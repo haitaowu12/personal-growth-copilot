@@ -106,6 +106,35 @@ class LearningDistributionTests(unittest.TestCase):
                     for n in names
                 )
             )
+            # Follow references from the packaged entry point, never the checkout.
+            # Missing allowlist entries must fail even when a source file exists locally.
+            import posixpath
+            import re
+
+            skill_prefix = "personal-growth-copilot/"
+            pending = [skill_prefix + "SKILL.md"]
+            visited = set()
+            while pending:
+                current = pending.pop()
+                if current in visited:
+                    continue
+                visited.add(current)
+                content = archive.read(current).decode()
+                targets = [
+                    skill_prefix + path
+                    for path in re.findall(r"`((?:references|assets|scripts)/[^`\s]+)`", content)
+                ]
+                for href in re.findall(r"\]\(([^)]+)\)", content):
+                    if ":" in href or href.startswith("#"):
+                        continue
+                    targets.append(posixpath.normpath(posixpath.join(
+                        posixpath.dirname(current), href.split("#", 1)[0]
+                    )))
+                for target in targets:
+                    self.assertTrue(target.startswith(skill_prefix), (current, target))
+                    self.assertIn(target, names, (current, target))
+                    if target.endswith(".md"):
+                        pending.append(target)
             manifest = json.loads(archive.read("MANIFEST.json"))
             self.assertEqual(set(manifest["files"]), names - {"MANIFEST.json"})
             for name, digest in manifest["files"].items():
