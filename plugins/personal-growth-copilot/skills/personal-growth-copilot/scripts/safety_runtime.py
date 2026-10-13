@@ -124,12 +124,18 @@ def _system_clock() -> datetime:
     return datetime.now(timezone.utc)
 
 
+_MACHINE_CACHE = {}
+
+
 def load_machine(path: Path = DEFAULT_MACHINE) -> dict:
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    errors = validate_machine_spec(data)
-    if errors:
-        raise SafetyRuntimeError("invalid safety state machine: " + "; ".join(errors))
-    return data
+    # ⚡ Bolt: Cache parsed machine state to avoid expensive repeated yaml loading and validation
+    if path not in _MACHINE_CACHE:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        errors = validate_machine_spec(data)
+        if errors:
+            raise SafetyRuntimeError("invalid safety state machine: " + "; ".join(errors))
+        _MACHINE_CACHE[path] = data
+    return deepcopy(_MACHINE_CACHE[path])
 
 
 def validate_machine_spec(data: object) -> list[str]:

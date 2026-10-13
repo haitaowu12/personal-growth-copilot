@@ -1,0 +1,24 @@
+--- plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/safety_runtime.py
++++ plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/safety_runtime.py
+@@ -124,12 +124,17 @@
+     return datetime.now(timezone.utc)
+
+
++_MACHINE_CACHE = {}
++
+ def load_machine(path: Path = DEFAULT_MACHINE) -> dict:
+-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+-    errors = validate_machine_spec(data)
+-    if errors:
+-        raise SafetyRuntimeError("invalid safety state machine: " + "; ".join(errors))
+-    return data
++    if path not in _MACHINE_CACHE:
++        data = yaml.safe_load(path.read_text(encoding="utf-8"))
++        errors = validate_machine_spec(data)
++        if errors:
++            raise SafetyRuntimeError("invalid safety state machine: " + "; ".join(errors))
++        _MACHINE_CACHE[path] = data
++    return deepcopy(_MACHINE_CACHE[path])
+
+
+ def validate_machine_spec(data: object) -> list[str]:
