@@ -262,8 +262,11 @@
         first_total: first.length,
         assisted: answers.filter((e) => e.helped).length,
         writing_example_views: events.filter((e) => e.type === "writing-example").length,
-        writing_after_example: events.some((e, i) => e.type === "write" &&
-          events.slice(0, i).some((prior) => prior.type === "writing-example")),
+        writing_after_example: (() => {
+          const firstExample = events.findIndex((e) => e.type === "writing-example");
+          const lastWrite = events.findLastIndex((e) => e.type === "write");
+          return firstExample >= 0 && lastWrite >= 0 && firstExample < lastWrite;
+        })(),
         written: events.some((e) => e.type === "write"),
         reviewed: hasReview(session, c.id),
       };
