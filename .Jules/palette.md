@@ -1,0 +1,3 @@
+## 2026-10-14 - Accessible groupings for dynamically rendered checkboxes
+**Learning:** When generating a list of related checkboxes dynamically (e.g. self-review criteria), wrapping them in a `<div role="group">` and binding it to an existing heading and description using `aria-labelledby` and `aria-describedby` provides semantic context without altering layout styling (unlike `fieldset`/`legend` which often conflict with existing CSS resets).
+**Action:** Always group dynamically rendered multiple-choice or checkbox lists with `role="group"` and proper ARIA labels to ensure screen readers announce the shared context before the individual items.
