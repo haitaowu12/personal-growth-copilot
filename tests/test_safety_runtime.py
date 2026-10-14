@@ -16,6 +16,20 @@ import safety_runtime as safety  # noqa: E402
 NOW = datetime(2026, 8, 11, 18, 0, tzinfo=timezone.utc)
 
 
+class TimestampTests(unittest.TestCase):
+    def test_utc_datetime(self):
+        dt = datetime(2026, 8, 11, 18, 0, tzinfo=timezone.utc)
+        self.assertEqual(safety._timestamp(dt), "2026-08-11T18:00:00Z")
+
+    def test_positive_offset_datetime(self):
+        dt = datetime(2026, 8, 12, 3, 0, tzinfo=timezone(timedelta(hours=9)))
+        self.assertEqual(safety._timestamp(dt), "2026-08-11T18:00:00Z")
+
+    def test_negative_offset_datetime(self):
+        dt = datetime(2026, 8, 11, 14, 0, tzinfo=timezone(timedelta(hours=-4)))
+        self.assertEqual(safety._timestamp(dt), "2026-08-11T18:00:00Z")
+
+
 class Resolver:
     def __init__(self, resources=(), error: Exception | None = None):
         self.resources = resources
