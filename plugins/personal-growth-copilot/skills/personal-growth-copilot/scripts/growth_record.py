@@ -19,9 +19,12 @@ import sys
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
+import logging
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
+
+logger = logging.getLogger(__name__)
 
 POLICIES = {"OFF", "SESSION_ONLY", "CONFIRM_EACH"}
 COLLECTIONS = (
@@ -270,8 +273,8 @@ def validate_record(data: Any) -> list[str]:
                     errors.append(
                         f"$.evidence[{index}].review_at: must be after last_confirmed_at"
                     )
-            except (KeyError, TypeError, ValueError):
-                pass
+            except (KeyError, TypeError, ValueError) as e:
+                logger.debug("$.evidence[%d]: ignored timestamp error: %s", index, e)
         origin_kind = item.get("origin_kind")
         source = item.get("source")
         citation = item.get("source_citation_id")
@@ -392,8 +395,8 @@ def validate_record(data: Any) -> list[str]:
                     errors.append(
                         f"$.check_ins[{index}].recorded_at: scale review is due"
                     )
-            except (KeyError, TypeError, ValueError):
-                pass
+            except (KeyError, TypeError, ValueError) as e:
+                logger.debug("$.check_ins[%d]: ignored timestamp error: %s", index, e)
 
     decisions = data.get("decisions", [])
     if isinstance(decisions, list):
