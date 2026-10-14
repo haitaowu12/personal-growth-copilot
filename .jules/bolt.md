@@ -1,0 +1,3 @@
+## 2024-10-15 - Replacing O(N²) array manipulation with O(N) linear search
+**Learning:** In string-processing algorithms within UI components rendering logic or state calculations (like `writing_after_example`), using operations such as `array.slice(0, i).some(...)` inside a loop evaluating `array.some((e, i) => ...)` turns an otherwise linear computation into O(N²). For 2000 elements (the MAX_EVENTS bound in the application), this causes significant latency (600+ ms) that can block the UI thread during parsing.
+**Action:** When tracking sequences, instead of slicing arrays recursively, always look for an O(N) replacement using `events.findIndex()` or `events.findLastIndex()` (e.g. keeping track of the first or last occurrences), or use linear scanning.
