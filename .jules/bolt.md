@@ -1,0 +1,3 @@
+## 2024-10-14 - Asset Caching for Python Scripts
+**Learning:** Build scripts that perform iterative loops over files or lists that repeatedly parse or read the same static resources can benefit heavily from memoization/caching. Using `functools.lru_cache` avoids repeated I/O and JSON overhead in identical processes. Be cautious not to mutate shared mutable results from a cache if `json.loads` is returned without deep copying.
+**Action:** When working with repetitive build scripts inside a loop or across processes that are kept alive, cache unchanging file loads to boost performance natively without complex external dependency layers.

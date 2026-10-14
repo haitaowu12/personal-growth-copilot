@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate a source-grounded topic pack and build a portable offline lesson."""
+
 from __future__ import annotations
 import argparse
 import base64
@@ -10,12 +11,23 @@ import re
 import sys
 import unicodedata
 from datetime import date
+from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlsplit
 from jsonschema import Draft202012Validator, FormatChecker
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets/learning"
 MAX_PACK_BYTES = 500_000
+
+
+@lru_cache(maxsize=None)
+def _get_asset_text(filename: str) -> str:
+    return (ASSETS / filename).read_text()
+
+
+@lru_cache(maxsize=None)
+def _get_schema() -> dict:
+    return json.loads(_get_asset_text("topic-pack.schema.json"))
 
 
 def concept_order(pack: dict) -> list[str]:
@@ -42,7 +54,7 @@ def concept_order(pack: dict) -> list[str]:
 
 
 def validate_pack(pack: object) -> list[str]:
-    schema = json.loads((ASSETS / "topic-pack.schema.json").read_text())
+    schema = _get_schema()
     errors = [
         f"{list(e.path)}: {e.message}"
         for e in Draft202012Validator(
@@ -87,8 +99,10 @@ def validate_pack(pack: object) -> list[str]:
             ids = [x["id"] for x in question["choices"]]
             if len(set(ids)) != len(ids) or question["correct"] not in ids:
                 errors.append("Invalid question answer IDs.")
-            visible = [" ".join(unicodedata.normalize("NFKC", x["text"]).casefold().split())
-                       for x in question["choices"]]
+            visible = [
+                " ".join(unicodedata.normalize("NFKC", x["text"]).casefold().split())
+                for x in question["choices"]
+            ]
             if len(set(visible)) != len(visible):
                 errors.append("Duplicate visible choice text.")
             prompts.append(question["prompt"])
@@ -135,8 +149,8 @@ def render(raw: bytes) -> str:
         .replace(">", "\\u003e")
         .replace("&", "\\u0026")
     )
-    css = (ASSETS / "player.css").read_text()
-    scripts = [(ASSETS / p).read_text() for p in ["core.js", "player.js"]]
+    css = _get_asset_text("player.css")
+    scripts = [_get_asset_text(p) for p in ["core.js", "player.js"]]
 
     def policy_hash(text):
         return (
