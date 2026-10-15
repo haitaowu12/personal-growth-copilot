@@ -536,19 +536,28 @@
     const draft = el("textarea");
     draft.id = "draft";
     draft.maxLength = 4000;
+    draft.setAttribute("aria-describedby", "draft-help");
     draft.value = last("write", c.id)?.text || "";
+
+    const countSpan = el("span", `${draft.value.length} / 4000`, "meta");
+    const helperRow = el("div", undefined, "progress-row");
+    const helperText = el(
+      "span",
+      "10–4,000 characters. Use invented examples; omit confidential information.",
+      "meta"
+    );
+    helperText.id = "draft-help";
+    helperRow.append(helperText, countSpan);
+
     draft.addEventListener("input", () => {
       dirtyDraft = true;
       recovery.disabled = false;
+      countSpan.textContent = `${draft.value.length} / 4000`;
     });
     main.append(
       label,
       draft,
-      el(
-        "p",
-        "10–4,000 characters. Use invented examples; omit confidential information.",
-        "meta",
-      ),
+      helperRow,
     );
     const recovery = button("Download unsaved draft", () => {
       if (!dirtyDraft) return;
