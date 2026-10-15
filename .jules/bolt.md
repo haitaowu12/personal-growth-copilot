@@ -1,0 +1,3 @@
+## 2023-10-25 - Safety Machine Caching
+**Learning:** `load_machine` in `safety_runtime.py` is called very frequently by tests (and potentially in real use) because it is called in `SafetySession.__init__`. This parses a yaml file and validates a schema, taking ~12ms per call. While caching with `@lru_cache` is a huge win (100x speedup), we must return a `deepcopy` from the public function to avoid caller side-effects, as callers expect a mutable dictionary they can independently validate or mutate.
+**Action:** When caching operations that return dictionaries parsed from files, always separate the cached internal function from the public interface, and use `deepcopy` in the public interface to preserve immutability of the cached object.

@@ -14,6 +14,7 @@ import secrets
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Literal, Protocol, Sequence
 
@@ -124,12 +125,16 @@ def _system_clock() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def load_machine(path: Path = DEFAULT_MACHINE) -> dict:
+@lru_cache(maxsize=1)
+def _load_machine_cached(path: Path) -> dict:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     errors = validate_machine_spec(data)
     if errors:
         raise SafetyRuntimeError("invalid safety state machine: " + "; ".join(errors))
     return data
+
+def load_machine(path: Path = DEFAULT_MACHINE) -> dict:
+    return deepcopy(_load_machine_cached(path))
 
 
 def validate_machine_spec(data: object) -> list[str]:
