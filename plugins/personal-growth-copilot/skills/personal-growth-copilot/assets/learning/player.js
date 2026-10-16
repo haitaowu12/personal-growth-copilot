@@ -536,11 +536,14 @@
     const draft = el("textarea");
     draft.id = "draft";
     draft.maxLength = 4000;
-    draft.setAttribute("aria-describedby", "draft-helper");
+    draft.setAttribute("aria-describedby", "draft-helper draft-char-count");
     draft.value = last("write", c.id)?.text || "";
+    const charCount = el("p", `${draft.value.length} / 4000`, "meta char-count");
+    charCount.id = "draft-char-count";
     draft.addEventListener("input", () => {
       dirtyDraft = true;
       recovery.disabled = false;
+      charCount.textContent = `${draft.value.length} / 4000`;
     });
     const helperText = el(
       "p",
@@ -552,6 +555,7 @@
       label,
       draft,
       helperText,
+      charCount,
     );
     const recovery = button("Download unsaved draft", () => {
       if (!dirtyDraft) return;

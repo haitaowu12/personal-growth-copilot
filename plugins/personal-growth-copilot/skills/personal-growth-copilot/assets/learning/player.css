@@ -286,6 +286,10 @@ textarea {
   resize: vertical;
   color: var(--ink);
 }
+.char-count {
+  margin-top: -12px;
+  text-align: right;
+}
 .check {
   display: flex;
   gap: 10px;
