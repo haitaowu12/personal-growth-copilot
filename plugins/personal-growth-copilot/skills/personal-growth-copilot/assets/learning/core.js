@@ -122,11 +122,12 @@
         const lastRecall = prior.findLastIndex(
           (e) => e.type === "answer" && e.stage === "review",
         );
-        const reviewAnchor = s.stage === "review"
-          ? lastRecall >= 0
-            ? lastRecall
-            : prior.findIndex((e) => e.type === "self-review")
-          : -1;
+        const reviewAnchor =
+          s.stage === "review"
+            ? lastRecall >= 0
+              ? lastRecall
+              : prior.findIndex((e) => e.type === "self-review")
+            : -1;
         const current = prior.slice(reviewAnchor + 1);
         const helped =
           current.some((e) => ["study", "writing-example"].includes(e.type)) ||
@@ -249,9 +250,24 @@
     return pack.concepts.map((c) => {
       const events = eventsFor(session, c.id);
       const answers = events.filter((e) => e.type === "answer");
-      const first = answers.filter(
-        (e, i) => answers.findIndex((x) => x.stage === e.stage) === i,
-      );
+      // Optimize O(n^2) filter to O(n) using a Set
+      const seenStages = new Set();
+      const first = answers.filter((e) => {
+        if (seenStages.has(e.stage)) return false;
+        seenStages.add(e.stage);
+        return true;
+      });
+      // Optimize O(n^2) write after example check to O(n)
+      let seenExample = false;
+      let writingAfterExample = false;
+      for (const e of events) {
+        if (e.type === "writing-example") {
+          seenExample = true;
+        } else if (e.type === "write" && seenExample) {
+          writingAfterExample = true;
+          break;
+        }
+      }
       return {
         id: c.id,
         ...status(pack, session, c.id, now),
@@ -261,9 +277,10 @@
         ).length,
         first_total: first.length,
         assisted: answers.filter((e) => e.helped).length,
-        writing_example_views: events.filter((e) => e.type === "writing-example").length,
-        writing_after_example: events.some((e, i) => e.type === "write" &&
-          events.slice(0, i).some((prior) => prior.type === "writing-example")),
+        writing_example_views: events.filter(
+          (e) => e.type === "writing-example",
+        ).length,
+        writing_after_example: writingAfterExample,
         written: events.some((e) => e.type === "write"),
         reviewed: hasReview(session, c.id),
       };
