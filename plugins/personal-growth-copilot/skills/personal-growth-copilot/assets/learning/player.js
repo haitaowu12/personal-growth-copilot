@@ -536,19 +536,22 @@
     const draft = el("textarea");
     draft.id = "draft";
     draft.maxLength = 4000;
+    draft.setAttribute("aria-describedby", "draft-helper");
     draft.value = last("write", c.id)?.text || "";
     draft.addEventListener("input", () => {
       dirtyDraft = true;
       recovery.disabled = false;
     });
+    const helperText = el(
+      "p",
+      "10–4,000 characters. Use invented examples; omit confidential information.",
+      "meta",
+    );
+    helperText.id = "draft-helper";
     main.append(
       label,
       draft,
-      el(
-        "p",
-        "10–4,000 characters. Use invented examples; omit confidential information.",
-        "meta",
-      ),
+      helperText,
     );
     const recovery = button("Download unsaved draft", () => {
       if (!dirtyDraft) return;
@@ -585,13 +588,20 @@
     main.append(save, reviewArea);
     function renderChecks() {
       reviewArea.replaceChildren();
-      reviewArea.append(el("h3", "Check your work"));
-      reviewArea.append(
-        el(
-          "p",
-          "Select only criteria your draft meets. Leave uncertain items unchecked. This is self-review, not automated grading.",
-        ),
+      const reviewHeading = el("h3", "Check your work");
+      reviewHeading.id = "review-heading";
+      const reviewDesc = el(
+        "p",
+        "Select only criteria your draft meets. Leave uncertain items unchecked. This is self-review, not automated grading.",
       );
+      reviewDesc.id = "review-description";
+      reviewArea.append(reviewHeading, reviewDesc);
+
+      const group = el("div");
+      group.setAttribute("role", "group");
+      group.setAttribute("aria-labelledby", "review-heading");
+      group.setAttribute("aria-describedby", "review-description");
+
       const inputs = [];
       for (const criterion of c.writing.criteria) {
         const l = el("label", undefined, "check"),
@@ -600,8 +610,9 @@
         i.value = criterion.id;
         inputs.push(i);
         l.append(i, el("span", criterion.text));
-        reviewArea.append(l);
+        group.append(l);
       }
+      reviewArea.append(group);
       const example = el("div");
       reviewArea.append(
         button(
