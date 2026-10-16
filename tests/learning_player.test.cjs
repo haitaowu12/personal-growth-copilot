@@ -31,6 +31,7 @@ function player(localStorage) {
   class Element {
     constructor(tag) {
       this.tag = tag; this.children = []; this.listeners = new Map();
+      this.attributes = new Map();
       this.textContent = ""; this.className = ""; this.isConnected = true;
       this.returnValue = ""; this.value = ""; nodes.push(this);
     }
@@ -38,7 +39,8 @@ function player(localStorage) {
     get id() { return this._id; }
     append(...children) { this.children.push(...children); }
     replaceChildren(...children) { this.children = children; }
-    setAttribute() {}
+    setAttribute(name, value) { this.attributes.set(name, String(value)); }
+    getAttribute(name) { return this.attributes.get(name) ?? null; }
     addEventListener(type, callback) { this.listeners.set(type, callback); }
     fire(type, extra = {}) { return this.listeners.get(type)?.({target: this, ...extra}); }
     focus() { document.activeElement = this; }
@@ -100,6 +102,39 @@ function player(localStorage) {
     failModal(value) { modalFailure = value; },
   };
 }
+
+test("writing instructions and character count stay associated with the draft while typing", () => {
+  const tab = player(storage());
+  tab.api.writing(pack.concepts[0]);
+  const draft = tab.ids.get("draft"), counter = tab.ids.get("draft-char-count");
+  const descriptions = draft.getAttribute("aria-describedby").split(/\s+/);
+  assert.deepEqual(descriptions, ["draft-helper", "draft-char-count"]);
+  assert.match(tab.ids.get(descriptions[0]).textContent, /10–4,000 characters/);
+  assert.equal(draft.maxLength, 4000);
+  assert.equal(counter.textContent, "0 / 4000");
+  for (const value of ["A🙂 sample", "x".repeat(4000), ""]) {
+    draft.value = value;
+    draft.fire("input");
+    assert.equal(counter.textContent, `${value.length} / 4000`);
+  }
+  assert.equal(counter.getAttribute("aria-live"), null);
+});
+
+test("restored drafts initialize the counter and retain labelled self-review groups", () => {
+  const store = storage(), first = player(store);
+  const text = "The service shall retain this synthetic saved response.";
+  first.write(text);
+  const restored = player(store);
+  restored.api.writing(pack.concepts[0]);
+  assert.equal(restored.ids.get("draft").value, text);
+  assert.equal(restored.ids.get("draft-char-count").textContent, `${text.length} / 4000`);
+  const group = restored.nodes.findLast(n => n.getAttribute("role") === "group");
+  assert.equal(group.getAttribute("aria-labelledby"), "review-heading");
+  assert.equal(group.getAttribute("aria-describedby"), "review-description");
+  assert.equal(restored.ids.get("review-heading").textContent, "Check your work");
+  assert.match(restored.ids.get("review-description").textContent, /self-review/);
+  assert.equal(group.children.length, pack.concepts[0].writing.criteria.length);
+});
 
 test("actual draft save keeps storage failure visible through the routine success notice, and explicit retry resolves it", () => {
   const store = storage(), tab = player(store);
