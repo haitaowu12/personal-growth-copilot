@@ -537,18 +537,29 @@
     draft.id = "draft";
     draft.maxLength = 4000;
     draft.value = last("write", c.id)?.text || "";
+
+    const draftDesc = el(
+      "p",
+      "10–4,000 characters. Use invented examples; omit confidential information.",
+      "meta",
+    );
+    draftDesc.id = "draft-desc";
+
+    const charCount = el("p", `${draft.value.length} / 4000`, "meta char-count");
+    charCount.id = "draft-char-count";
+
+    draft.setAttribute("aria-describedby", "draft-desc draft-char-count");
+
     draft.addEventListener("input", () => {
       dirtyDraft = true;
       recovery.disabled = false;
+      charCount.textContent = `${draft.value.length} / 4000`;
     });
     main.append(
       label,
       draft,
-      el(
-        "p",
-        "10–4,000 characters. Use invented examples; omit confidential information.",
-        "meta",
-      ),
+      draftDesc,
+      charCount,
     );
     const recovery = button("Download unsaved draft", () => {
       if (!dirtyDraft) return;
