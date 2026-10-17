@@ -128,11 +128,24 @@
               ? lastRecall
               : prior.findIndex((e) => e.type === "self-review")
             : -1;
-        const current = prior.slice(reviewAnchor + 1);
-        const helped =
-          current.some((e) => ["study", "writing-example"].includes(e.type)) ||
-          current.some((e) => e.type === "hint" && e.stage === s.stage) ||
-          prior.some((e) => e.type === "answer" && e.stage === s.stage);
+        let helped = false;
+        for (let i = 0; i < prior.length; i++) {
+          const e = prior[i];
+          if (e.type === "answer" && e.stage === s.stage) {
+            helped = true;
+            break;
+          }
+          if (i > reviewAnchor) {
+            if (
+              e.type === "study" ||
+              e.type === "writing-example" ||
+              (e.type === "hint" && e.stage === s.stage)
+            ) {
+              helped = true;
+              break;
+            }
+          }
+        }
         event = { ...action, stage: s.stage, helped, at: now };
         break;
       }
