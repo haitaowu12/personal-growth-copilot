@@ -364,12 +364,6 @@ footer p {
   opacity: 0;
   overflow: hidden;
 }
-#import:focus-visible {
-  position: static;
-  width: 200px;
-  height: auto;
-  opacity: 1;
-}
 #storage label {
   display: flex;
   gap: 8px;
