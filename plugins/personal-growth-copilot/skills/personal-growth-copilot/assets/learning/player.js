@@ -30,10 +30,8 @@
     return b;
   }
   function tell(text, error = false) {
-    notice.textContent =
-      storageWarning && text !== storageWarning
-        ? `${storageWarning}\n${text}`
-        : text;
+    notice.textContent = storageWarning && text !== storageWarning
+      ? `${storageWarning}\n${text}` : text;
     notice.className = error || storageWarning ? "error" : "";
   }
   function last(type, id) {
@@ -45,8 +43,7 @@
     confirmationOpen = true;
     const previousFocus = document.activeElement;
     const dialog = el("dialog", undefined, "confirmation");
-    const heading = el("h2", title),
-      description = el("p", message);
+    const heading = el("h2", title), description = el("p", message);
     heading.id = "confirmation-title";
     description.id = "confirmation-description";
     dialog.setAttribute("aria-labelledby", heading.id);
@@ -58,17 +55,13 @@
     dialog.append(heading, description, actions);
     document.body.append(dialog);
     return new Promise((resolve) => {
-      dialog.addEventListener(
-        "close",
-        () => {
-          const accepted = dialog.returnValue === "accept";
-          dialog.remove();
-          confirmationOpen = false;
-          if (previousFocus?.isConnected) previousFocus.focus();
-          resolve(accepted);
-        },
-        { once: true },
-      );
+      dialog.addEventListener("close", () => {
+        const accepted = dialog.returnValue === "accept";
+        dialog.remove();
+        confirmationOpen = false;
+        if (previousFocus?.isConnected) previousFocus.focus();
+        resolve(accepted);
+      }, { once: true });
       try {
         dialog.showModal();
         cancel.focus();
@@ -76,22 +69,16 @@
         dialog.remove();
         confirmationOpen = false;
         if (previousFocus?.isConnected) previousFocus.focus();
-        tell(
-          "This browser could not open the confirmation. Your progress has not changed.",
-          true,
-        );
+        tell("This browser could not open the confirmation. Your progress has not changed.", true);
         resolve(false);
       }
     });
   }
   async function confirmLeave() {
-    return (
-      !dirtyDraft ||
-      (await confirmAction(
-        "Leave this exercise?",
-        "Your unsaved draft will be lost. Cancel to keep editing or save it first.",
-        "Discard draft and leave",
-      ))
+    return !dirtyDraft || await confirmAction(
+      "Leave this exercise?",
+      "Your unsaved draft will be lost. Cancel to keep editing or save it first.",
+      "Discard draft and leave",
     );
   }
   function storageProblem(message) {
@@ -104,13 +91,8 @@
     try {
       // This detects changed snapshots; localStorage read/write is not an
       // atomic transaction and does not guarantee simultaneous-writer safety.
-      if (
-        storageSnapshot === undefined ||
-        localStorage.getItem(key) !== storageSnapshot
-      ) {
-        storageProblem(
-          "Browser progress changed or could not be compared. Saving is off; this tab's work remains here. Export it, then reload to review the browser copy. No browser copy was overwritten.",
-        );
+      if (storageSnapshot === undefined || localStorage.getItem(key) !== storageSnapshot) {
+        storageProblem("Browser progress changed or could not be compared. Saving is off; this tab's work remains here. Export it, then reload to review the browser copy. No browser copy was overwritten.");
         return false;
       }
       const bytes = JSON.stringify(session);
@@ -118,18 +100,13 @@
       storageSnapshot = bytes;
       return true;
     } catch (_) {
-      storageProblem(
-        "Saving failed. This tab may have newer progress than the browser copy. Saving is off; export before closing.",
-      );
+      storageProblem("Saving failed. This tab may have newer progress than the browser copy. Saving is off; export before closing.");
       return false;
     }
   }
   function removeBrowserCopy() {
     try {
-      if (
-        storageSnapshot === undefined ||
-        localStorage.getItem(key) !== storageSnapshot
-      )
+      if (storageSnapshot === undefined || localStorage.getItem(key) !== storageSnapshot)
         return "changed";
       localStorage.removeItem(key);
       storageSnapshot = null;
@@ -278,12 +255,7 @@
         ),
       );
       if (r.writing_example_views) {
-        aside.append(
-          el(
-            "p",
-            `Worked writing response opened ${r.writing_example_views} time(s). ${r.writing_after_example ? "At least one draft was saved after viewing an example." : "No later draft has been saved."} This is assisted practice context, not independent writing evidence.`,
-          ),
-        );
+        aside.append(el("p", `Worked writing response opened ${r.writing_example_views} time(s). ${r.writing_after_example ? "At least one draft was saved after viewing an example." : "No later draft has been saved."} This is assisted practice context, not independent writing evidence.`));
       }
       aside.append(el("h3", "Source notes"));
       for (const id of c.source_ids) {
@@ -556,8 +528,7 @@
     const criteriaPreview = el("section", undefined, "criteria-preview");
     criteriaPreview.append(el("h3", "What to include"));
     const criteriaList = el("ul");
-    for (const criterion of c.writing.criteria)
-      criteriaList.append(el("li", criterion.text));
+    for (const criterion of c.writing.criteria) criteriaList.append(el("li", criterion.text));
     criteriaPreview.append(criteriaList, el("p", c.writing.notes, "meta"));
     main.append(criteriaPreview);
     const label = el("label", "Your response");
@@ -567,11 +538,7 @@
     draft.maxLength = 4000;
     draft.setAttribute("aria-describedby", "draft-helper draft-char-count");
     draft.value = last("write", c.id)?.text || "";
-    const charCount = el(
-      "p",
-      `${draft.value.length} / 4000`,
-      "meta char-count",
-    );
+    const charCount = el("p", `${draft.value.length} / 4000`, "meta char-count");
     charCount.id = "draft-char-count";
     draft.addEventListener("input", () => {
       dirtyDraft = true;
@@ -584,35 +551,26 @@
       "meta",
     );
     helperText.id = "draft-helper";
-    main.append(label, draft, helperText, charCount);
-    const recovery = button(
-      "Download unsaved draft",
-      () => {
-        if (!dirtyDraft) return;
-        download(
-          `${pack.id}-${c.id}-unsaved-draft.json`,
-          JSON.stringify(
-            {
-              type: "draft-recovery",
-              notice:
-                "Unsaved text recovery only. This is not a replayable progress file and cannot be imported as lesson progress.",
-              topic: pack.id,
-              version: pack.version,
-              digest,
-              concept: c.id,
-              text: draft.value,
-              created_at: now(),
-            },
-            null,
-            2,
-          ),
-        );
-        tell(
-          "Unsaved draft recovery file prepared for download. It is not replayable progress. Your draft remains unsaved in this tab; export recorded progress separately if needed.",
-        );
-      },
-      "quiet",
+    main.append(
+      label,
+      draft,
+      helperText,
+      charCount,
     );
+    const recovery = button("Download unsaved draft", () => {
+      if (!dirtyDraft) return;
+      download(`${pack.id}-${c.id}-unsaved-draft.json`, JSON.stringify({
+        type: "draft-recovery",
+        notice: "Unsaved text recovery only. This is not a replayable progress file and cannot be imported as lesson progress.",
+        topic: pack.id,
+        version: pack.version,
+        digest,
+        concept: c.id,
+        text: draft.value,
+        created_at: now(),
+      }, null, 2));
+      tell("Unsaved draft recovery file prepared for download. It is not replayable progress. Your draft remains unsaved in this tab; export recorded progress separately if needed.");
+    }, "quiet");
     recovery.disabled = !dirtyDraft;
     main.append(recovery);
     const reviewArea = el("section");
@@ -862,15 +820,11 @@
     render();
     if (removal === "removed") {
       storageWarning = null;
-      tell(
-        "This topic’s tab and browser progress cleared. Other copies remain unchanged.",
-      );
+      tell("This topic’s tab and browser progress cleared. Other copies remain unchanged.");
     } else {
-      storageProblem(
-        removal === "changed"
-          ? "Tab progress cleared. A changed or unverified browser copy was retained; reload to review it. Downloaded files and backups remain."
-          : "Tab progress cleared. The browser copy could not be removed; use browser site-data controls. Downloaded files and backups remain.",
-      );
+      storageProblem(removal === "changed"
+        ? "Tab progress cleared. A changed or unverified browser copy was retained; reload to review it. Downloaded files and backups remain."
+        : "Tab progress cleared. The browser copy could not be removed; use browser site-data controls. Downloaded files and backups remain.");
     }
   });
   window.addEventListener("storage", (event) => {
@@ -882,9 +836,7 @@
     } catch (_) {
       // An unreadable browser copy is also unsafe to overwrite.
     }
-    storageProblem(
-      "Browser progress changed in another tab or window. Saving is off; this tab's work remains here. Export it, then reload to review the browser copy. Changes are not merged automatically.",
-    );
+    storageProblem("Browser progress changed in another tab or window. Saving is off; this tab's work remains here. Export it, then reload to review the browser copy. Changes are not merged automatically.");
   });
   window.addEventListener("beforeunload", (e) => {
     if (dirtyDraft || (!saved && session.events.length)) {
