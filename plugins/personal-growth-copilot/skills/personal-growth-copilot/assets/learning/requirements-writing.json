@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "id": "requirements-writing",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "title": "Write requirements you can verify",
   "subtitle": "Turn a vague request into an observable obligation. Practice applying it and checking its intended use.",
   "audience": "Adults new to requirements writing. No systems engineering background required.",
