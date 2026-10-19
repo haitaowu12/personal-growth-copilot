@@ -49,39 +49,57 @@
     return session.events.filter((e) => e.concept === id);
   }
   function hasReview(session, id) {
-    return eventsFor(session, id).some((e) => e.type === "self-review");
+    return session.events.some(
+      (e) => e.concept === id && e.type === "self-review",
+    );
   }
   function status(pack, session, id, now) {
-    const c = conceptFor(pack, id),
-      events = eventsFor(session, id);
+    const c = conceptFor(pack, id);
     const missing = c.prerequisites.filter((p) => !hasReview(session, p));
     if (missing.length) return { stage: "locked", missing };
-    const diagnosis = events.find(
-      (e) => e.type === "answer" && e.stage === "diagnostic",
-    );
+
+    const events = eventsFor(session, id);
+
+    let diagnosis = null;
+    let hasStudy = false;
+    let hasPracticeCorrect = false;
+    let hasTransfer = false;
+    let lastWrite = -1;
+    let lastCheck = -1;
+    let firstCheckEvent = null;
+    const recalls = [];
+
+    for (let i = 0; i < events.length; i++) {
+      const e = events[i];
+      if (e.type === "answer") {
+        if (e.stage === "diagnostic" && !diagnosis) diagnosis = e;
+        else if (
+          e.stage === "practice" &&
+          e.choice === c.questions.practice.correct
+        )
+          hasPracticeCorrect = true;
+        else if (e.stage === "transfer") hasTransfer = true;
+        else if (e.stage === "review") recalls.push(e);
+      } else if (e.type === "study") {
+        hasStudy = true;
+      } else if (e.type === "write") {
+        lastWrite = i;
+      } else if (e.type === "self-review") {
+        lastCheck = i;
+        if (!firstCheckEvent) firstCheckEvent = e;
+      }
+    }
+
     if (!diagnosis) return { stage: "diagnostic" };
     if (diagnosis.choice !== c.questions.diagnostic.correct) {
-      if (!events.some((e) => e.type === "study")) return { stage: "lesson" };
-      if (
-        !events.some(
-          (e) =>
-            e.type === "answer" &&
-            e.stage === "practice" &&
-            e.choice === c.questions.practice.correct,
-        )
-      )
-        return { stage: "practice" };
+      if (!hasStudy) return { stage: "lesson" };
+      if (!hasPracticeCorrect) return { stage: "practice" };
     }
-    if (!events.some((e) => e.type === "answer" && e.stage === "transfer"))
-      return { stage: "transfer" };
-    const lastWrite = events.findLastIndex((e) => e.type === "write");
-    const lastCheck = events.findLastIndex((e) => e.type === "self-review");
+    if (!hasTransfer) return { stage: "transfer" };
     if (lastWrite < 0 || lastCheck < lastWrite) return { stage: "writing" };
-    const recalls = events.filter(
-      (e) => e.type === "answer" && e.stage === "review",
-    );
+
     const last = recalls.at(-1);
-    const anchor = last || events.find((e) => e.type === "self-review");
+    const anchor = last || firstCheckEvent;
     const days =
       last && last.choice !== c.questions.review.correct
         ? 1
@@ -119,20 +137,40 @@
           fail("Choose a listed answer.");
         // Match the due-date interval: later writing self-reviews must not
         // erase help received since the first self-review or latest recall.
-        const lastRecall = prior.findLastIndex(
-          (e) => e.type === "answer" && e.stage === "review",
-        );
+        let lastRecall = -1;
+        let firstSelfReview = -1;
+        let helped = false;
+
+        for (let i = 0; i < prior.length; i++) {
+          const e = prior[i];
+          if (e.type === "answer" && e.stage === "review") lastRecall = i;
+          else if (e.type === "self-review" && firstSelfReview === -1)
+            firstSelfReview = i;
+        }
+
         const reviewAnchor =
           s.stage === "review"
             ? lastRecall >= 0
               ? lastRecall
-              : prior.findIndex((e) => e.type === "self-review")
+              : firstSelfReview
             : -1;
-        const current = prior.slice(reviewAnchor + 1);
-        const helped =
-          current.some((e) => ["study", "writing-example"].includes(e.type)) ||
-          current.some((e) => e.type === "hint" && e.stage === s.stage) ||
-          prior.some((e) => e.type === "answer" && e.stage === s.stage);
+
+        for (let i = 0; i < prior.length; i++) {
+          const e = prior[i];
+          if (e.type === "answer" && e.stage === s.stage) {
+            helped = true;
+            break;
+          }
+          if (i > reviewAnchor) {
+            if (
+              ["study", "writing-example"].includes(e.type) ||
+              (e.type === "hint" && e.stage === s.stage)
+            ) {
+              helped = true;
+              break;
+            }
+          }
+        }
         event = { ...action, stage: s.stage, helped, at: now };
         break;
       }
