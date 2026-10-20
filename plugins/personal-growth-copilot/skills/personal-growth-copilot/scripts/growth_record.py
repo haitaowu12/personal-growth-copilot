@@ -117,7 +117,7 @@ def _parse_timestamp(value: str) -> datetime:
 @lru_cache(maxsize=1)
 def evidence_source_ids() -> frozenset[str]:
     manifest = json.loads(EVIDENCE_SOURCE_PATH.read_text(encoding="utf-8"))
-    return frozenset(source["id"] for source in manifest["sources"])
+    return frozenset(manifest["source_ids"])
 
 
 def temporal_status(item: dict[str, Any], at: datetime) -> str:

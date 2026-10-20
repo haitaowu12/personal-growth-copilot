@@ -15,6 +15,7 @@ from referencing.exceptions import Unresolvable
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = "plugins/personal-growth-copilot/skills/personal-growth-copilot"
+RUNTIME_EVIDENCE_INDEX = f"{SKILL}/assets/evidence-source-ids.json"
 ASSET_PAIRS = (
     (f"{SKILL}/assets/technique-registry.json", f"{SKILL}/assets/technique-registry.schema.json"),
     ("examples/session-capsule.example.json", f"{SKILL}/assets/session-capsule.schema.json"),
@@ -143,6 +144,7 @@ def validate(root: Path = ROOT) -> list[str]:
 
     try:
         canonical = _load_json(root, "provenance/evidence-sources.json")
+        runtime_index = _load_json(root, RUNTIME_EVIDENCE_INDEX)
     except DesignValidationError as exc:
         return [str(exc)]
     if not isinstance(canonical, dict) or not isinstance(canonical.get("sources"), list) or any(
@@ -150,6 +152,13 @@ def validate(root: Path = ROOT) -> list[str]:
         for source in canonical["sources"]
     ):
         return ["canonical evidence sources must contain a list of source objects with IDs"]
+    if not isinstance(runtime_index, dict) or not isinstance(runtime_index.get("source_ids"), list) or any(
+        not isinstance(source_id, str) or not source_id for source_id in runtime_index["source_ids"]
+    ):
+        return ["runtime evidence-source index must contain a list of source IDs"]
+    _unique(runtime_index["source_ids"], "runtime evidence source IDs", errors)
+    runtime_evidence_set = set(runtime_index["source_ids"])
+    canonical_evidence_set = {source["id"] for source in canonical["sources"]}
     supplement = assets["provenance/evidence-supplement-20260813.json"]
     evidence_ids = [source["id"] for source in canonical["sources"] + supplement["sources"]]
     _unique(evidence_ids, "combined evidence source IDs", errors)
@@ -168,9 +177,14 @@ def validate(root: Path = ROOT) -> list[str]:
     _unique(technique_ids, "technique IDs", errors)
     _unique([technique["bcio_id"] for technique in techniques], "BCIO mappings", errors)
     for technique in techniques:
-        missing = sorted(set(technique["evidence_source_ids"]) - evidence_set)
+        # Ontology naming may cite candidate research above; technique citation
+        # lists must remain usable by the unchanged growth-record allowlist.
+        missing = sorted(set(technique["evidence_source_ids"]) - canonical_evidence_set)
         if missing:
-            errors.append(f"technique {technique['id']} references unknown evidence IDs {missing}")
+            errors.append(f"technique {technique['id']} references unknown evidence IDs for canonical runtime citations {missing}")
+        missing = sorted(set(technique["evidence_source_ids"]) - runtime_evidence_set)
+        if missing:
+            errors.append(f"technique {technique['id']} references IDs absent from the runtime evidence index {missing}")
         missing = sorted(set(technique["alternatives"]) - technique_set)
         if missing:
             errors.append(f"technique {technique['id']} references unknown alternatives {missing}")
