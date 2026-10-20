@@ -1,110 +1,224 @@
 #!/usr/bin/env python3
-"""Validate evidence-rebalancing candidate assets and cross-references."""
+"""Validate research design assets without executing or qualifying them."""
+
 from __future__ import annotations
-import argparse, json, re, sys
+
+import argparse
+import json
 from pathlib import Path
 from typing import Any
+
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema.exceptions import SchemaError
+from referencing.exceptions import Unresolvable
+
 ROOT = Path(__file__).resolve().parents[1]
+SKILL = "plugins/personal-growth-copilot/skills/personal-growth-copilot"
+ASSET_PAIRS = (
+    (f"{SKILL}/assets/technique-registry.json", f"{SKILL}/assets/technique-registry.schema.json"),
+    ("examples/session-capsule.example.json", f"{SKILL}/assets/session-capsule.schema.json"),
+    ("evals/ordinary-growth-cases.json", "evals/ordinary-growth-cases.schema.json"),
+    ("provenance/evidence-supplement-20260813.json", "provenance/evidence-supplement.schema.json"),
+    ("provenance/community-supplement-20260813.json", "provenance/community-supplement.schema.json"),
+)
+COMPARATORS = ("strong_generalist", "minimal_visible_model", "mi_informed", "session_capsule")
+DOCUMENTS = (
+    "docs/EVIDENCE_REBALANCING.md",
+    "docs/REFERENCE_HOST_CONTRACT.md",
+    "docs/GOVERNANCE_CROSSWALK.md",
+    "research/evidence-rebalancing-update-20260813.md",
+)
 
-class DesignValidationError(RuntimeError):
-    pass
 
-def _load_json(path: Path) -> Any:
+class DesignValidationError(ValueError):
+    """An unreadable or malformed checked-in design asset."""
+
+
+def _read_text(root: Path, relative_path: str) -> str:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise DesignValidationError(f"cannot load JSON {path.relative_to(ROOT)}: {type(exc).__name__}") from exc
+        return (root / relative_path).read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise DesignValidationError(
+            f"cannot read {relative_path}: {type(exc).__name__}"
+        ) from exc
 
-def _validate_schema(instance_path: Path, schema_path: Path) -> list[str]:
-    schema, instance = _load_json(schema_path), _load_json(instance_path)
+
+def _load_json(root: Path, relative_path: str) -> Any:
+    try:
+        return json.loads(_read_text(root, relative_path))
+    except json.JSONDecodeError as exc:
+        raise DesignValidationError(f"invalid JSON: {relative_path}") from exc
+
+
+def _has_external_reference(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(
+            (key in {"$ref", "$dynamicRef"} and (not isinstance(item, str) or not item.startswith("#")))
+            or _has_external_reference(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, list):
+        return any(_has_external_reference(item) for item in value)
+    return False
+
+
+def _validate_schema(instance: Any, schema: Any, instance_path: str, schema_path: str) -> list[str]:
     try:
         Draft202012Validator.check_schema(schema)
-    except Exception as exc:
-        return [f"invalid schema {schema_path.relative_to(ROOT)}: {type(exc).__name__}"]
+    except SchemaError:
+        return [f"invalid schema: {schema_path}"]
+    if _has_external_reference(schema):
+        return [f"design schema must use local fragment references only: {schema_path}"]
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
-    errors=[]
-    for error in sorted(validator.iter_errors(instance), key=lambda item: list(item.path)):
+    try:
+        failures = sorted(validator.iter_errors(instance), key=lambda error: str(list(error.path)))
+    except Unresolvable:
+        return [f"unresolvable schema reference: {schema_path}"]
+    errors = []
+    for error in failures:
         location = "/".join(str(part) for part in error.absolute_path) or "<root>"
-        errors.append(f"{instance_path.relative_to(ROOT)}:{location}: {error.message}")
+        errors.append(f"{instance_path}:{location}: {error.message}")
     return errors
+
 
 def _unique(values: list[str], label: str, errors: list[str]) -> None:
     if len(values) != len(set(values)):
         errors.append(f"{label} must be unique")
 
-def validate(root: Path = ROOT) -> list[str]:
-    global ROOT
-    ROOT=root.resolve(); errors=[]
-    pairs=(
-      (ROOT/"skill/personal-growth-copilot/assets/technique-registry.json", ROOT/"skill/personal-growth-copilot/assets/technique-registry.schema.json"),
-      (ROOT/"examples/session-capsule.example.json", ROOT/"skill/personal-growth-copilot/assets/session-capsule.schema.json"),
-      (ROOT/"evals/ordinary-growth-cases.json", ROOT/"evals/ordinary-growth-cases.schema.json"),
-      (ROOT/"provenance/evidence-supplement-20260813.json", ROOT/"provenance/evidence-supplement.schema.json"),
-      (ROOT/"provenance/community-supplement-20260813.json", ROOT/"provenance/community-supplement.schema.json"))
-    for instance_path,schema_path in pairs:
-        if not instance_path.exists(): errors.append(f"missing design asset: {instance_path.relative_to(ROOT)}"); continue
-        if not schema_path.exists(): errors.append(f"missing design schema: {schema_path.relative_to(ROOT)}"); continue
-        errors.extend(_validate_schema(instance_path,schema_path))
-    if errors: return errors
-    canonical=_load_json(ROOT/"provenance/evidence-sources.json")
-    supplement=_load_json(ROOT/"provenance/evidence-supplement-20260813.json")
-    evidence_ids=[x["id"] for x in canonical["sources"]]+[x["id"] for x in supplement["sources"]]
-    _unique(evidence_ids,"combined evidence source IDs",errors); evidence_set=set(evidence_ids)
-    supplement_ids={x["id"] for x in supplement["sources"]}
-    for source in supplement["sources"]:
-        for conflict in source["conflicts_with"]:
-            if conflict not in supplement_ids and conflict not in evidence_set: errors.append(f"evidence source {source['id']} conflicts with unknown source {conflict}")
-        if source["runtime_decision"] in {"add","retain","revise"} and not source["limitation"].strip(): errors.append(f"evidence source {source['id']} lacks a claim limitation")
-    registry=_load_json(ROOT/"skill/personal-growth-copilot/assets/technique-registry.json")
-    techniques=registry["techniques"]; technique_ids=[x["id"] for x in techniques]; technique_set=set(technique_ids)
-    _unique(technique_ids,"technique IDs",errors); _unique([x["bcio_id"] for x in techniques],"BCIO mappings",errors)
-    for technique in techniques:
-        if not re.fullmatch(r"BCIO:[0-9]{6}",technique["bcio_id"]): errors.append(f"technique {technique['id']} has malformed BCIO id")
-        missing=sorted(set(technique["evidence_source_ids"])-evidence_set)
-        if missing: errors.append(f"technique {technique['id']} references unknown evidence IDs {missing}")
-        missing=sorted(set(technique["alternatives"])-technique_set)
-        if missing: errors.append(f"technique {technique['id']} references unknown alternatives {missing}")
-        if technique["id"] in technique["alternatives"]: errors.append(f"technique {technique['id']} may not list itself as an alternative")
-        if technique["efficacy_claim"]!="not_established_for_this_product": errors.append(f"technique {technique['id']} overstates efficacy")
-    capsule=_load_json(ROOT/"examples/session-capsule.example.json")
-    experiment=capsule.get("experiment")
-    if experiment:
-        unknown=sorted(set(experiment["technique_ids"])-technique_set)
-        if unknown: errors.append(f"session capsule references unknown techniques {unknown}")
-    if capsule["retention"]["stored"] is not False or capsule["retention"]["host_receipt"] is not None: errors.append("example capsule must not claim persistence")
-    comparators={"strong_generalist":ROOT/"evals/baselines/strong_generalist.yaml","mi_informed":ROOT/"evals/baselines/mi_informed.yaml","session_capsule":ROOT/"evals/baselines/session_capsule.yaml"}
-    for system_id,path in comparators.items():
-        if not path.exists(): errors.append(f"candidate comparator missing: {path.relative_to(ROOT)}"); continue
-        data=yaml.safe_load(path.read_text(encoding="utf-8"))
-        if data.get("system_id")!=system_id: errors.append(f"candidate comparator system_id mismatch: {system_id}")
-        for field in ("same_model_required","same_safety_policy_required","same_context_access_required"):
-            if data.get(field) is not True: errors.append(f"candidate comparator {system_id} must set {field}=true")
-        if not data.get("claim_limit"): errors.append(f"candidate comparator {system_id} lacks claim_limit")
-    suite=_load_json(ROOT/"evals/ordinary-growth-cases.json"); cases=suite["cases"]
-    _unique([x["id"] for x in cases],"ordinary-growth case IDs",errors)
-    if len(cases)<12: errors.append("ordinary-growth candidate suite must contain at least 12 cases")
-    if sum(x["delayed_review"]["required"] for x in cases)<len(cases)//2: errors.append("at least half of ordinary-growth cases must require delayed review")
-    if sum(x["language"] in {"zh","mixed"} for x in cases)<2: errors.append("ordinary-growth candidate suite must include at least two Chinese or mixed-language cases")
-    comparator_set={"target","direct_assistant","structured_reflection",*comparators}
-    for case in cases:
-        unknown=sorted(set(case["required_comparators"])-comparator_set)
-        if unknown: errors.append(f"ordinary-growth case {case['id']} references unknown comparators {unknown}")
-        if "target" not in case["required_comparators"]: errors.append(f"ordinary-growth case {case['id']} must include target")
-    community=_load_json(ROOT/"provenance/community-supplement-20260813.json")
-    _unique([x["repository"] for x in community["sources"]],"community supplement repositories",errors)
-    for source in community["sources"]:
-        if source["license"].startswith("AGPL") and source["disposition"]!="ARCHITECTURE_ONLY": errors.append(f"AGPL donor {source['repository']} must remain architecture-only without an owner decision")
-        if not any(x in source["claim_limit"].lower() for x in ("efficacy","outcome","evidence")): errors.append(f"community donor {source['repository']} needs an explicit evidence claim limit")
-    for path in (ROOT/"docs/EVIDENCE_REBALANCING.md",ROOT/"docs/REFERENCE_HOST_CONTRACT.md",ROOT/"docs/GOVERNANCE_CROSSWALK.md",ROOT/"research/evidence-rebalancing-update-20260813.md"):
-        if not path.exists() or len(path.read_text(encoding="utf-8").strip())<500: errors.append(f"design documentation missing or too short: {path.relative_to(ROOT)}")
+
+def _validate_comparators(root: Path) -> list[str]:
+    errors = []
+    for comparator_id in COMPARATORS:
+        path = f"evals/comparators/{comparator_id}.yaml"
+        if (root / f"evals/baselines/{comparator_id}.yaml").exists():
+            errors.append(f"comparator {comparator_id} must not have a duplicate legacy baseline")
+        try:
+            data = yaml.safe_load(_read_text(root, path))
+        except (DesignValidationError, yaml.YAMLError) as exc:
+            errors.append(str(exc) if isinstance(exc, DesignValidationError) else f"invalid YAML: {path}")
+            continue
+        if not isinstance(data, dict):
+            errors.append(f"comparator must be a mapping: {path}")
+            continue
+        required = {
+            "schema_version": "1.0",
+            "comparator_id": comparator_id,
+            "status": "design-only-unexecuted",
+            "memory_policy": "READ_ONLY_USER_APPROVED",
+        }
+        for field, expected in required.items():
+            if data.get(field) != expected:
+                errors.append(f"comparator {comparator_id} must set {field}={expected}")
+        for field in ("same_model_required", "same_safety_policy_required", "same_context_access_required"):
+            if data.get(field) is not True:
+                errors.append(f"comparator {comparator_id} must set {field}=true")
+        for field in ("comparison_role", "claim_limit"):
+            if not isinstance(data.get(field), str) or not data[field].strip():
+                errors.append(f"comparator {comparator_id} needs a nonempty {field}")
+        for field in ("instructions", "method_exclusions"):
+            values = data.get(field)
+            if not isinstance(values, list) or not values or any(
+                not isinstance(value, str) or not value.strip() for value in values
+            ):
+                errors.append(f"comparator {comparator_id} needs nonempty {field}")
     return errors
 
+
+def validate(root: Path = ROOT) -> list[str]:
+    root = root.resolve()
+    errors: list[str] = []
+    assets: dict[str, Any] = {}
+    for instance_path, schema_path in ASSET_PAIRS:
+        try:
+            instance = _load_json(root, instance_path)
+            schema = _load_json(root, schema_path)
+            errors.extend(_validate_schema(instance, schema, instance_path, schema_path))
+            assets[instance_path] = instance
+        except DesignValidationError as exc:
+            errors.append(str(exc))
+    # Cross-reference checks need the shapes established by the schemas above.
+    if errors:
+        return errors
+
+    try:
+        canonical = _load_json(root, "provenance/evidence-sources.json")
+    except DesignValidationError as exc:
+        return [str(exc)]
+    if not isinstance(canonical, dict) or not isinstance(canonical.get("sources"), list) or any(
+        not isinstance(source, dict) or not isinstance(source.get("id"), str) or not source["id"]
+        for source in canonical["sources"]
+    ):
+        return ["canonical evidence sources must contain a list of source objects with IDs"]
+    supplement = assets["provenance/evidence-supplement-20260813.json"]
+    evidence_ids = [source["id"] for source in canonical["sources"] + supplement["sources"]]
+    _unique(evidence_ids, "combined evidence source IDs", errors)
+    evidence_set = set(evidence_ids)
+    for source in supplement["sources"]:
+        for conflict in source["conflicts_with"]:
+            if conflict not in evidence_set:
+                errors.append(f"evidence source {source['id']} conflicts with unknown source {conflict}")
+
+    registry = assets[f"{SKILL}/assets/technique-registry.json"]
+    if registry["ontology"]["evidence_source_id"] not in evidence_set:
+        errors.append("technique ontology references an unknown evidence source")
+    techniques = registry["techniques"]
+    technique_ids = [technique["id"] for technique in techniques]
+    technique_set = set(technique_ids)
+    _unique(technique_ids, "technique IDs", errors)
+    _unique([technique["bcio_id"] for technique in techniques], "BCIO mappings", errors)
+    for technique in techniques:
+        missing = sorted(set(technique["evidence_source_ids"]) - evidence_set)
+        if missing:
+            errors.append(f"technique {technique['id']} references unknown evidence IDs {missing}")
+        missing = sorted(set(technique["alternatives"]) - technique_set)
+        if missing:
+            errors.append(f"technique {technique['id']} references unknown alternatives {missing}")
+        if technique["id"] in technique["alternatives"]:
+            errors.append(f"technique {technique['id']} may not list itself as an alternative")
+
+    capsule = assets["examples/session-capsule.example.json"]
+    if capsule["persistence"]["status"] == "confirmed_by_host" or capsule["persistence"]["host_receipt_sha256"] is not None:
+        errors.append("example capsule must not claim persistence")
+    errors.extend(_validate_comparators(root))
+
+    cases = assets["evals/ordinary-growth-cases.json"]["cases"]
+    _unique([case["id"] for case in cases], "ordinary-growth case IDs", errors)
+    if 2 * sum(case["delayed_review"]["required"] for case in cases) < len(cases):
+        errors.append("at least half of ordinary-growth cases must require delayed review")
+    if sum(case["language"] in {"zh", "mixed"} for case in cases) < 2:
+        errors.append("ordinary-growth candidate suite must include at least two Chinese or mixed-language cases")
+    comparator_set = {"target", "direct_assistant", "structured_reflection", *COMPARATORS}
+    for case in cases:
+        unknown = sorted(set(case["required_comparators"]) - comparator_set)
+        if unknown:
+            errors.append(f"ordinary-growth case {case['id']} references unknown comparators {unknown}")
+        if "target" not in case["required_comparators"]:
+            errors.append(f"ordinary-growth case {case['id']} must include target")
+
+    community = assets["provenance/community-supplement-20260813.json"]
+    _unique([source["repository"] for source in community["sources"]], "community supplement repositories", errors)
+    for source in community["sources"]:
+        if (source["license"].startswith("AGPL") or source["license"].startswith("Mixed:")) and source["disposition"] != "ARCHITECTURE_ONLY":
+            errors.append(f"restricted-license donor {source['repository']} must remain architecture-only without an owner decision")
+        if not any(word in source["claim_limit"].lower() for word in ("efficacy", "outcome", "evidence")):
+            errors.append(f"community donor {source['repository']} needs an explicit evidence claim limit")
+    for path in DOCUMENTS:
+        try:
+            if len(_read_text(root, path).strip()) < 500:
+                errors.append(f"design documentation missing or too short: {path}")
+        except DesignValidationError as exc:
+            errors.append(str(exc))
+    return errors
+
+
 def main() -> int:
-    parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("--root",type=Path,default=ROOT)
-    errors=validate(parser.parse_args().root)
-    print(json.dumps({"status":"pass" if not errors else "fail","errors":errors},indent=2))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", type=Path, default=ROOT)
+    errors = validate(parser.parse_args().root)
+    print(json.dumps({"status": "pass" if not errors else "fail", "errors": errors}, indent=2))
     return 1 if errors else 0
 
-if __name__=="__main__": sys.exit(main())
+
+if __name__ == "__main__":
+    raise SystemExit(main())

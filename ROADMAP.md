@@ -1,6 +1,41 @@
+# Source-grounded learning candidate
+
+Current development adds a portable offline requirements-writing lesson, strict topic
+packs, deterministic progression and progress replay, explicit saving/export/import,
+source references, and a conversational learning lane. Human-learning outcomes and
+browser acceptance evidence remain separate from code and schema checks. See
+`docs/LEARNING_RELEASE.md` for acceptance and `docs/LEARNING_PILOT.md` for next evidence.
+
+## Current learning follow-through
+
+Implemented topic 1.0.2 corrections, recorded writing-example exposure, recovery
+dialogs, storage-conflict detection, draft rescue and portable packaging after an
+independent model rehearsal. Protocol and rubric 1.2 remain draft human-review
+inputs; see `docs/LEARNING_REHEARSAL.md`. Next operational
+gates: independent 21-item content approval, named outcome custodian and scorers,
+consent/retention freeze, pilot-device rehearsal and actual learner observations.
+These are not satisfied by model review or deterministic tests. No additional topics,
+adaptive engine or automatic promotion is planned before those observations.
+
+## Bounded research-design integration
+
+The older evidence-rebalancing proposal is reconciled with the current plugin
+layout and canonical capsule contract. It adds eight candidate technique
+entries, 14 authored ordinary-growth cases, two additional design-only
+comparators, and source/gap notes. The existing strong-generalist and
+minimal-visible-model definitions remain authoritative; all four comparator
+designs require the same model, safety policy, and approved context access.
+
+The cases and comparators are outside governed execution. Eight ontology
+identifier/label mappings have been checked against a pinned primary source;
+this verifies naming only. Design-asset validation is a ninth deterministic
+qualification check and does not establish user benefit, host operation,
+installation, or promotion. The current learning follow-through above remains
+the operational priority. See `docs/EVIDENCE_REBALANCING.md`.
+
 # Roadmap
 
-## Completed through 0.4.0-alpha.7
+## Completed through 0.4.0-alpha.11
 
 - standalone private repository and clean-room lineage;
 - explicit-only Agent Skill scaffold;
@@ -41,64 +76,59 @@
   and owner-only promotion; the default trust policy remains unconfigured;
 - 16 pinned community repositories, including four current evaluation-system
   donors used only for clean-room architecture and failure-mode patterns;
-- local Python 3.13 validation and skill-creator validation;
+- local Python 3.13 validation and skill-creator validation.
 - fail-closed source manifests for reviewer, holdout, named-host privacy,
   bilingual, and pilot release gates, including bounded evidence-file replay,
   exact reviewer/result reconciliation, derived holdout/pilot completeness,
-  and rejection of signed assertion-only promotion packets;
+  and rejection of signed assertion-only promotion packets.
 - create-only private qualification-packet initialization with restrictive
   permissions, no generated authority material or fake evidence, candidate
-  binding, PEM private-key detection, and trust-policy input preflight.
-
-## Candidate evidence-rebalancing slice
-
-The following assets are implemented as candidates and must not be described as
-executed behavioral evidence:
-
-- a Behaviour Change Intervention Ontology-aligned technique registry with
-  eligibility, contraindication, burden, proximal, disconfirming, and review
-  fields;
-- an explicit-save, host-verifiable session capsule;
-- 14 ordinary-growth and longitudinal authored cases with burden budgets and
-  delayed review expectations;
-- strong-generalist, MI-informed, and session-capsule comparator contracts;
-- current research and community supplements with conflicting evidence,
-  adoption, maintenance, licensing, and claim-limit fields;
-- a reference-host contract and ICF/NIST governance gap crosswalk;
-- deterministic design-asset validation.
-
-Codex must reproduce repository qualification and decide how to integrate these
-candidate assets into the canonical run plan and ledgers before a candidate
-freeze. The new suite and comparators do not alter the current release gates by
-existing alone.
+  binding, PEM private-key detection, per-input incremental validation, and
+  all-or-nothing trust-policy preflight.
+- create-only external-participant intake generation with exact candidate and
+  plan binding, machine-readable role responsibilities, unresolved host-control
+  remediation, and an explicit non-evidence claim limit.
+- fail-closed read-only named-host privacy discovery with hashed command
+  observations, exact private-output boundaries, incomplete sync-inventory
+  handling, and a hard prohibition on persistence authorization.
+- design-only outcome measurement across process, proximal, delayed, burden,
+  and dependence layers with two fixed primary outcome IDs, explicit missing
+  and dropout treatment, two same-capability comparator definitions, and a
+  schema-bound explicit-save session capsule.
 
 ## Next evidence slice
 
-1. reproduce the complete deterministic qualification from a clean checkout of
-   the exact candidate and repair any integration defects;
-2. integrate accepted ordinary-growth cases and strong comparators into one
-   frozen target plan while preserving every safety and privacy hard gate;
-3. implement one named reference host for invocation, attestations, safety
-   observations, current resources, and persistence semantics;
+1. extend the governed run schemas, provider profiles, results, aggregation,
+   and attempt inventory to execute the strong-generalist and
+   minimal-visible-model comparators; assess the additional MI-informed and
+   session-capsule designs within the same freeze, and retain current baselines
+   as ablations;
+2. expand ordinary-growth and multi-session cases, including disconfirmation,
+   direct-answer, intentional non-action, low engagement, non-attempt, and
+   dropout paths;
+3. initialize the private packet on a dedicated non-sync evaluation host,
+   provision the real independent inputs, pass preregistration preflight, and
+   freeze the exact trust policy;
 4. provision restricted credentials, then run the authored cases on a frozen
-   target model and matched comparators;
-5. add independently authored untouched cases after the skill and evaluator
-   freeze;
+   target model, current ablations, and strong comparators while collecting the
+   fixed outcome, burden, and dependence measures;
+5. add independently authored untouched cases after the skill freezes;
 6. conduct two-reviewer safety and English/Chinese adjudication and calculate
    preregistered agreement;
-7. produce signed reviewer-attestation and immutable attempt-inventory evidence
-   using the implemented receipt protocol;
+7. produce signed reviewer-attestation and
+   immutable attempt-inventory evidence using the implemented receipt protocol;
 8. calibrate any auxiliary model judge to human labels;
-9. execute the named-host privacy/security, deletion, backup, and incident
-   evidence contract;
-10. pre-register and run a 10–20 episode consented feasibility pilot over 4–8
-    weeks, reporting process, proximal, delayed, burden, dependence, withdrawal,
-    and adverse-event outcomes separately;
-11. obtain signed independent release review and explicit owner promotion.
+9. resolve every `FAIL` or `UNKNOWN` from named-host discovery, then execute the
+   source-witnessed host privacy/security and incident evidence contract;
+10. implement a persistent adapter only if host discovery proves correct storage,
+   encryption, no-sync path, backup, correction, export, and deletion behavior;
+11. run a 10–20 episode consented private pilot over 4–8 weeks, retaining
+    failures, non-attempts, missing reviews, withdrawals, and dependence signals;
+12. obtain signed independent release review and explicit owner promotion.
 
 ## Stop conditions
 
-Do not install, register, enable implicit invocation, initialize real sensitive
+Do not enable implicit invocation, initialize real sensitive
 state, claim production readiness, or run a real pilot until its preceding
 gates have evidence. A strong average score cannot waive a hard safety,
 privacy, dependence, or fabricated-persistence failure.

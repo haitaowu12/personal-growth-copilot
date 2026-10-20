@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import stat
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from unittest import mock
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +29,8 @@ class QualificationPacketTests(unittest.TestCase):
         qualification_packet.initialize_packet(
             root,
             "campaign-private-qualification-0001",
+            "restricted-local-host",
+            "pgc-private-evaluation-001",
             source_identity=lambda _: CANDIDATE,
             clock=lambda: FIXED_TIME,
         )
@@ -55,6 +59,12 @@ class QualificationPacketTests(unittest.TestCase):
             self.assertEqual(stat.S_IMODE(plan_path.stat().st_mode), 0o600)
             plan_bytes = plan_path.read_bytes()
             plan = json.loads(plan_bytes)
+            self.assertEqual(plan["named_host"], "restricted-local-host")
+            self.assertEqual(plan["environment_id"], "pgc-private-evaluation-001")
+            self.assertEqual(
+                plan["storage_root_sha256"],
+                qualification_packet.host_privacy_discovery.path_identity(root),
+            )
             self.assertEqual(plan_bytes, release_evidence.canonical_bytes(plan))
             self.assertEqual(release_evidence.schema_errors(plan, "qualification_plan"), [])
             self.assertEqual(
@@ -69,6 +79,8 @@ class QualificationPacketTests(unittest.TestCase):
                 qualification_packet.initialize_packet(
                     root,
                     "campaign-private-qualification-0001",
+                    "restricted-local-host",
+                    "pgc-private-evaluation-001",
                     source_identity=lambda _: CANDIDATE,
                 )
 
@@ -88,8 +100,12 @@ class QualificationPacketTests(unittest.TestCase):
             self.assertEqual(result["status"], "NOT_READY")
             self.assertFalse(result["ready_to_freeze"])
             self.assertEqual(result["missing_inputs"], list(qualification_packet.INPUT_LABELS))
+            self.assertEqual(result["invalid_inputs"], [])
             self.assertEqual(result["errors"], [])
             self.assertIsNone(result["validated_bindings"])
+            self.assertTrue(
+                all(item["status"] == "MISSING" for item in result["requirements"])
+            )
             self.assertEqual(
                 result["preflight_sha256"],
                 release_evidence.object_hash(result, "preflight_sha256"),
@@ -116,12 +132,17 @@ class QualificationPacketTests(unittest.TestCase):
                 root,
                 source_identity=lambda _: CANDIDATE,
                 clock=lambda: FIXED_TIME,
+                input_validator=lambda **_: None,
                 policy_preparer=prepare,
             )
             self.assertEqual(result["status"], "READY_TO_FREEZE")
             self.assertTrue(result["ready_to_freeze"])
             self.assertEqual(result["missing_inputs"], [])
+            self.assertEqual(result["invalid_inputs"], [])
             self.assertEqual(result["errors"], [])
+            self.assertTrue(
+                all(item["status"] == "VALID" for item in result["requirements"])
+            )
             self.assertEqual(result["validated_bindings"]["authority_count"], 9)
             self.assertEqual(
                 result["validated_bindings"]["qualification_plan_sha256"],
@@ -130,6 +151,274 @@ class QualificationPacketTests(unittest.TestCase):
             self.assertEqual(captured["candidate"], CANDIDATE)
             self.assertEqual(captured["packet_root"], root.resolve())
             self.assertNotIn("policy_sha256", result["validated_bindings"])
+
+    def test_preflight_validates_each_available_input_before_full_freeze(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            target = root / "target" / "target-config.json"
+            target.write_bytes(release_evidence.canonical_bytes({}))
+            os.chmod(target, 0o600)
+
+            def unexpected(**_: object) -> dict:
+                self.fail("policy builder must not run with invalid or missing inputs")
+
+            result = qualification_packet.preflight_packet(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                policy_preparer=unexpected,
+            )
+            statuses = {
+                item["input_id"]: item for item in result["requirements"]
+            }
+            self.assertEqual(result["status"], "NOT_READY")
+            self.assertEqual(result["invalid_inputs"], ["target_config"])
+            self.assertNotIn("target_config", result["missing_inputs"])
+            self.assertEqual(statuses["target_config"]["status"], "INVALID")
+            self.assertTrue(statuses["target_config"]["validation_errors"])
+            self.assertTrue(
+                all(
+                    statuses[input_id]["status"] == "MISSING"
+                    for input_id in qualification_packet.INPUT_LABELS
+                    if input_id != "target_config"
+                )
+            )
+
+    def test_preflight_reports_partial_validity_without_calling_policy_builder(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            target = root / "target" / "target-config.json"
+            target.write_bytes(release_evidence.canonical_bytes({"draft": True}))
+            os.chmod(target, 0o600)
+            validated: list[str] = []
+
+            def validate(**kwargs: object) -> None:
+                validated.append(str(kwargs["input_id"]))
+
+            def unexpected(**_: object) -> dict:
+                self.fail("policy builder must wait for all validated inputs")
+
+            result = qualification_packet.preflight_packet(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                input_validator=validate,
+                policy_preparer=unexpected,
+            )
+            statuses = {
+                item["input_id"]: item for item in result["requirements"]
+            }
+            self.assertEqual(validated, ["target_config"])
+            self.assertEqual(result["invalid_inputs"], [])
+            self.assertEqual(statuses["target_config"]["status"], "VALID")
+            self.assertEqual(statuses["target_config"]["validation_errors"], [])
+            self.assertFalse(result["ready_to_freeze"])
+
+    def test_preflight_dispatches_validation_for_every_declared_input(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            self.populate_declared_inputs(root)
+
+            def unexpected(**_: object) -> dict:
+                self.fail("policy builder must not run with invalid inputs")
+
+            result = qualification_packet.preflight_packet(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                policy_preparer=unexpected,
+            )
+            self.assertEqual(
+                result["invalid_inputs"], list(qualification_packet.INPUT_LABELS)
+            )
+            self.assertEqual(result["missing_inputs"], [])
+            self.assertTrue(
+                all(
+                    item["status"] == "INVALID" and item["validation_errors"]
+                    for item in result["requirements"]
+                )
+            )
+
+    def test_external_intake_is_nonpromotional_exact_and_create_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            intake = qualification_packet.build_external_intake(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+            )
+            self.assertEqual(
+                release_evidence.schema_errors(intake, "qualification_intake"), []
+            )
+            self.assertEqual(intake["status"], "AWAITING_EXTERNAL_INPUTS")
+            self.assertEqual(
+                intake["intake_sha256"],
+                release_evidence.object_hash(intake, "intake_sha256"),
+            )
+            self.assertEqual(
+                [item["status"] for item in intake["artifact_requirements"]],
+                ["MISSING"] * 5,
+            )
+            self.assertEqual(
+                intake["host_remediation"][0]["status"], "MISSING"
+            )
+            self.assertEqual(intake["host_discovery"]["status"], "MISSING")
+            serialized = release_evidence.canonical_bytes(intake)
+            self.assertNotIn(b"PRIVATE KEY", serialized)
+            self.assertNotIn(b"public_key_path\":null", serialized)
+            output = root / "review" / "external-intake.json"
+            exact = qualification_packet._intake_output(root.resolve(), output)
+            release_packet.write_private_new(exact, intake)
+            self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o600)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError, "create-only"
+            ):
+                qualification_packet._intake_output(root.resolve(), output)
+
+    def test_external_intake_rejects_invalid_or_stale_host_discovery(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            discovery = root / "privacy" / "host-discovery.json"
+            discovery.write_bytes(release_evidence.canonical_bytes({}))
+            os.chmod(discovery, 0o600)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError,
+                "invalid host privacy discovery",
+            ):
+                qualification_packet.build_external_intake(
+                    root,
+                    source_identity=lambda _: CANDIDATE,
+                    clock=lambda: FIXED_TIME,
+                )
+
+    def test_external_intake_preserves_exact_host_discovery_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            discovery_record = qualification_packet.host_privacy_discovery.discover(
+                storage_root=root,
+                named_host="restricted-local-host",
+                environment_id="pgc-private-evaluation-001",
+                sync_roots=[],
+                sync_inventory_complete=False,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                runner=lambda *_: self.fail("Linux discovery must not run host commands"),
+                platform_system=lambda: "Linux",
+                platform_release=lambda: "test",
+                platform_machine=lambda: "test",
+                home_root=lambda: root.parent,
+                directory_acl_probe=lambda *_: "ABSENT",
+            )
+            discovery = root / "privacy" / "host-discovery.json"
+            discovery.write_bytes(release_evidence.canonical_bytes(discovery_record))
+            os.chmod(discovery, 0o600)
+            intake = qualification_packet.build_external_intake(
+                root,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+            )
+            provenance = intake["host_discovery"]
+            self.assertEqual(provenance["status"], "PRESENT")
+            self.assertEqual(provenance["named_host"], "restricted-local-host")
+            self.assertEqual(
+                provenance["environment_id"], "pgc-private-evaluation-001"
+            )
+            self.assertEqual(
+                provenance["generated_at"], discovery_record["generated_at"]
+            )
+            self.assertEqual(
+                provenance["report_sha256"], discovery_record["report_sha256"]
+            )
+            self.assertEqual(
+                provenance["storage_root_sha256"],
+                discovery_record["storage_root_sha256"],
+            )
+
+        with tempfile.TemporaryDirectory() as directory_name:
+            root = self.initialize(Path(directory_name))
+            discovery_record = qualification_packet.host_privacy_discovery.discover(
+                storage_root=root,
+                named_host="restricted-local-host",
+                environment_id="pgc-private-evaluation-001",
+                sync_roots=[],
+                sync_inventory_complete=False,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME - timedelta(days=1),
+                runner=lambda *_: self.fail("Linux discovery must not run host commands"),
+                platform_system=lambda: "Linux",
+                platform_release=lambda: "test",
+                platform_machine=lambda: "test",
+                home_root=lambda: root.parent,
+                directory_acl_probe=lambda *_: "ABSENT",
+            )
+            discovery = root / "privacy" / "host-discovery.json"
+            discovery.write_bytes(release_evidence.canonical_bytes(discovery_record))
+            os.chmod(discovery, 0o600)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError,
+                "predates the qualification packet",
+            ):
+                qualification_packet.build_external_intake(
+                    root,
+                    source_identity=lambda _: CANDIDATE,
+                    clock=lambda: FIXED_TIME,
+                )
+
+    def test_storage_root_identity_is_reconciled_across_intake_and_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name)
+            root = self.initialize(parent)
+            other_storage = parent / "other-storage"
+            other_storage.mkdir(mode=0o700)
+            os.chmod(other_storage, 0o700)
+            discovery_record = qualification_packet.host_privacy_discovery.discover(
+                storage_root=other_storage,
+                named_host="restricted-local-host",
+                environment_id="pgc-private-evaluation-001",
+                sync_roots=[],
+                sync_inventory_complete=False,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: FIXED_TIME,
+                runner=lambda *_: self.fail("Linux discovery must not run host commands"),
+                platform_system=lambda: "Linux",
+                platform_release=lambda: "test",
+                platform_machine=lambda: "test",
+                home_root=lambda: parent,
+                directory_acl_probe=lambda *_: "ABSENT",
+            )
+            discovery = root / "privacy" / "host-discovery.json"
+            discovery.write_bytes(release_evidence.canonical_bytes(discovery_record))
+            os.chmod(discovery, 0o600)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError,
+                "differs from the qualification storage root",
+            ):
+                qualification_packet.build_external_intake(
+                    root,
+                    source_identity=lambda _: CANDIDATE,
+                    clock=lambda: FIXED_TIME,
+                )
+
+            identity = {
+                "named_host": "restricted-local-host",
+                "environment_id": "pgc-private-evaluation-001",
+                "storage_root_sha256": "f" * 64,
+            }
+            with mock.patch.object(
+                release_packet,
+                "load_privacy_host_preregistration",
+                return_value=(b"{}", identity, "1" * 64),
+            ):
+                with self.assertRaisesRegex(
+                    release_evidence.ReleaseEvidenceError,
+                    "differs from the qualification storage root",
+                ):
+                    release_packet.validate_qualification_preregistration_input(
+                        input_id="privacy_host_identity",
+                        packet_root=root.resolve(),
+                        path=root / "privacy" / "host-identity.json",
+                        candidate=CANDIDATE,
+                    )
 
     def test_preflight_rejects_candidate_drift_private_keys_and_existing_policy(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
@@ -251,6 +540,26 @@ class QualificationPacketTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 release_evidence.ReleaseEvidenceError,
                 "invalid qualification packet plan",
+            ):
+                qualification_packet.preflight_packet(
+                    root,
+                    source_identity=lambda _: CANDIDATE,
+                    clock=lambda: FIXED_TIME,
+                )
+
+    def test_copied_or_replaced_packet_root_invalidates_the_frozen_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            parent = Path(directory_name)
+            root = self.initialize(parent)
+            original = parent / "original-packet-object"
+            root.rename(original)
+            shutil.copytree(original, root)
+            for path in root.rglob("*"):
+                os.chmod(path, 0o700 if path.is_dir() else 0o600)
+            os.chmod(root, 0o700)
+            with self.assertRaisesRegex(
+                release_evidence.ReleaseEvidenceError,
+                "storage root differs from the frozen plan",
             ):
                 qualification_packet.preflight_packet(
                     root,

@@ -155,7 +155,7 @@ def main() -> int:
                 "tool_permissions": sorted(set(args.tool_permission)),
                 "environment_allowlist": sorted(set(args.environment_name)),
                 "skill_sha256": file_hash(
-                    ROOT / "skill/personal-growth-copilot/SKILL.md"
+                    ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md"
                 ),
                 "profile_bundle_sha256": target_session.profile_bundle_sha256(),
             },

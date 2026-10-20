@@ -127,7 +127,7 @@ def load_request() -> dict:
 def load_profile(payload: dict, repository: Path) -> str:
     execution = payload["provider_execution"]
     request = payload["request"]
-    skill_path = repository / "skill/personal-growth-copilot/SKILL.md"
+    skill_path = repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md"
     cached: dict[Path, bytes] = {}
 
     def read(path: Path) -> bytes:
@@ -148,13 +148,13 @@ def load_profile(payload: dict, repository: Path) -> str:
     } != execution["baseline_sha256"]:
         fail("baseline hashes differ from the frozen provider request")
     safety_paths = (
-        repository / "skill/personal-growth-copilot/references/safety-and-scope.md",
-        repository / "safety/resource-resolver-interface.md",
+        repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/safety-and-scope.md",
+        repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
     )
     system_id = request["system_id"]
     if system_id == "target":
         references = sorted(
-            (repository / "skill/personal-growth-copilot/references").glob("*.md")
+            (repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references").glob("*.md")
         )
         documents = [skill_path, *references]
     elif system_id in baseline_paths:
