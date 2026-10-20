@@ -1,46 +1,56 @@
 {
   "schema_version": "1.0",
-  "capsule_id": "cap_0123456789abcdef0123456789abcdef",
-  "created_at": "2026-08-13T17:00:00Z",
-  "objective": "Choose a bounded first test for a delayed but important project.",
-  "user_wording": ["The project matters, but I feel overloaded when I look at the whole thing."],
+  "capsule_id": "capsule-0123456789abcdef",
+  "created_at": "2026-08-13T03:40:00Z",
+  "session_objective": "Choose a low-burden way to practice a presentation before Friday.",
+  "preserved_user_wording": "I want practice that reveals where I get stuck, not another perfect script.",
   "confirmed_facts": [
-    {"id": "fact-1", "statement": "The next deliverable is already defined.", "source": "USER-REPORTED"},
-    {"id": "fact-2", "statement": "Previous detailed plans did not increase initiation.", "source": "USER-REPORTED"}
+    {
+      "statement": "The presentation is scheduled for Friday.",
+      "source_tag": "USER-REPORTED"
+    },
+    {
+      "statement": "A full rehearsal feels too burdensome tonight.",
+      "source_tag": "USER-REPORTED"
+    }
   ],
   "working_hypotheses": [
     {
-      "id": "hyp-1",
-      "statement": "Perceived task size may be blocking initiation more than task ambiguity.",
-      "confidence": "medium",
-      "supporting_fact_ids": ["fact-1", "fact-2"],
-      "alternative": "The project may not be a current priority despite its stated importance.",
-      "disconfirming_observation": "A ten-minute start is still not attempted when the task is reduced and time is available.",
-      "status": "active"
+      "id": "hyp-0123abcd",
+      "statement": "A short unscripted opening may reveal the first material retrieval gap.",
+      "status": "tentative",
+      "alternatives": [
+        "The main obstacle may be fatigue rather than retrieval.",
+        "The difficult part may occur during questions rather than the opening."
+      ]
     }
   ],
-  "unknowns_that_matter": ["Whether a competing obligation is consuming the available start window."],
+  "unknowns": [
+    "Whether the first retrieval gap occurs in the opening or later questions."
+  ],
   "user_choice": {
-    "status": "ACTION",
-    "chosen_by": "USER",
-    "statement": "Attempt one ten-minute start tomorrow morning.",
-    "reason": "It tests initiation without requiring a new full plan."
+    "kind": "action",
+    "wording": "Practice the opening aloud once for five minutes tonight."
   },
-  "experiment": {
-    "technique_ids": ["PGC-BCT-003", "PGC-BCT-008"],
-    "prediction": "If perceived task size is the main barrier, a bounded start should be attempted when the first step is visible.",
-    "action": "Open the defined deliverable and work for ten minutes at 09:00.",
-    "evidence": "Whether the start occurs and what blocks it if it does not.",
-    "disconfirming_signal": "No attempt despite an available start window and a visible first step.",
-    "review_at": "2026-08-14T17:00:00Z",
-    "stop_condition": "Stop if the task reveals an unrecognized safety, authority, or workload constraint."
+  "prediction": "One specific retrieval gap will become observable within five minutes.",
+  "disconfirming_observation": "The opening is fluent and the first difficulty appears only during questions.",
+  "review_point": {
+    "kind": "event",
+    "value": "Immediately after the five-minute practice."
   },
-  "review": {
-    "review_at": "2026-08-14T17:00:00Z",
-    "proximal_outcome": "The user reports whether the start occurred and the immediate barrier.",
-    "delayed_outcome": "The observation changes, narrows, or rejects the working hypothesis."
-  },
-  "open_questions": ["What competing obligation would make tomorrow's start window unavailable?"],
-  "memory_delta": {"status": "NOT_REQUESTED", "proposed_fields": [], "host_result": null},
-  "retention": {"policy": "SESSION_ONLY", "stored": false, "host_receipt": null}
+  "open_question": "Which later section should be tested if the opening is fluent?",
+  "persistence": {
+    "status": "previewed",
+    "exact_proposed_delta": [
+      {
+        "op": "add",
+        "path": "/experiments/-",
+        "value": {
+          "action": "Practice the opening aloud once for five minutes tonight.",
+          "review_point": "Immediately after practice."
+        }
+      }
+    ],
+    "host_receipt_sha256": null
+  }
 }

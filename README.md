@@ -1,10 +1,54 @@
 # Personal Growth Copilot
 
-Standalone clean-room development repository for an explicit-invocation Agent
-Skill supporting context-rich personal growth, reflective dialogue, practical
-behavior-change experiments, and longitudinal learning.
+Installable clean-room Codex plugin and standalone Agent Skill supporting
+context-rich personal growth, reflective dialogue, practical behavior-change
+experiments, and longitudinal learning.
 
-Current version: `0.4.0-alpha.7`
+Current version: `0.5.0-alpha.1`
+
+## Learn through practice
+
+The current development candidate adds a source-grounded requirements-writing lesson:
+topic `requirements-writing@1.0.2`: three concepts, twelve scenario questions, worked examples, written applications,
+self-review, and delayed retrieval. It runs offline with no account or model. Source
+links open only on request; progress saving is opt-in.
+
+Writing criteria are visible before drafting. Opening a writing example is recorded
+in practice progress; self-review records the learner's judgment and does not grade
+the response. Version 1.0.2 clarifies question alternatives and preserves observed
+use failures alongside timing passes. Human content acceptance remains pending.
+
+Build a portable lesson from this checkout:
+
+```bash
+python3 plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/build_learning.py \
+  --out build/learning/requirements-writing.html
+```
+
+Use the declared Python environment below. Open the HTML in a modern browser. Export
+progress before closing if device saving is off. See `docs/TOPIC_PACKS.md` for source
+provenance, update compatibility, and distribution. Build the complete portable bundle
+with `python3 scripts/package_learning.py --out build/learning-candidate.zip`. Read
+`docs/LEARNING_ACCEPTANCE.md` for verified scope and pending browser checks. Learning efficacy and production
+qualification remain unproven. The [feasibility protocol](docs/LEARNING_PILOT.md),
+[0–10 scoring rubric, version 1.2](docs/LEARNING_SCORING.md) and [run sheet](docs/LEARNING_PILOT_RUN_SHEET.md)
+are supplied for human review before recruitment.
+
+## Install
+
+The published tag below remains the earlier alpha; it does not include this learning
+candidate until a reviewed release is published. Use the source build above for this
+candidate.
+
+```bash
+codex plugin marketplace add haitaowu12/personal-growth-copilot --ref v0.4.0-alpha.12
+codex plugin add personal-growth-copilot@personal
+```
+
+Start a new task, then invoke `$personal-growth-copilot` explicitly. The
+complete plugin, standalone-skill alternative, update procedure, privacy
+boundary, and package layout are documented in
+[`docs/INSTALLATION.md`](docs/INSTALLATION.md).
 
 This repository does not contain or claim byte equivalence to the unavailable
 historical `0.2.0-rc.1` candidate. See
@@ -73,8 +117,21 @@ interaction decisions. Overlap is allowed; activation remains explicit.
   arbitrary hashes.
 - a create-only private qualification-packet initializer and fail-closed
   preregistration preflight. It creates no identities, evidence, private keys,
-  holdout cases, or pilot records; it reports the real missing inputs and reuses
-  the trust-policy validator before a candidate can be frozen.
+  holdout cases, or pilot records; it reports each real input as `MISSING`,
+  `INVALID`, or `VALID`, validates available inputs immediately, and reuses the
+  trust-policy validator before a candidate can be frozen.
+- a create-only, schema-bound external-participant intake artifact that names
+  the real reviewer, holdout, witness, authority, owner, and host-remediation
+  work without creating identities, keys, cases, pilot episodes, or evidence.
+- a read-only named-host privacy discovery that records bounded storage,
+  encryption, declared-sync, and backup observations without retaining raw
+  command output. It cannot generate a privacy PASS, authorize persistence, or
+  convert unexecuted lifecycle and incident controls from `UNKNOWN`.
+- a design-only outcome contract that separates process, proximal, delayed,
+  burden, and dependence measures; fixes two primary outcome IDs before target
+  execution; defines two stronger same-capability comparators; and validates a
+  user-readable explicit-save session capsule. None is executed outcome
+  evidence yet.
 
 The copilot may feel conversationally similar to a thoughtful coach. It must
 not claim to be a therapist, simulate a clinical relationship, diagnose, mine
@@ -82,7 +139,8 @@ trauma, or encourage emotional dependence.
 
 ## Status
 
-Standalone research alpha. Not installed, registered, implicitly invoked,
+Installable research alpha distributed through this repository's Codex
+marketplace. It is explicit-invocation only, not universally directory-listed,
 production-qualified, or approved for real sensitive-state initialization.
 
 Run local checks with:
@@ -104,4 +162,7 @@ release review, and owner promotion each require their own exact evidence.
 Synthetic expected-event fixtures prove only that the harness works.
 The target adapter, review, and campaign tests prove only that the evidence path
 fails closed; no real target-model run or human qualification is claimed yet.
+The strong-generalist and minimal-visible-model comparators remain
+design-only; current schemas do not execute them as governed run slots.
+See `docs/OUTCOME_EVALUATION.md` for the measurement and comparator boundary.
 See `docs/RELEASE_EVIDENCE.md` for the signed external-evidence contract.

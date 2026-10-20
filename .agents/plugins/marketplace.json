@@ -1,0 +1,20 @@
+{
+  "name": "personal",
+  "interface": {
+    "displayName": "Personal Growth Copilot"
+  },
+  "plugins": [
+    {
+      "name": "personal-growth-copilot",
+      "source": {
+        "source": "local",
+        "path": "./plugins/personal-growth-copilot"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

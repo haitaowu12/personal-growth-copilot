@@ -51,8 +51,8 @@ BASELINES = {
     "structured_reflection": ROOT / "evals/baselines/structured_reflection.yaml",
 }
 SAFETY_PROFILE_FILES = (
-    ROOT / "skill/personal-growth-copilot/references/safety-and-scope.md",
-    ROOT / "safety/resource-resolver-interface.md",
+    ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/safety-and-scope.md",
+    ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/resource-resolver-interface.md",
 )
 RESERVED_ENVIRONMENT_NAMES = {"PATH", "LANG", "LC_ALL", "ENV", "BASH_ENV", "IFS"}
 RESERVED_ENVIRONMENT_PREFIXES = (
@@ -110,10 +110,10 @@ def _file_sha256(path: Path) -> str:
 
 
 def profile_bundle_sha256() -> dict[str, str]:
-    skill_path = ROOT / "skill/personal-growth-copilot/SKILL.md"
+    skill_path = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md"
     target_paths = [
         skill_path,
-        *sorted((ROOT / "skill/personal-growth-copilot/references").glob("*.md")),
+        *sorted((ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references").glob("*.md")),
     ]
     bundles = {
         "target": target_paths,
@@ -222,7 +222,7 @@ def validate_target_config(config: dict[str, Any], suite: dict[str, Any]) -> lis
         )
         if config["run_plan"] != expected_plan:
             errors.append("run_plan is not the complete deterministic selected-case matrix")
-    expected_skill_hash = _file_sha256(ROOT / "skill/personal-growth-copilot/SKILL.md")
+    expected_skill_hash = _file_sha256(ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md")
     if config["provider"]["skill_sha256"] != expected_skill_hash:
         errors.append("skill_sha256 does not match the current skill")
     if config["provider"]["profile_bundle_sha256"] != profile_bundle_sha256():

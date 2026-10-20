@@ -77,7 +77,7 @@ def config():
             "settings": {"temperature": 0},
             "tool_permissions": [],
             "environment_allowlist": [],
-            "skill_sha256": sha(ROOT / "skill/personal-growth-copilot/SKILL.md"),
+            "skill_sha256": sha(ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md"),
             "profile_bundle_sha256": target_session.profile_bundle_sha256(),
         },
         "review": {

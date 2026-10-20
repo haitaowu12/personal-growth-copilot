@@ -2,6 +2,12 @@
 
 Status: design contract; no qualified host implementation exists
 
+Reconciled on 2026-10-20 with the canonical plugin package at
+`plugins/personal-growth-copilot/skills/personal-growth-copilot/`.
+This document specifies future host behavior. The design-asset check validates
+repository structure and contracts; it does not implement or qualify a host,
+provision authority, authorize sensitive state, or satisfy a release gate.
+
 ## Objective
 
 Implement one named host that turns the current model-facing contracts into
@@ -116,10 +122,23 @@ security evidence passes.
 
 ## Session capsule
 
-The host may render a session capsule only after an explicit request. It must
-validate against `session-capsule.schema.json`, show the complete capsule before
-persistence, and record `stored=false` until a real host receipt exists. It may
-not automatically retrieve the last capsules in a later session.
+The host may render a session capsule only after an explicit request. Validate
+against
+`plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json`
+and show the complete capsule and exact proposed delta before persistence.
+
+The canonical `persistence.status` is `not_requested` with an empty delta and
+null `host_receipt_sha256`, or `previewed` with the exact proposed delta and a
+null receipt hash. Only a verified host write establishes `confirmed_by_host`
+and the actual receipt's SHA-256 hash. User confirmation, a generated hash, or
+a model-authored success message cannot establish that state. Do not restore
+the historical `retention.stored` representation or automatically retrieve
+capsules in a later session.
+
+The design-only `session_capsule` comparator uses the same approved read-only
+context as all comparison arms and remains at preview. A later write-enabled
+comparison must freeze common host capabilities, consent, and evidence rules
+before any arm executes.
 
 ## Required adversarial tests
 

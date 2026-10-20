@@ -38,6 +38,8 @@ SCHEMAS = {
     "pilot_protocol": ROOT / "release/pilot-protocol.schema.json",
     "reviewer_identity": ROOT / "release/reviewer-identity-attestation.schema.json",
     "qualification_plan": ROOT / "release/qualification-packet-plan.schema.json",
+    "qualification_intake": ROOT / "release/qualification-external-intake.schema.json",
+    "host_privacy_discovery": ROOT / "release/host-privacy-discovery.schema.json",
 }
 GATES = (
     "behavioral_qualification",
@@ -81,6 +83,17 @@ def canonical_bytes(value: object) -> bytes:
 
 def digest(value: object) -> str:
     return hashlib.sha256(canonical_bytes(value)).hexdigest()
+
+
+def filesystem_object_identity(path: Path) -> str:
+    """Return an opaque identity for one existing filesystem object."""
+    try:
+        metadata = os.stat(path, follow_symlinks=False)
+    except OSError as exc:
+        raise ReleaseEvidenceError("filesystem object identity is unavailable") from exc
+    return hashlib.sha256(
+        f"filesystem-object:{metadata.st_dev}:{metadata.st_ino}".encode("utf-8")
+    ).hexdigest()
 
 
 def object_hash(value: dict[str, Any], field: str) -> str:

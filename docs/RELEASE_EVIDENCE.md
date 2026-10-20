@@ -44,8 +44,10 @@ python scripts/release_packet.py build-trust-policy \
 ```
 
 The resulting policy also binds the exact self-hashed qualification plan, so
-the candidate, campaign epoch, preregistration input paths, and fixed policy
-destination cannot be changed after freeze. The authority roster contains only
+the candidate, campaign epoch, named host, environment, bound storage-root
+filesystem identity, preregistration input paths, and fixed policy destination cannot be
+changed after freeze. The target provider host, host discovery, and privacy-host
+identity must match that plan. The authority roster contains only
 `authorities`; each entry supplies a unique
 `key_id`, one release role, and a packet-relative Ed25519 public-key path. The
 builder reads, canonicalizes, and hashes the exact config, seal, host identity,
@@ -60,6 +62,33 @@ It also requires the packet's candidate to equal the exact clean Git checkout
 provided to the verifier. Git and OpenSSL are trusted host dependencies; run
 the verifier only on the restricted evaluation host.
 
+## Read-only named-host discovery
+
+Before creating a privacy source manifest or implementing a persistent record
+adapter, capture a bounded discovery report on the intended evaluation host.
+The output parent must already be a current-user-owned mode-`0700` directory
+outside the source repository, on the home filesystem, with no macOS access
+control list or symlink component; the report is created once with mode `0600`.
+
+```text
+python scripts/host_privacy_discovery.py \
+  --storage-root /private/release-packet \
+  --named-host restricted-local-host \
+  --environment-id pgc-private-evaluation-001 \
+  --sync-root /known/sync/root \
+  --output /private/release-packet/privacy/host-discovery.json
+```
+
+The command deliberately exits nonzero with `NOT_READY`. It hashes rather than
+retains raw command output, reports unavailable or ambiguous controls as
+`UNKNOWN`, and reports an unconfigured backup destination or invalid storage
+boundary as `FAIL`. Do not pass `--sync-inventory-complete` unless an authorized
+host operator has established that the supplied sync-root list is the complete
+bounded inventory; an unavailable declared root remains `UNKNOWN` even with
+that flag. The report can never set `privacy_gate_ready` or
+`persistent_adapter_authorized` to true and is not a substitute for the
+source-witnessed privacy-preflight gate below.
+
 Initialize the restricted packet outside the source repository and any synced
 folder. This command creates only mode-`0700` directories and a mode-`0600`,
 self-hashed draft plan. It does not create or impersonate reviewers, holdout
@@ -69,12 +98,27 @@ private keys:
 ```text
 python scripts/qualification_packet.py init \
   --packet-root /private/release-packet \
-  --attempt-campaign-id campaign-2026-08-12-001
+  --attempt-campaign-id campaign-2026-08-12-001 \
+  --named-host restricted-local-host \
+  --environment-id pgc-private-evaluation-001
 ```
 
 Place the real externally controlled inputs at the packet-relative locations
 recorded in `qualification-plan.json`, keeping every private key outside the
-packet and candidate-author access. Then run:
+packet and candidate-author access. Generate the create-only handoff contract
+for those external roles with:
+
+```text
+python scripts/qualification_packet.py intake \
+  --packet-root /private/release-packet \
+  --output /private/release-packet/review/external-intake.json
+```
+
+The intake is schema-bound and exact-candidate-bound, but explicitly
+non-promotional. It enumerates real participant responsibilities, current
+`MISSING` / `INVALID` / `VALID` input status, and unresolved host discovery
+checks. It never generates a person, identity claim, key, holdout case, pilot
+episode, or release artifact. Then run:
 
 ```text
 python scripts/qualification_packet.py preflight \
@@ -86,9 +130,13 @@ Until every real input exists and passes the same validation used by
 different or dirty candidate checkout, path or permission escape, symlinks,
 detectable PEM private-key material, an existing policy output, invalid source
 schemas/hashes/times, noncanonical target config, incomplete run scope, and
-aliased witness or authority key material. `READY_TO_FREEZE` is only permission
-to execute the create-only trust-policy builder; it is not gate evidence or a
-release claim.
+aliased witness or authority key material. Each declared input is reported as
+`MISSING`, `INVALID`, or `VALID`, with bounded validation errors for an invalid
+input, even while other inputs remain missing. Cross-input key independence,
+chronology, and the complete frozen bindings are still checked only through the
+combined policy preparation. `READY_TO_FREEZE` is only permission to execute
+the create-only trust-policy builder; it is not gate evidence or a release
+claim.
 
 The policy builder independently repeats the packet-permission, symlink,
 private-key-marker, plan, path, candidate, campaign, and preregistration input

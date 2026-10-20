@@ -19,29 +19,36 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "build/evidence/deterministic-qualification.json"
 CHECKS = (
     ("repository-validation", ("scripts/validate.py",)),
-    ("evidence-rebalancing-design-assets", ("scripts/validate_design_assets.py",)),
     ("evaluation-manifest-lint", ("scripts/lint_eval_manifest.py",)),
+    (
+        "learning-pack-validation",
+        (
+            "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/build_learning.py",
+            "--check",
+        ),
+    ),
     (
         "multiturn-harness-conformance",
         ("evals/run.py", "--conformance", "--require-clean"),
     ),
     ("dependency-consistency", ("-m", "pip", "check")),
-    (
-        "deterministic-unit-tests",
-        ("-m", "unittest", "discover", "-s", "tests", "-v"),
-    ),
+    ("deterministic-unit-tests", ("-m", "unittest", "discover", "-s", "tests", "-v")),
     (
         "growth-record-example",
         (
-            "skill/personal-growth-copilot/scripts/growth_record.py",
+            "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/growth_record.py",
             "validate",
             "examples/growth-record.example.json",
         ),
     ),
     (
         "skill-structure-validation",
-        (".ci/quick_validate.py", "skill/personal-growth-copilot"),
+        (
+            ".ci/quick_validate.py",
+            "plugins/personal-growth-copilot/skills/personal-growth-copilot",
+        ),
     ),
+    ("design-asset-validation", ("scripts/validate_design_assets.py",)),
 )
 
 
@@ -73,9 +80,7 @@ def _git_status() -> list[str]:
 
 def _locked_dependencies() -> list[dict[str, str]]:
     dependencies: list[dict[str, str]] = []
-    for line in (ROOT / "requirements/ci.txt").read_text(
-        encoding="utf-8"
-    ).splitlines():
+    for line in (ROOT / "requirements/ci.txt").read_text(encoding="utf-8").splitlines():
         match = re.match(r"^([A-Za-z0-9_.-]+)==([^\\\s]+)", line)
         if match is None:
             continue
@@ -103,10 +108,7 @@ def build_evidence() -> dict[str, Any]:
         )
         print(f"[{check_id}] exit={completed.returncode}")
         if completed.stdout:
-            print(
-                completed.stdout,
-                end="" if completed.stdout.endswith("\n") else "\n",
-            )
+            print(completed.stdout, end="" if completed.stdout.endswith("\n") else "\n")
         if completed.stderr:
             print(
                 completed.stderr,
@@ -141,13 +143,14 @@ def build_evidence() -> dict[str, Any]:
             and source_tree_clean
             else "fail"
         ),
-        "generated_at": datetime.now(timezone.utc)
-        .isoformat()
-        .replace("+00:00", "Z"),
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "source_commit": _git_commit(),
         "source_tree_clean": source_tree_clean,
         "source_tree_status": source_tree_status,
         "python": sys.version,
+        "node": subprocess.run(
+            ["node", "--version"], capture_output=True, text=True, check=True
+        ).stdout.strip(),
         "platform": platform.platform(),
         "requirements_lock_sha256": _sha256(
             (ROOT / "requirements/ci.txt").read_bytes()
@@ -156,22 +159,16 @@ def build_evidence() -> dict[str, Any]:
         "dependency_lock_match": dependency_lock_match,
         "checks": results,
         "claim_limit": (
-            "This artifact proves deterministic source, schema, design-asset, "
-            "record-store, safety-state, resolver-failure, branchable-harness-"
-            "conformance, blinded-review, target-transport, conditional submitted-"
-            "matrix aggregation, manifest, qualification-packet-preflight, and "
-            "skill-structure checks only. Candidate technique, session-capsule, "
-            "comparator, and ordinary-growth assets are structurally validated "
-            "but are not integrated target behavior. It is not target-model "
-            "behavior, English/Chinese human review, privacy-pilot, efficacy, "
-            "or release evidence."
+            "This artifact proves deterministic source, schema, record-store, "
+            "safety-state, resolver-failure, branchable-harness-conformance, "
+            "blinded-review, target-transport, conditional submitted-matrix aggregation, "
+            "manifest, qualification-packet-preflight, skill-structure, and research-design-asset checks only. "
+            "It is not target-model behavior, "
+            "bilingual-human-review, privacy-pilot, efficacy, or release evidence."
         ),
     }
     aggregate_payload = json.dumps(
-        evidence,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
+        evidence, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode("utf-8")
     evidence["aggregate_sha256"] = _sha256(aggregate_payload)
     return evidence
@@ -189,8 +186,7 @@ def main() -> int:
     output = args.output if args.output.is_absolute() else ROOT / args.output
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
-        json.dumps(evidence, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
+        json.dumps(evidence, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     print(
         json.dumps(
