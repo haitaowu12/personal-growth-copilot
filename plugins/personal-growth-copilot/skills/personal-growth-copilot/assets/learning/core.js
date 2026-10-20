@@ -53,12 +53,25 @@
       (e) => e.concept === id && e.type === "self-review",
     );
   }
-  function status(pack, session, id, now) {
+  function status(
+    pack,
+    session,
+    id,
+    now,
+    precomputedEvents,
+    precomputedEventsByConcept,
+  ) {
     const c = conceptFor(pack, id);
-    const missing = c.prerequisites.filter((p) => !hasReview(session, p));
+    const missing = c.prerequisites.filter((p) => {
+      if (precomputedEventsByConcept) {
+        const pEvents = precomputedEventsByConcept.get(p);
+        return !(pEvents && pEvents.some((e) => e.type === "self-review"));
+      }
+      return !hasReview(session, p);
+    });
     if (missing.length) return { stage: "locked", missing };
 
-    const events = eventsFor(session, id);
+    const events = precomputedEvents || eventsFor(session, id);
 
     let diagnosis = null;
     let hasStudy = false;
@@ -285,8 +298,14 @@
     return replay;
   }
   function summary(pack, session, now) {
+    const eventsByConcept = new Map(pack.concepts.map((c) => [c.id, []]));
+    for (const e of session.events) {
+      if (eventsByConcept.has(e.concept)) {
+        eventsByConcept.get(e.concept).push(e);
+      }
+    }
     return pack.concepts.map((c) => {
-      const events = eventsFor(session, c.id);
+      const events = eventsByConcept.get(c.id);
       const answers = events.filter((e) => e.type === "answer");
       // Optimize O(n^2) filter to O(n) using a Set
       const seenStages = new Set();
@@ -308,7 +327,7 @@
       }
       return {
         id: c.id,
-        ...status(pack, session, c.id, now),
+        ...status(pack, session, c.id, now, events, eventsByConcept),
         attempts: answers.length,
         first_correct: first.filter(
           (e) => e.choice === c.questions[e.stage].correct,
@@ -320,7 +339,7 @@
         ).length,
         writing_after_example: writingAfterExample,
         written: events.some((e) => e.type === "write"),
-        reviewed: hasReview(session, c.id),
+        reviewed: events.some((e) => e.type === "self-review"),
       };
     });
   }
