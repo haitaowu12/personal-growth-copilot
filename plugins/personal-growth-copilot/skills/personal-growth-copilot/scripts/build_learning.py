@@ -158,7 +158,7 @@ def render(raw: bytes) -> str:
 <body><a class="skip" href="#workspace">Skip to practice</a>
 <header><a class="wordmark" href="#">Personal Growth <span> / Learning Lab</span></a><span class="edition">TOPIC {html.escape(pack['version'])}</span></header>
 <div class="layout"><nav id="navigation" aria-label="Lesson navigation"></nav><main id="workspace" tabindex="-1"></main><aside id="context" aria-label="Evidence and progress"></aside></div>
-<footer><div id="storage"></div><div class="file-actions"><button id="export">Export progress</button><label class="file-button" for="import">Import progress</label><input id="import" type="file" accept="application/json,.json"><button id="clear">Clear progress</button></div><p id="notice" role="status" aria-live="polite"></p></footer>
+<footer><div id="storage"></div><div class="file-actions"><button id="export">Export progress</button><label class="file-button" for="import">Import progress<input id="import" type="file" accept="application/json,.json"></label><button id="clear">Clear progress</button></div><p id="notice" role="status" aria-live="polite"></p></footer>
 <noscript>This offline lesson requires JavaScript. Use the accompanying topic JSON and learning reference with a tutor if JavaScript is unavailable.</noscript>
 <script type="application/json" id="topic-data">{payload}</script>
 <script>{scripts[0]}</script><script>{scripts[1]}</script></body></html>\n"""
