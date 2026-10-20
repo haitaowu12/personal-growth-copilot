@@ -33,6 +33,7 @@ class DesignAssetsTests(unittest.TestCase):
         paths.update(MODULE.DOCUMENTS)
         paths.update(f"evals/comparators/{name}.yaml" for name in MODULE.COMPARATORS)
         paths.add("provenance/evidence-sources.json")
+        paths.add(MODULE.RUNTIME_EVIDENCE_INDEX)
         for path in paths:
             destination = self.root / path
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -132,6 +133,36 @@ class DesignAssetsTests(unittest.TestCase):
         path.parent.mkdir(parents=True)
         shutil.copyfile(self.root / "evals/comparators/strong_generalist.yaml", path)
         self.assertIn("duplicate legacy baseline", "\n".join(MODULE.validate(self.root)))
+
+    def test_ontology_research_source_does_not_admit_technique_citations(self):
+        registry = json.loads((self.root / REGISTRY).read_text(encoding="utf-8"))
+        candidate_id = registry["ontology"]["evidence_source_id"]
+        self.assertEqual(MODULE.validate(self.root), [])
+        self.assert_rejected(
+            REGISTRY,
+            lambda data: data["techniques"][0]["evidence_source_ids"].append(candidate_id),
+            "canonical runtime citations",
+        )
+
+    def test_technique_citations_require_both_canonical_and_runtime_admission(self):
+        candidate_id = "bcto-2023-ontology"
+        with self.changed_json(REGISTRY, lambda data: data["techniques"][0]["evidence_source_ids"].append(candidate_id)):
+            with self.changed_json(MODULE.RUNTIME_EVIDENCE_INDEX, lambda data: data["source_ids"].append(candidate_id)):
+                self.assertIn("canonical runtime citations", "\n".join(MODULE.validate(self.root)))
+            supplement = json.loads((self.root / EVIDENCE).read_text(encoding="utf-8"))
+            source = next(item for item in supplement["sources"] if item["id"] == candidate_id)
+            with self.changed_json(EVIDENCE, lambda data: data["sources"].remove(source)):
+                with self.changed_json("provenance/evidence-sources.json", lambda data: data["sources"].append(source)):
+                    errors = MODULE.validate(self.root)
+                    self.assertIn("absent from the runtime evidence index", "\n".join(errors))
+                    self.assertFalse(any("must be unique" in error for error in errors), errors)
+
+    def test_runtime_evidence_index_shape_errors_are_reported(self):
+        self.assert_rejected(
+            MODULE.RUNTIME_EVIDENCE_INDEX,
+            lambda data: data.update(source_ids=[{}]),
+            "runtime evidence-source index must contain a list of source IDs",
+        )
 
     def test_technique_references_and_identities_are_checked(self):
         self.assert_rejected(REGISTRY, lambda data: data["techniques"][0].update(alternatives=["PGC-BCT-999"]), "unknown alternatives")

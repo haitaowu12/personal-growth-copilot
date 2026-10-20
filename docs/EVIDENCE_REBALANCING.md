@@ -59,6 +59,24 @@ does not establish technique eligibility, safety, selection quality, user fit,
 or efficacy. The 281-technique/20-group count in the evidence supplement refers
 to the published 2023 ontology version, not the current repository's size.
 
+### Research references and runtime citations
+
+The ontology's `evidence_source_id` remains research naming provenance and may
+reference the candidate supplement. It is not a growth-record citation
+allowlist. Per-technique `evidence_source_ids` are restricted to IDs present in
+both the canonical evidence ledger and
+`plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/evidence-source-ids.json`.
+The BCTO candidate stays in ontology metadata; it is not promoted into either
+canonical source file. Registry status and eligibility remain unvalidated.
+
+Active experiment cards use ordinary-language ingredients. Registry/BCIO IDs
+belong in research or evaluation traceability, not growth-record citation
+fields. Optional external citations use admitted `source_citation_id` values
+inside `EXTERNAL_SOURCE` evidence items; hypothesis evidence references use
+record-local item IDs. The record CLI loads the canonical `source_ids` array
+and rejects candidate-only, taxonomy, and unknown citation IDs. Design-asset
+validation of research metadata cannot authorize persistence or source admission.
+
 ## Canonical capsule and comparison contract
 
 The existing schema remains at
