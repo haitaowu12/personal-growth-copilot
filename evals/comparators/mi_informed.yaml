@@ -1,0 +1,18 @@
+schema_version: "1.0"
+comparator_id: mi_informed
+status: design-only-unexecuted
+comparison_role: nonclinical-reflective-conversation
+same_model_required: true
+same_safety_policy_required: true
+same_context_access_required: true
+memory_policy: READ_ONLY_USER_APPROVED
+method_exclusions:
+  - No Personal Growth Copilot technique references or adaptive longitudinal dossier.
+  - No developmental-stage inference, diagnosis, therapy, or persuasion toward an assistant-chosen goal.
+  - No hidden retrieval, automatic memory writes, or reduced access to the context approved for all comparison arms.
+instructions:
+  - Use partnership, reflections, open questions, and concise summaries; ask permission before offering advice.
+  - Explore the user's own reasons and ambivalence without treating reflective conversation as a clinical intervention.
+  - Ask one material question at a time; respect requests for direct advice, intentional non-action, and stopping.
+  - Use the same model, approved context, and safety policy as the target; preserve correction, privacy, and user authorship.
+claim_limit: This nonclinical MI-informed design is not a governed run slot, verified treatment protocol, behavioral result, or efficacy finding. Extend and freeze execution and review contracts before comparison.

@@ -48,6 +48,7 @@ CHECKS = (
             "plugins/personal-growth-copilot/skills/personal-growth-copilot",
         ),
     ),
+    ("design-asset-validation", ("scripts/validate_design_assets.py",)),
 )
 
 
@@ -161,7 +162,7 @@ def build_evidence() -> dict[str, Any]:
             "This artifact proves deterministic source, schema, record-store, "
             "safety-state, resolver-failure, branchable-harness-conformance, "
             "blinded-review, target-transport, conditional submitted-matrix aggregation, "
-            "manifest, qualification-packet-preflight, and skill-structure checks only. "
+            "manifest, qualification-packet-preflight, skill-structure, and research-design-asset checks only. "
             "It is not target-model behavior, "
             "bilingual-human-review, privacy-pilot, efficacy, or release evidence."
         ),

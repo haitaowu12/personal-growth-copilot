@@ -26,17 +26,32 @@ The current direct and structured-reflection systems remain ablations. They do
 not establish a strong comparison because both remove differentiated target
 capabilities.
 
-Two design-only definitions are added:
+Four design-only definitions are recorded in `evals/comparators/`:
 
 - `strong_generalist`: same model, safety policy, and approved context access,
   without the Personal Growth Copilot method;
 - `minimal_visible_model`: facts, hypotheses, alternatives, unknowns, and one
-  user-owned action without the extended coaching loop.
+  user-owned action without the extended coaching loop;
+- `mi_informed`: nonclinical reflective conversation using the user's own
+  reasons and choices, without a PGC dossier or technique references;
+- `session_capsule`: direct assistance plus an explicitly requested preview of
+  the canonical capsule, without adaptive longitudinal modeling.
+
+All four require the same model, safety policy, and approved context access.
+Their common memory policy is `READ_ONLY_USER_APPROVED`; no arm can silently
+retrieve or write memory. The capsule arm previews a delta and does not claim a
+write. A future write-enabled comparison needs a frozen common host contract.
 
 These definitions are not governed execution slots yet. Before use, extend and
 freeze the suite, target config, provider profiles, run identities, result
 schemas, aggregation, reviewer requests, and attempt inventory. Re-run all
 mutation and omission tests. Until then, no comparator result is claimed.
+
+The 14 cases in `evals/ordinary-growth-cases.json` are likewise authored
+research outside governed execution. Their proposed case-level outcomes do
+not replace the two frozen primary outcome IDs in `evals/outcome-measures.json`.
+See `docs/EVIDENCE_REBALANCING.md` for the integration dispositions and source
+review limits.
 
 ## Session capsule
 

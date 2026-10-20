@@ -1,0 +1,218 @@
+{
+  "schema_version": "1.0",
+  "package_id": "pgc-codex-final-check-20260813",
+  "receipt_nonce": "855AD45B-DB39-4196-B995-BAB751C325F9",
+  "created_at": "2026-08-13T18:48:26.377640Z",
+  "repository": "haitaowu12/personal-growth-copilot",
+  "pull_request": 10,
+  "base_branch": "codex/qualification-packet-bootstrap",
+  "base_commit": "767fa96ca51116f916997d04a8cf3cff67ee9515",
+  "implementation_branch": "agent/evidence-rebalancing-host-handoff",
+  "implementation_commit": "0774e9568673c89061f0cddf9ffb74d27574ac82",
+  "implementation_tree": "f4e534cfde08645d93c4922379962ad1a7238c6b",
+  "implementation_range": "767fa96ca51116f916997d04a8cf3cff67ee9515..0774e9568673c89061f0cddf9ffb74d27574ac82",
+  "product_state": "explicit-invocation-only; unregistered; uninstalled; release blocked",
+  "changed_file_count": 23,
+  "changed_files": [
+    "ROADMAP.md",
+    "docs/EVIDENCE_REBALANCING.md",
+    "docs/GOVERNANCE_CROSSWALK.md",
+    "docs/REFERENCE_HOST_CONTRACT.md",
+    "evals/baselines/mi_informed.yaml",
+    "evals/baselines/session_capsule.yaml",
+    "evals/baselines/strong_generalist.yaml",
+    "evals/ordinary-growth-cases.json",
+    "evals/ordinary-growth-cases.schema.json",
+    "examples/session-capsule.example.json",
+    "provenance/community-supplement-20260813.json",
+    "provenance/community-supplement.schema.json",
+    "provenance/evidence-supplement-20260813.json",
+    "provenance/evidence-supplement.schema.json",
+    "research/evidence-rebalancing-update-20260813.md",
+    "scripts/run_deterministic_qualification.py",
+    "scripts/validate_design_assets.py",
+    "skill/personal-growth-copilot/assets/session-capsule.schema.json",
+    "skill/personal-growth-copilot/assets/technique-registry.json",
+    "skill/personal-growth-copilot/assets/technique-registry.schema.json",
+    "skill/personal-growth-copilot/references/behavior-change-experiments.md",
+    "skill/personal-growth-copilot/references/memory-and-continuity.md",
+    "tests/test_design_assets.py"
+  ],
+  "validation": {
+    "exact_head_push": {
+      "run_id": 31732175609,
+      "event": "push",
+      "conclusion": "success",
+      "head_sha": "0774e9568673c89061f0cddf9ffb74d27574ac82",
+      "python_matrix": [
+        "3.11.15",
+        "3.12.13",
+        "3.13.15",
+        "3.14.7"
+      ],
+      "all_jobs_success": true,
+      "artifacts": [
+        {
+          "python": "3.11.15",
+          "artifact_id": 9193675012,
+          "archive_sha256": "24c2dac95d5771d3a86fe99db6e6ef682be1080da85fc50e3a69923754a53bbb"
+        },
+        {
+          "python": "3.12.13",
+          "artifact_id": 9193677213,
+          "archive_sha256": "122b04aabf328ae61d7eb72901061ab1dbf2ca646391e23c96bce0609a715bee"
+        },
+        {
+          "python": "3.13.15",
+          "artifact_id": 9193683082,
+          "archive_sha256": "1b499c72e62ea7471ca28517a49221a9577c6f3b24871b1e8de41295fd4f7a3d"
+        },
+        {
+          "python": "3.14.7",
+          "artifact_id": 9193682697,
+          "archive_sha256": "4ab7ee6f52c6a214bbad1c8e396fe9a16ea8cea6fe89e6ac8eb23daf4757fab2"
+        }
+      ],
+      "representative_python": "3.12.13",
+      "representative_deterministic_aggregate_sha256": "ab932bae4ea069bed16641866beb495c14abfded16deb721815126bfc8f07726",
+      "representative_unit_tests": 128,
+      "representative_check_count": 8,
+      "representative_source_tree_clean": true,
+      "representative_dependency_lock_match": true
+    },
+    "pull_request_merge": {
+      "run_id": 31732181723,
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_sha": "0774e9568673c89061f0cddf9ffb74d27574ac82",
+      "synthetic_merge_commit": "6972ea445675c66add7deb5c9288212df9b7a21c",
+      "python_matrix": [
+        "3.11.15",
+        "3.12.13",
+        "3.13.15",
+        "3.14.7"
+      ],
+      "all_jobs_success": true,
+      "representative_python": "3.12.13",
+      "representative_deterministic_aggregate_sha256": "3fd0a8ba62a3b7a4e57c5da2705d8263d5a941e1b87b2551336d75df98bed490"
+    },
+    "focused_local_candidate_checks": {
+      "design_validator": "pass",
+      "focused_unit_tests": "4/4 pass",
+      "python_compile": "pass",
+      "json_yaml_parse": "pass",
+      "scope": "candidate files in a synthetic minimal root; superseded by the exact-head CI above for repository qualification"
+    },
+    "known_failed_predecessor": {
+      "commit": "edb0a2bf316fffa6eca1fa619e341694ebdff086",
+      "run_id": 31731917946,
+      "cause": "one extra closing brace in evals/ordinary-growth-cases.schema.json",
+      "fixed_by": "0774e9568673c89061f0cddf9ffb74d27574ac82"
+    }
+  },
+  "post_review_fix": {
+    "parent_commit": "b29258df45f8fdeef9c717467e86ab0b3893223f",
+    "commit": "46676c9185e1fd2e78d3ef9609c936d409dc4837",
+    "tree": "ac3409fe9d220184e663c10e458de9a5992d27cf",
+    "changed_files": [
+      "skill/personal-growth-copilot/assets/session-capsule.schema.json",
+      "tests/test_design_assets.py"
+    ],
+    "reason": "Enforce the host-contract invariant that stored=false requires a null receipt and stored=true requires a non-empty host receipt.",
+    "local_validation": {
+      "design_validator": "pass",
+      "focused_unit_tests": "5/5 pass",
+      "full_unit_tests": "129/129 pass",
+      "git_diff_check": "pass"
+    },
+    "exact_head_push": {
+      "run_id": 31739762225,
+      "event": "push",
+      "conclusion": "success",
+      "head_sha": "46676c9185e1fd2e78d3ef9609c936d409dc4837",
+      "python_matrix": [
+        "3.11.15",
+        "3.12.13",
+        "3.13.15",
+        "3.14.7"
+      ],
+      "all_jobs_success": true,
+      "artifacts": [
+        {
+          "python": "3.11.15",
+          "artifact_id": 9196588790,
+          "archive_sha256": "b36a27b9e3c31561a3687d4aff220e3c339859b6edc25f7f8e587013001d59a1"
+        },
+        {
+          "python": "3.12.13",
+          "artifact_id": 9196594225,
+          "archive_sha256": "27a9f3593057c05a1bca16ef8e50784ddd46a54f255f205112a27ae24d04d288"
+        },
+        {
+          "python": "3.13.15",
+          "artifact_id": 9196592879,
+          "archive_sha256": "103e50b2b116cce4ce183d82165b34f3956abb9f6cb61b25ebca92fa0c528218"
+        },
+        {
+          "python": "3.14.7",
+          "artifact_id": 9196591918,
+          "archive_sha256": "23fcdc7284e63fdf6c4e658fb4346d7b3726569b5892d31683a889501c8e9c57"
+        }
+      ],
+      "representative_python": "3.12.13",
+      "representative_deterministic_aggregate_sha256": "f16e10a4c03347bcb4e54ec45d93adcd8bcb8a7673560030031d21707e81a425",
+      "representative_unit_tests": 129,
+      "representative_check_count": 8,
+      "representative_source_tree_clean": true,
+      "representative_dependency_lock_match": true
+    },
+    "pull_request": {
+      "run_id": 31739764766,
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_sha": "46676c9185e1fd2e78d3ef9609c936d409dc4837",
+      "synthetic_merge_commit": "157a6990695c197171b0553f2f5c6721dfa9988f",
+      "python_matrix": [
+        "3.11.15",
+        "3.12.13",
+        "3.13.15",
+        "3.14.7"
+      ],
+      "all_jobs_success": true,
+      "representative_python": "3.12.13",
+      "representative_deterministic_aggregate_sha256": "1c355e88b411adb725c7d17662b08577d3c5f638a1a934cb71793f3d0974d068",
+      "representative_artifact_id": 9196593950,
+      "representative_archive_sha256": "365ae0fa93403a0a9ca8a27e5ee3ede7420c0ba79e541ef6b3a7ad558fc56b8f"
+    }
+  },
+  "implemented_scope": [
+    "BCIO-aligned candidate technique registry with fit, burden, disconfirmation, and no-efficacy controls",
+    "explicit-save session capsule schema and non-persistent example",
+    "14 ordinary-growth/longitudinal candidate cases with burden and English/Chinese coverage",
+    "strong-generalist, MI-informed, and session-capsule comparator contracts",
+    "structured evidence and community donor supplements",
+    "reference-host contract and ICF/NIST gap crosswalk",
+    "design-asset validator, focused tests, and deterministic-qualification integration"
+  ],
+  "external_or_unexecuted_gates": [
+    "independent source and BCIO mapping review",
+    "decision whether and how to adopt Promptfoo or another mature generic evaluation runner",
+    "canonical target-run integration of candidate cases and comparators",
+    "target-model behavioral execution with complete attempt inventory",
+    "calibrated independent English/Chinese human review",
+    "independently authored untouched holdouts",
+    "named reference-host implementation and privacy/security verification",
+    "persistent adapter with backup/export/correction/deletion evidence",
+    "consented feasibility pilot with delayed outcomes, burden, dependence, withdrawal, and adverse events",
+    "independent release review and explicit owner promotion"
+  ],
+  "stop_conditions": [
+    "do not install or register the skill",
+    "do not enable implicit invocation",
+    "do not initialize real sensitive state",
+    "do not configure or fabricate external authorities, signatures, reviewers, holdouts, provider attempts, privacy findings, or pilot records",
+    "do not claim coaching efficacy, human equivalence, ICF approval, NIST certification, production readiness, or release passage",
+    "do not merge or promote without explicit owner decision after independent review"
+  ],
+  "handoff_file": "handoff/CODEX_FINAL_CHECK_20260813.md"
+}
