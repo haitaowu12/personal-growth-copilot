@@ -724,11 +724,9 @@
     const c = pack.concepts.find((x) => x.id === selected);
     evidence(c);
     if (!c) {
-      document.title = `${pack.title} \u00b7 Learning Lab`;
       overview();
       return;
     }
-    document.title = `${c.title} \u00b7 ${pack.title} \u00b7 Learning Lab`;
     const s = core.status(pack, session, c.id, now());
     displayedStage = s.stage;
     main.append(
