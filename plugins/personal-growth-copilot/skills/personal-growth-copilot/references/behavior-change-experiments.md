@@ -33,20 +33,33 @@ particular person.
 
 ## Candidate technique registry
 
-Before naming a registered technique in an experiment, consult
-`assets/technique-registry.json`. Its entries are candidate selection rules,
-not validated prescriptions. Use an entry only when current user-provided
-evidence fits its eligibility conditions and no contraindication applies. If
-fit is unknown, preserve the uncertainty or choose another approach with the
-user. The registry is not an exhaustive list of useful responses.
-
-Use ordinary language with the user. Keep identifiers for traceable records or
-evaluation, without requiring the user to learn them. Preserve:
+`assets/technique-registry.json` is a candidate research and evaluation aid,
+not a requirement for active experiment records or a validated prescription.
+Its eligibility and contraindication rules are hypotheses to evaluate; they do
+not establish user fit or safety. Use ordinary language with the user and
+preserve these features of an experiment:
 
 - the barrier hypothesis and a plausible alternative;
-- the selected technique and evidence-source identifiers when a registry entry is used;
+- the chosen active ingredient and the user's reason for trying it;
 - the expected proximal signal and what would disconfirm it;
 - minimum burden, a feasible review window, and the user's choice to proceed or decline.
+
+Keep research identifiers separate from record fields. `PGC-BCT-*` and `BCIO:*`
+name registry entries and ontology concepts; they are neither record-local
+evidence IDs nor external `source_citation_id` values. The ontology's
+`evidence_source_id` can reference candidate research such as
+`bcto-2023-ontology`; that naming provenance is not admitted runtime evidence.
+
+For a growth record, use only fields supported by
+`assets/growth-record.schema.json`. An optional external citation belongs in an
+evidence item with `origin_kind: EXTERNAL_SOURCE`, and its
+`source_citation_id` must occur in `assets/evidence-source-ids.json`. The
+registry's per-technique `evidence_source_ids` are limited to that canonical
+allowlist, but include a citation only if it supports the specific recorded
+statement. If none applies, omit the optional external citation rather than
+substitute a candidate or taxonomy ID. Hypothesis `supporting_evidence_ids`
+refer to IDs of evidence items in this record, not directly to research
+citations. Keep candidate mapping traceability in research/evaluation artifacts.
 
 Ontology membership and a citation do not establish product efficacy or fit
 for this user. When an attempted technique fails to produce its predicted
@@ -64,7 +77,7 @@ Hypothesis
 If ..., then ..., because ...
 
 Technique
-Chosen active ingredient and registry/evidence IDs when applicable.
+Chosen active ingredient in ordinary language.
 
 Action
 Exact behavior, time/place, duration, and minimum version.

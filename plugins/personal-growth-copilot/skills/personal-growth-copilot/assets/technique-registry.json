@@ -34,8 +34,7 @@
         "value": "before selecting the next experiment"
       },
       "evidence_source_ids": [
-        "michie-2013-bct-taxonomy",
-        "bcto-2023-ontology"
+        "michie-2013-bct-taxonomy"
       ],
       "alternatives": [
         "PGC-BCT-002",
@@ -71,8 +70,7 @@
       },
       "evidence_source_ids": [
         "ryan-deci-2000-sdt",
-        "locke-latham-2002-goals",
-        "bcto-2023-ontology"
+        "locke-latham-2002-goals"
       ],
       "alternatives": [
         "PGC-BCT-001",
@@ -108,8 +106,7 @@
         "value": 1
       },
       "evidence_source_ids": [
-        "gollwitzer-sheeran-2006-ifthen",
-        "bcto-2023-ontology"
+        "gollwitzer-sheeran-2006-ifthen"
       ],
       "alternatives": [
         "PGC-BCT-004",
@@ -144,8 +141,7 @@
         "value": 2
       },
       "evidence_source_ids": [
-        "gollwitzer-sheeran-2006-ifthen",
-        "bcto-2023-ontology"
+        "gollwitzer-sheeran-2006-ifthen"
       ],
       "alternatives": [
         "PGC-BCT-003",
@@ -180,8 +176,7 @@
         "value": "after one explanation or rehearsal"
       },
       "evidence_source_ids": [
-        "michie-2013-bct-taxonomy",
-        "bcto-2023-ontology"
+        "michie-2013-bct-taxonomy"
       ],
       "alternatives": [
         "PGC-BCT-001",
@@ -216,8 +211,7 @@
         "value": 3
       },
       "evidence_source_ids": [
-        "harkin-2016-monitoring-meta",
-        "bcto-2023-ontology"
+        "harkin-2016-monitoring-meta"
       ],
       "alternatives": [
         "PGC-BCT-008",
@@ -253,8 +247,7 @@
         "value": "after the request or decision not to make it"
       },
       "evidence_source_ids": [
-        "michie-2013-bct-taxonomy",
-        "bcto-2023-ontology"
+        "michie-2013-bct-taxonomy"
       ],
       "alternatives": [
         "PGC-BCT-001",
@@ -291,8 +284,7 @@
       },
       "evidence_source_ids": [
         "tannenbaum-cerasoli-2013-debrief",
-        "harkin-2016-monitoring-meta",
-        "bcto-2023-ontology"
+        "harkin-2016-monitoring-meta"
       ],
       "alternatives": [
         "PGC-BCT-006",
