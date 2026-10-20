@@ -31,6 +31,29 @@ The map is a hypothesis. Ask the user to correct it.
 Technique names describe active content. They do not prove effectiveness for a
 particular person.
 
+## Candidate technique registry
+
+Before naming a registered technique in an experiment, consult
+`assets/technique-registry.json`. Its entries are candidate selection rules,
+not validated prescriptions. Use an entry only when current user-provided
+evidence fits its eligibility conditions and no contraindication applies. If
+fit is unknown, preserve the uncertainty or choose another approach with the
+user. The registry is not an exhaustive list of useful responses.
+
+Use ordinary language with the user. Keep identifiers for traceable records or
+evaluation, without requiring the user to learn them. Preserve:
+
+- the barrier hypothesis and a plausible alternative;
+- the selected technique and evidence-source identifiers when a registry entry is used;
+- the expected proximal signal and what would disconfirm it;
+- minimum burden, a feasible review window, and the user's choice to proceed or decline.
+
+Ontology membership and a citation do not establish product efficacy or fit
+for this user. When an attempted technique fails to produce its predicted
+signal, revisit the hypothesis, fit, or technique rather than explain away
+the result. A blocked or unattempted action leaves the prediction untested;
+record the barrier instead of claiming success or disconfirmation.
+
 ## Experiment card
 
 ```text
@@ -39,6 +62,9 @@ What are we trying to learn or change?
 
 Hypothesis
 If ..., then ..., because ...
+
+Technique
+Chosen active ingredient and registry/evidence IDs when applicable.
 
 Action
 Exact behavior, time/place, duration, and minimum version.
@@ -75,6 +101,19 @@ Prefer an experiment that is:
 
 Do not shrink an action until it loses meaning. Do not use a tiny step to avoid
 a necessary real decision.
+
+## Proximal and delayed observations
+
+Separate an immediate process signal, such as a clearer choice, from a later
+observation at the agreed review event. Agreement, encouragement, or one
+favourable result does not establish that the technique caused improvement.
+Keep the original prediction visible before reviewing the result.
+
+Record non-attempts, blocked opportunities, burden, missing reviews, withdrawal,
+and dropout alongside attempts. Do not retrospectively change the success
+criterion or select only favourable episodes. A useful review can narrow or
+retire a hypothesis, support intentional non-action, or reduce unnecessary
+tracking without demonstrating a general treatment effect.
 
 ## Mental contrasting plus if-then planning
 

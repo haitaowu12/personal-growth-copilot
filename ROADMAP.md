@@ -17,6 +17,22 @@ consent/retention freeze, pilot-device rehearsal and actual learner observations
 These are not satisfied by model review or deterministic tests. No additional topics,
 adaptive engine or automatic promotion is planned before those observations.
 
+## Bounded research-design integration
+
+The older evidence-rebalancing proposal is reconciled with the current plugin
+layout and canonical capsule contract. It adds eight candidate technique
+entries, 14 authored ordinary-growth cases, two additional design-only
+comparators, and source/gap notes. The existing strong-generalist and
+minimal-visible-model definitions remain authoritative; all four comparator
+designs require the same model, safety policy, and approved context access.
+
+The cases and comparators are outside governed execution. Eight ontology
+identifier/label mappings have been checked against a pinned primary source;
+this verifies naming only. Design-asset validation is a ninth deterministic
+qualification check and does not establish user benefit, host operation,
+installation, or promotion. The current learning follow-through above remains
+the operational priority. See `docs/EVIDENCE_REBALANCING.md`.
+
 # Roadmap
 
 ## Completed through 0.4.0-alpha.11
@@ -84,7 +100,9 @@ adaptive engine or automatic promotion is planned before those observations.
 
 1. extend the governed run schemas, provider profiles, results, aggregation,
    and attempt inventory to execute the strong-generalist and
-   minimal-visible-model comparators; retain current baselines as ablations;
+   minimal-visible-model comparators; assess the additional MI-informed and
+   session-capsule designs within the same freeze, and retain current baselines
+   as ablations;
 2. expand ordinary-growth and multi-session cases, including disconfirmation,
    direct-answer, intentional non-action, low engagement, non-attempt, and
    dropout paths;

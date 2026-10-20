@@ -1,0 +1,19 @@
+schema_version: "1.0"
+comparator_id: session_capsule
+status: design-only-unexecuted
+comparison_role: direct-assistance-with-requested-continuity-preview
+same_model_required: true
+same_safety_policy_required: true
+same_context_access_required: true
+memory_policy: READ_ONLY_USER_APPROVED
+method_exclusions:
+  - No Personal Growth Copilot technique references or adaptive longitudinal dossier.
+  - No stable identity inference, hidden retrieval, automatic loading, or autonomous memory writes.
+  - No persistence claim from user approval or model-authored receipts.
+instructions:
+  - Answer at the requested depth with the same model, approved context, and safety policy as the target.
+  - Only when explicitly requested, preview a capsule using plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json.
+  - Preserve user wording, facts, hypotheses, alternatives, unknowns, choice, prediction, disconfirmation, review point, and the exact proposed delta.
+  - Keep persistence.status not_requested or previewed and host_receipt_sha256 null in the read-only comparison. User confirmation alone never establishes a write.
+  - Any future write-enabled comparison needs a separately frozen common host contract across arms; confirmed_by_host requires an actual verified host result and receipt hash.
+claim_limit: This capsule-preview design is not a governed run slot, host implementation, persistence result, or evidence of continuity benefit. Extend and freeze execution and review contracts before comparison.
