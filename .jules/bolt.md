@@ -5,3 +5,7 @@
 ## 2026-10-18 - Index session events once per summary
 **Learning:** Filtering the full event history for each concept repeats work proportional to both the number of concepts and events. A map local to `summary` reuses each concept's event list without retaining stale state between calls. Prerequisite checks still inspect the prerequisite's own events.
 **Action:** Reuse the grouped events for status and summary fields, preserve standalone status calls, and compare outputs across interleaved histories before accepting this optimization. Measure each caller separately; fewer array passes do not guarantee a speedup in every state.
+
+## 2024-10-21 - Optimize summary generation to single pass iteration
+**Learning:** Found multiple chained O(n) `.filter()`, `.some()`, and `.length` array operations per concept during `summary()` calculation in `core.js`. This repeated array scanning scales poorly when event arrays grow.
+**Action:** Replaced chained array methods with a single iterative `for` loop that passes over `eventsByConcept.get(c.id)` exactly once per concept, computing all variables (`attempts`, `first_correct`, `assisted`, `writing_example_views`, `writing_after_example`, `written`, `reviewed`) simultaneously.
