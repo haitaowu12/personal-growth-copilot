@@ -306,40 +306,53 @@
     }
     return pack.concepts.map((c) => {
       const events = eventsByConcept.get(c.id);
-      const answers = events.filter((e) => e.type === "answer");
-      // Optimize O(n^2) filter to O(n) using a Set
+
+      let attempts = 0;
+      let first_correct = 0;
+      let first_total = 0;
+      let assisted = 0;
+      let writing_example_views = 0;
+      let writing_after_example = false;
+      let written = false;
+      let reviewed = false;
+
       const seenStages = new Set();
-      const first = answers.filter((e) => {
-        if (seenStages.has(e.stage)) return false;
-        seenStages.add(e.stage);
-        return true;
-      });
-      // Optimize O(n^2) write after example check to O(n)
       let seenExample = false;
-      let writingAfterExample = false;
-      for (const e of events) {
-        if (e.type === "writing-example") {
+
+      for (let i = 0; i < events.length; i++) {
+        const e = events[i];
+        if (e.type === "answer") {
+          attempts++;
+          if (e.helped) assisted++;
+          if (!seenStages.has(e.stage)) {
+            seenStages.add(e.stage);
+            first_total++;
+            if (e.choice === c.questions[e.stage].correct) {
+              first_correct++;
+            }
+          }
+        } else if (e.type === "writing-example") {
+          writing_example_views++;
           seenExample = true;
-        } else if (e.type === "write" && seenExample) {
-          writingAfterExample = true;
-          break;
+        } else if (e.type === "write") {
+          written = true;
+          if (seenExample) writing_after_example = true;
+        } else if (e.type === "self-review") {
+          reviewed = true;
         }
       }
+
       return {
         id: c.id,
         ...status(pack, session, c.id, now, events, eventsByConcept),
-        attempts: answers.length,
-        first_correct: first.filter(
-          (e) => e.choice === c.questions[e.stage].correct,
-        ).length,
-        first_total: first.length,
-        assisted: answers.filter((e) => e.helped).length,
-        writing_example_views: events.filter(
-          (e) => e.type === "writing-example",
-        ).length,
-        writing_after_example: writingAfterExample,
-        written: events.some((e) => e.type === "write"),
-        reviewed: events.some((e) => e.type === "self-review"),
+        attempts,
+        first_correct,
+        first_total,
+        assisted,
+        writing_example_views,
+        writing_after_example,
+        written,
+        reviewed,
       };
     });
   }
