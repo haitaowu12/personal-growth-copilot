@@ -59,6 +59,22 @@ class SafetyMachineTests(unittest.TestCase):
     def session(self):
         return safety.SafetySession(clock=lambda: NOW)
 
+    def test_system_clock_returns_current_aware_utc(self):
+        before = datetime.now(timezone.utc)
+        observed = safety._system_clock()
+        after = datetime.now(timezone.utc)
+        self.assertIs(observed.tzinfo, timezone.utc)
+        self.assertLessEqual(before, observed)
+        self.assertLessEqual(observed, after)
+
+    def test_default_clock_supplies_transition_audit_timestamp(self):
+        with patch.object(safety, "_system_clock", return_value=NOW) as clock:
+            session = safety.SafetySession()
+            transition = session.transition("OUT_OF_SCOPE_REQUEST")
+        clock.assert_called_once_with()
+        self.assertEqual(transition.occurred_at, "2026-08-11T18:00:00Z")
+        self.assertEqual(session.history, (transition,))
+
     def test_canonical_machine_is_complete(self):
         machine = safety.load_machine()
         self.assertEqual(safety.validate_machine_spec(machine), [])
