@@ -51,7 +51,7 @@ button:hover,
   border-color: #91a89e;
 }
 button:disabled {
-  cursor: default;
+  cursor: not-allowed;
   opacity: 0.55;
 }
 button.primary {
@@ -78,6 +78,7 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
+.hint:focus,
 .file-button:focus-within {
   outline: 3px solid #9c610a;
   outline-offset: 3px;
@@ -230,6 +231,16 @@ legend {
   margin: 10px 0;
   cursor: pointer;
   line-height: 1.5;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+.choice:has(input:enabled):hover {
+  background: var(--wash);
+  border-color: #91a89e;
+}
+.choice:has(input:disabled) {
+  cursor: not-allowed;
 }
 .choice:has(input:checked) {
   border-color: var(--accent);
@@ -295,6 +306,7 @@ textarea {
   gap: 10px;
   align-items: flex-start;
   margin: 14px 0;
+  cursor: pointer;
 }
 .check input {
   margin-top: 7px;
