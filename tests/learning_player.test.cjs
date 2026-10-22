@@ -79,7 +79,7 @@ function player(localStorage) {
   // Expose closure state/functions only in this test context; no duplicated logic.
   const instrumented = source.slice(0, -6) + `
     globalThis.inspectPlayer = {
-      act, tell, writing, confirmAction,
+      act, tell, writing, question, confirmAction,
       state: () => ({session, saved, dirtyDraft, storageSnapshot, storageWarning, confirmationOpen})
     };
   })();\n`;
@@ -88,6 +88,7 @@ function player(localStorage) {
   return {
     api, ids, nodes, downloads,
     notice: () => ids.get("notice"),
+    focused: () => document.activeElement,
     toggle(checked) {
       const input = ids.get("storage").children[0].children[0];
       input.checked = checked; return input.fire("change");
@@ -102,6 +103,21 @@ function player(localStorage) {
     failModal(value) { modalFailure = value; },
   };
 }
+
+test("revealing a hint moves focus to its text before disabling the trigger", () => {
+  const tab = player(storage(null));
+  tab.api.question(pack.concepts[0], "diagnostic");
+  const hint = tab.nodes.findLast(n => n.tag === "button" && n.textContent === "Give me a hint");
+  hint.focus();
+  hint.click();
+  const content = tab.nodes.findLast(n => n.className === "hint");
+  assert.equal(content.textContent, pack.concepts[0].questions.diagnostic.hint);
+  assert.equal(content.tabIndex, -1);
+  assert.equal(content.getAttribute("aria-live"), "polite");
+  assert.equal(tab.focused(), content);
+  assert.equal(hint.disabled, true);
+  assert.equal(tab.api.state().session.events.at(-1).type, "hint");
+});
 
 test("writing instructions and character count stay associated with the draft while typing", () => {
   const tab = player(storage());

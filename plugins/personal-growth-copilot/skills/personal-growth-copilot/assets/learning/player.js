@@ -458,6 +458,8 @@
       () => {
         if (act({ type: "hint", concept: c.id })) {
           hintArea.textContent = q.hint;
+          hintArea.tabIndex = -1;
+          hintArea.focus();
           hint.disabled = true;
         }
       },
