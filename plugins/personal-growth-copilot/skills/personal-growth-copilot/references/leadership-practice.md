@@ -37,7 +37,9 @@ Recommend a method with a reason and the strongest plausible alternative. State
 whether it is usable now, conditional on a named prerequisite, unsuitable, unresolved,
 or unnecessary. Conditional means wait for the prerequisite before acting. Formal
 leadership does not establish competence or capacity; informal leadership does not
-grant authority. A proposed handoff is not an agreement.
+grant authority. A proposed handoff is not an agreement. An escalation suggestion does not
+establish policy compliance or protection from discipline or retaliation; do not
+assign that formal status without a verified policy or authorized source.
 
 A completed model or document is not proof of technical adequacy, decision
 readiness or a selected design. If options, criteria or consequential evidence
