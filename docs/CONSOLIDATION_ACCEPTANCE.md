@@ -108,10 +108,21 @@ associations, hard usage caps or arbitrary new case-count thresholds. The exact
 external response and primary-source checks are retained in the notebook's dated
 review record; the user skill does not need a research packet at runtime.
 
+## Subsequent independent model reviews and safety work
+
+`INDEPENDENT_SAFETY_REVIEW.md` records two independent model source reviews,
+reproduced protective-state defects, their repaired negative sequences, bilingual
+source corrections and actual native stateful conversations. These observations
+extend the earlier replayed-history walkthroughs without promoting human, clinical,
+privacy or production gates. Earlier contrary outputs and failed binding attempts
+remain retained. The current safety helper differs from the earlier 28-case subject;
+the latest software/package receipts bind the reviewed implementation.
+
 ## Evidence still pending
 
-- Longer native stateful conversations, wider safety/consent and cross-module
-  coverage beyond the executed public, replayed-history development walkthroughs.
+- Broader and longer native stateful safety/consent and adversarial coverage,
+  beyond the executed public eight-case stateful probes and earlier replayed-history
+  walkthroughs; trustworthy integrated host state enforcement remains separate.
 - A passing named-host privacy preflight and real managed-record operations,
   retention, recovery and incident handling; ordinary fictional file operations
   and read-only denial were observed, while persistent memory stays unavailable.

@@ -100,6 +100,7 @@ Browser storage on file URLs varies; JSON export/import is the portable resume p
         "CONSOLIDATION_CANDIDATE.md",
         "CONSOLIDATION_ACCEPTANCE.md",
         "CONSOLIDATION_WALKTHROUGHS.md",
+        "INDEPENDENT_SAFETY_REVIEW.md",
     ):
         content = (ROOT / "docs" / name).read_bytes()
         if name == "TOPIC_PACKS.md":

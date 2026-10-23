@@ -92,6 +92,7 @@ extracted reference closure, scoring edge cases and unchanged lesson rebuild.
 The separately retained actual conversations and host operations establish their
 reported local observations; they do not certify behavior across cases/hosts,
 managed persistence, real-world benefit, independent content acceptance, bilingual
-quality or delayed learner transfer. Existing production qualification stays
+quality or delayed learner transfer. See `INDEPENDENT_SAFETY_REVIEW.md` for subsequent independent model source
+reviews, repaired state controls and native stateful probes. Existing production qualification stays
 blocked. Old receipts retain their own source subject rather than becoming a
 new combined pass.
