@@ -20,6 +20,7 @@ next action. Do not require the whole table or a personal history.
 | Instructions or priorities changed | Missing facts, contradictory authority, or uncertain effect? | Retrieve facts; seek owner reconciliation/L04; L08 for an authorized test; L06 to reconnect the plan |
 | I need cooperation beyond my authority | What can the other party actually decide, and what remains open? | L10 evidence and consultation |
 | I feel pressured or stuck | Immediate attention, or unsustainable conditions? | Pressure practice below; L09 capacity; L07 for a recurring coordination problem |
+| A technical architecture or model decision | Artifact completeness versus decision evidence; design authority versus operating-risk acceptance | [Technical leadership guide](leadership-guides.md#technical-leadership-and-architecture-contribution), then relevant L11/L12 method |
 | An attempt did not work | What was attempted, observed, and experienced by others? | L07 and the short practice note below |
 
 Card IDs refer to [leadership-methods.md](leadership-methods.md). Keep alternatives
@@ -37,6 +38,12 @@ whether it is usable now, conditional on a named prerequisite, unsuitable, unres
 or unnecessary. Conditional means wait for the prerequisite before acting. Formal
 leadership does not establish competence or capacity; informal leadership does not
 grant authority. A proposed handoff is not an agreement.
+
+A completed model or document is not proof of technical adequacy, decision
+readiness or a selected design. If options, criteria or consequential evidence
+are missing, prepare a pending decision/evidence brief or propose bounded
+validation; do not announce a preferred option, approval or readiness. A future
+decision-record template must be conditional until the owner actually decides.
 
 Do not rate people's potential or use a numerical method score as a prediction of
 success. Keep unknown, contested, and not applicable distinct. For fuller comparison, describe job fit, time, participant feasibility, input readiness and exposure separately. Do not sum ordinal ratings or let strengths cancel an essential failure. No source repository or score is required.

@@ -212,3 +212,16 @@ Feedback, feedback-seeking, channel, implementation-intention, and practitioner
 guidance support these controls at a general level. They do not validate one
 script or guarantee compliance. See `FEEDBACK-01`, `FEEDBACK-02`, `CHANNEL-01`,
 `CHANGE-01`, and `PRACTICE-01` in the evidence ledger.
+
+## Check the action status in a draft
+
+A report, request, authorized instruction, agreement and completed action are
+different states. Preserve which one the source actually establishes. Do not
+write “I have asked them,” “we agreed,” or “you will deliver” when the user only
+said a person could be asked or that a message was acknowledged. Use future or
+conditional wording, or ask for the missing confirmation. A recipient's silence
+or acknowledgment does not supply missing agreement or the user's authority.
+
+For example, if a relative has not been contacted, write “With your permission,
+I can ask them to coordinate the handover,” not “I have asked them to take over.”
+Do not make the draft smoother by inventing a contact, acceptance or handover.
