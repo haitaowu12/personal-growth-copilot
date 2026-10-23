@@ -1,5 +1,7 @@
 # Source-grounded learning candidate
 
+> Consolidation update — 23 October 2026: the local candidate is one portable agent skill spanning growth, the full interpersonal scope, twelve leadership methods and learning. Inquiry, rehearsal and review have shared owners; optional scoring and specialist references are bundled. Existing installed/published versions and host/human qualification remain separate. [Candidate scope](docs/CONSOLIDATION_CANDIDATE.md).
+
 Current development adds a portable offline requirements-writing lesson, strict topic
 packs, deterministic progression and progress replay, explicit saving/export/import,
 source references, and a conversational learning lane. Human-learning outcomes and

@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.1",
+  "profile_id": "relationship-alias",
+  "profile_version": 1,
+  "purpose": "State the bounded interpersonal decision being scored.",
+  "as_of": "2026-08-10",
+  "review_or_expiry": "Replace with a date or observable review event.",
+  "mode": "session-only",
+  "sensitive_exclusions": [
+    "Raw private transcripts, intimate media, credentials, and unnecessary identifiers"
+  ],
+  "dimensions": [
+    {
+      "id": "reliability",
+      "label": "Reliability and follow-through",
+      "anchor": "0 is directly blocked for this decision; 5 is consistent favorable evidence across relevant situations and time.",
+      "materiality": "Explain how reliability changes the named decision.",
+      "weight": 3,
+      "rating": null,
+      "confidence": "unknown",
+      "evidence": [],
+      "counterevidence": [],
+      "unknowns": [
+        "Add the decision-relevant missing evidence."
+      ],
+      "update_condition": "Review after the next comparable commitment or material correction.",
+      "decision_critical": true
+    }
+  ],
+  "flags": []
+}

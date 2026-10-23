@@ -109,3 +109,7 @@ provisional thresholds from approved promises, and permits shared observations
 for verification and validation. Ask what intended-use outcome and success basis
 would support the learner's conclusion. Do not equate user participation alone
 with validation. The separate offline-player pilot cannot validate tutor behavior.
+
+## Rehearsal and application
+
+Use the [shared rehearsal controller](rehearsal.md) for role-play without a second intake. Leadership learning uses [the twelve methods](leadership-methods.md) and [practice guides](leadership-guides.md). Preserve hints/example exposure and the distinction between rehearsal, self-review, tutor judgment and independent application. The offline topic format and progress records are unchanged.

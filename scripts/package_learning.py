@@ -6,11 +6,48 @@ import hashlib
 import importlib.util
 import io
 import json
+import posixpath
+import re
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot"
+
+
+def validate_runtime_references(files: dict[str, bytes]) -> None:
+    """Validate the actual distribution, including nested specialist modules.
+
+    Markdown links resolve relative to their containing document; inline
+    references/scripts/assets paths are skill-root-relative. Source URLs and
+    section anchors are provenance, not required runtime files.
+    """
+    prefix = "personal-growth-copilot/"
+    for name, raw in files.items():
+        if not name.startswith(prefix) or not name.endswith(".md"):
+            continue
+        body = raw.decode("utf-8")
+        targets = [prefix + target for target in re.findall(
+            r"`((?:references|assets|scripts)/[^`\s]+)`", body
+        )]
+        for href in re.findall(r"\]\(([^)]+)\)", body):
+            href = href.strip().strip("<>")
+            parsed = urlsplit(href)
+            if parsed.scheme and parsed.scheme not in {"http", "https", "mailto"}:
+                raise ValueError(f"Non-portable runtime URI: {name}: {href}")
+            if parsed.scheme or parsed.netloc or not parsed.path:
+                continue
+            target = unquote(parsed.path)
+            if target.startswith("/") or "\\" in target:
+                raise ValueError(f"Non-portable runtime reference: {name}: {href}")
+            targets.append(posixpath.normpath(posixpath.join(
+                posixpath.dirname(name), target
+            )))
+        for target in targets:
+            target = posixpath.normpath(target)
+            if not target.startswith(prefix) or target not in files:
+                raise ValueError(f"Missing or escaping runtime reference: {name}: {target}")
 
 
 def package_bytes() -> bytes:
@@ -60,6 +97,8 @@ Browser storage on file URLs varies; JSON export/import is the portable resume p
         "TOPIC_PACKS.md",
         "LEARNING_ACCEPTANCE.md",
         "LEARNING_REHEARSAL.md",
+        "CONSOLIDATION_CANDIDATE.md",
+        "CONSOLIDATION_ACCEPTANCE.md",
     ):
         content = (ROOT / "docs" / name).read_bytes()
         if name == "TOPIC_PACKS.md":
@@ -68,6 +107,7 @@ Browser storage on file URLs varies; JSON export/import is the portable resume p
                 b"../personal-growth-copilot/references/topic-authoring.md",
             )
         files["docs/" + name] = content
+    validate_runtime_references(files)
     manifest = {
         "schema_version": "1.0",
         "version": (ROOT / "VERSION").read_text().strip(),

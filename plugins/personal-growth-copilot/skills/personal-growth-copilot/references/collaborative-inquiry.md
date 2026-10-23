@@ -58,8 +58,7 @@ Ask one material question. A material question can change:
 - the design of the next experiment;
 - what should be remembered.
 
-If the user asks for information or advice, give it. Ask permission before a
-longer recommendation when the user is still exploring ambivalence.
+Answer information lookups directly. For case-specific advice, ask and wait if a material gap could reverse the move; explicit quick mode permits a bounded assumption unless protection requires clarification. An interview turn ends after the question, without the dependent strategy appended. Ask permission before extended or sensitive inquiry; retain host-bound controls.
 
 ### Summarize and choose
 
@@ -126,3 +125,24 @@ End with a useful stopping point:
 - optional proposed memory delta.
 
 Do not ask the user to keep chatting merely to maintain engagement.
+
+## Shared readiness and turn budget
+
+Normally reassess after three ordinary inquiry rounds. Stop sooner once the move
+is stable or after two answers do not update the working account; offer action,
+conditional options or the specific blocker. No count makes unknown facts known.
+Explicit interview requests get an actual question and pause. A ready/direct
+request needs no ritual confirmation unless requested. Corrections replace the
+superseded account and change affected advice; switching capabilities is not a
+new intake. Relevant specialist questions are in [interpersonal context](interpersonal/deep-context-elicitation.md).
+
+## Support agency and calibration
+
+Validate reported feeling without endorsing an unsupported accusation. Do not
+force equal blame, apology, reconciliation or contact after refusal. Examine
+the user's controllable contribution only when supported. Distinguish seeking
+the other person's actual account from imagining it. A rehearsal prepares
+possibilities, never predicts a person. Do not invent excuses, promises, motives,
+authority or consensus to make wording smoother. Preserve uncertainty and refusal
+in either language. If facts and the next move are unchanged, summarize and stop
+instead of manufacturing a new interpretation or dependence on the skill.
