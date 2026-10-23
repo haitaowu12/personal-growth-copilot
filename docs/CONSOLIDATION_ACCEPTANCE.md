@@ -25,8 +25,11 @@ boundary; it is not a target-model conversation or a claim of behavioural qualit
 
 ## Public development cases
 
-`evals/consolidation-cases.json` is an authored public case set, not an executed
-target-model run or untouched holdout. It covers the original three walkthroughs
+`evals/consolidation-cases.json` is a public development case set. All 28 cases
+were executed in two actual model walkthrough rounds, with focused follow-up
+checks after repairs. See `CONSOLIDATION_WALKTHROUGHS.md` for subjects, model,
+transport, observations, failures and host results. These are development runs,
+not untouched holdouts or independent human acceptance. It covers the original three walkthroughs
 plus family/household, reciprocity, dating refusal, partnership, breakup/no-contact,
 Chinese speech acts, multi-actor authority, digital/AI authorization, profile
 correction/expiry, memory off/host failure, DFS missing evidence/flags, leadership
@@ -60,8 +63,8 @@ Do not adopt the critique's proposed separate relationship schema as an existing
 capability: the package has no such persistent schema/adapter. Do not add tests
 that only assert authored wording; existing archive closure and score edge cases
 exercise executable invariants. Two additional public development cases probe
-case-content and proportional inquiry boundaries (28 authored, unexecuted cases
-total). They are not untouched holdouts.
+case-content and proportional inquiry boundaries (28 public development cases
+total, now executed). They are not untouched holdouts.
 
 ## Finite qualification sequence using existing work
 
@@ -72,7 +75,9 @@ total). They are not untouched holdouts.
    The current governed target-session suite is `evals/cases.json`; the broader
    consolidation case list is a separate development design, not silently a new
    governed suite. Its execution/import must be explicitly supported before
-   claiming full governed coverage.
+   claiming full governed coverage. The completed walkthroughs are a separate
+   trace-retaining development runner; no governed comparison arm, blinded score
+   or release-gate promotion is claimed.
 3. Compare matched generalist and available original specialist behavior under
    the same model/context/tools/budgets. The existing strong-generalist definition
    is design-only; do not label it an executed governed arm. Avoid substituting a
@@ -86,7 +91,10 @@ total). They are not untouched holdouts.
    can detect/reduce judge effects, not eliminate all bias or establish truth.
 5. Verify actual host invocation and the relevant supported operation boundaries,
    including script-enabled and conversational-only fallback, memory off, failed
-   save/delete and exact preview. A helper pass is not a persistent-host pass.
+   save/delete and exact preview. Seven actual fictional file/helper operations
+   and an actual frozen-runtime adapter call are now observed. Named-host privacy
+   discovery is NOT_READY; persistent record semantics remain unverified. A
+   helper or exported-file pass is not a persistent-host pass.
 6. Complete the existing independent bilingual/content/device/accessibility and
    consented user/learner observation work for the claim sought. Retain burden,
    dependence and delayed transfer alongside benefit; promote only evidence-backed
@@ -102,8 +110,11 @@ review record; the user skill does not need a research packet at runtime.
 
 ## Evidence still pending
 
-- Executed target-model conversations on this combined instruction subject.
-- Current-host discovery/invocation and actual permission/record-operation checks.
+- Longer native stateful conversations, wider safety/consent and cross-module
+  coverage beyond the executed public, replayed-history development walkthroughs.
+- A passing named-host privacy preflight and real managed-record operations,
+  retention, recovery and incident handling; ordinary fictional file operations
+  and read-only denial were observed, while persistent memory stays unavailable.
 - Independent untouched holdouts and calibrated comparison/review.
 - Independent fluent English/Chinese review and expanded relationship safety cases.
 - The offline topic's outstanding human content decisions and final target-device,
