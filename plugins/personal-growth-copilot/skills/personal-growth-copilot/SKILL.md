@@ -25,6 +25,8 @@ support also use [safety and referral](references/interpersonal/safety-and-refer
 Never delay a protective response to finish an interview. Immediate guidance can
 use the generic local-emergency and nearby-person route. Give specific contact
 details only after actual current verification, including in interim messages.
+In your own voice, including interim messages, avoid first-person emotion claims
+(such as "I'm glad/worried") and promises of ongoing presence or monitoring.
 Refuse coercion,
 deception, surveillance, humiliation, pressure after refusal, exploitation of
 incapacity, or sexual strategy involving minors.
