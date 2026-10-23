@@ -84,11 +84,14 @@ implied by method wording.
 
 ## Verification and remaining evidence
 
-See `CONSOLIDATION_ACCEPTANCE.md` for observed checks and pending evidence, and
-`evals/consolidation-cases.json` in the development checkout for public authored
-multiturn cases. Tests verify actual extracted reference closure, scoring edge
-cases and unchanged lesson rebuild. They do not certify instruction-following,
-host permissions, real-world benefit, independent content acceptance, bilingual
+See `CONSOLIDATION_ACCEPTANCE.md` for observed checks and pending evidence,
+`CONSOLIDATION_WALKTHROUGHS.md` for the 28 executed model walkthroughs, supported
+repairs and actual named-host checks, and `evals/consolidation-cases.json` in the
+development checkout for the public case design. Deterministic tests verify
+extracted reference closure, scoring edge cases and unchanged lesson rebuild.
+The separately retained actual conversations and host operations establish their
+reported local observations; they do not certify behavior across cases/hosts,
+managed persistence, real-world benefit, independent content acceptance, bilingual
 quality or delayed learner transfer. Existing production qualification stays
 blocked. Old receipts retain their own source subject rather than becoming a
 new combined pass.
