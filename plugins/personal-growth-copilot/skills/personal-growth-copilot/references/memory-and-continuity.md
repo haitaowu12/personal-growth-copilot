@@ -2,7 +2,8 @@
 
 ## Default
 
-No persistence is assumed. Use `CONFIRM_EACH` when a host provides memory.
+Default to session-only/OFF. Use `CONFIRM_EACH` only after a current scoped
+opt-in and verification that the host supports the requested operation.
 Never claim a write, read, correction, export, or deletion succeeded without a
 host result.
 
@@ -28,7 +29,14 @@ audit identifier.
 
 It must not contain hidden model reasoning, raw transcripts, raw journals,
 trauma narratives, credentials, unnecessary identifiers, intimate media,
-diagnoses, or profiles of other people.
+diagnoses, or profiles of other people. A user-owned interpersonal case may
+include the minimum alias/role-scoped statements, observations and revisable
+hypotheses needed for the user's own decision; this is case evidence, not a
+standalone person dossier. See [case content](interpersonal/memory-and-continuity.md)
+and [decision context](interpersonal/profiles-and-scoring.md). Do not force that
+content into the growth-record schema. This package supplies no separate
+persistent interpersonal schema or adapter; without an actually supported host
+representation, return a requested unsaved portable case card.
 
 ## Requested session capsule
 
@@ -79,8 +87,11 @@ A richer dossier is permitted when requested. It remains:
 - **inspectable:** the user can view the complete retained record;
 - **portable:** use an open format;
 - **erasable:** deletion is available through the host;
-- **non-third-party:** describe interactions only as needed to understand the
-  user's choices; do not build records about non-users.
+- **user-decision-scoped:** describe other people only through the minimal
+  case evidence needed for the user's choices, boundaries and exposure. Do not
+  build standalone profiles of non-users or aggregate a person dossier across
+  unrelated cases. Shared authorization governs every specialist's content;
+  a case template grants no additional storage capability.
 
 ## Retrieval
 

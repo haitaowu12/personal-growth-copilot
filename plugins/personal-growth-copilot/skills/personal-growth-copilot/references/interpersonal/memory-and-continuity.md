@@ -18,7 +18,12 @@ Only enable persistence after explicit scope consent and a verified host adapter
 The adapter must demonstrate scoped read/write, inspect, correction, expiry,
 export, and deletion with receipts. If a required capability is unavailable or
 unverified, keep that case session-only; do not promise unsupported controls.
-No raw transcripts or secret person profiles belong in a card.
+No raw transcripts or secret person profiles belong in a card. Actor statements,
+observations and hypotheses are minimal evidence within the user's bounded case;
+do not create standalone non-user dossiers or aggregate them across unrelated
+cases. This content template is not an executable schema or a persistent adapter.
+Use a requested unsaved card if the real host cannot represent the content under
+the shared controls.
 
 A skill's memory mode does not control provider chat history, logs, backups, or
 training policies. Explain the exact storage scope of a save/delete receipt.
@@ -77,7 +82,8 @@ Actions tried and observable results:
 Current strategy, next review, and stop rule:
 Open questions:
 Profile version and change note:
-Decision Fit Score, coverage, confidence, and flags:
+Decision status and interpretation / active flags / critical unknowns / coverage / confidence:
+Decision Fit Score: null when gated, unassessed or incomplete; optional partial arithmetic labeled:
 Expiry or update event:
 ```
 

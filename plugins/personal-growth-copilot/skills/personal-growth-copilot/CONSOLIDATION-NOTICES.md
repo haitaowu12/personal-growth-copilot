@@ -2,7 +2,7 @@
 
 Personal Growth Copilot base: `08fcbec7888a7a6ff37bdb41cfb0b8bbcb68347d`. Interpersonal Strategist donor: `224c8af74bd3558ac6b0af810dde6078fe16105c` (0.13.0-alpha.1). Both copyright 2026 Tony Wu, MIT. Specialist reference bodies and the status-first calculator are retained from that donor with namespaced paths; shared inquiry/rehearsal/review and authorization are adapted to the consolidated owners. Leadership sources are described in [the provenance guide](references/leadership-programme.md).
 
-This is a new local implementation subject, not a claim that either donor's production or host gates passed. Third-party authors retain their works; no book corpus, private records or donor research packet is bundled.
+This is a new local implementation subject, not a claim that either donor's production or host gates passed. A subsequent subset critique informed source corrections to shared inquiry, case-content ownership, status-first templates and entry routing; it does not establish behavioral improvement. Third-party authors retain their works; no book corpus, private records or donor research packet is bundled.
 
 MIT License
 

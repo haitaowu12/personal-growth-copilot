@@ -40,6 +40,66 @@ corrections, reviewer judgment and reason. Compare existing specialist and stron
 generalist responses under matched conditions for benefit claims. Preserve all
 failures and missing observations; do not substitute a polished scripted answer.
 
+## External critique reconciliation — 23 October
+
+Argon High returned a static critique of the supplied nine-module subset of
+`98bd2b24d3e2bba26d9b2f6a31ada29bbdc18902`. The earlier Deep Research task
+collected a source list but was stopped without a finished report. The direct
+critique is useful source review, not full-repository inspection, target-skill
+execution, independent holdouts, human review or release approval.
+
+| Finding | Source disposition and change |
+| --- | --- |
+| DEF-01: competing record-content ownership | Confirmed. Shared authorization and permitted retained content govern; specialist content is bounded evidence within the user's case. No standalone non-user dossier, cross-case person aggregation or growth-schema coercion. No new persistent schema/adapter is implied; unsupported operations return a requested unsaved card. Template IDs now follow the existing opaque host-ID rule. |
+| DEF-02: score-first compact/template output | Confirmed. Compact output, dossier snapshot and case-card summary now expose status/interpretation, flags, critical unknowns and coverage before optional arithmetic. The calculator and numerical gates are unchanged. |
+| DEF-03: default closing checklist | Wording ambiguity, not proof an optional delta was always emitted. Closing is proportional; review observations remain useful for active experiments, with no default formal summary, capsule, delta or schedule. |
+| DEF-04: four-part opening contract | Wording ambiguity: the prior text already rejected intake forms, but could suggest collecting four items. Treat them as context, infer supplied outcome/mode, ask only a material question, and obtain extended/sensitive inquiry consent when relevant. The shared readiness budget also governs synthesis. |
+| DEF-05: allegedly unreachable routes | Overstated: topic-learning and interpersonal-practice already linked all three modules. Add concise direct entry links for authoring, interpersonal protection and case continuity to improve discovery; retain progressive loading. |
+
+Do not adopt the critique's proposed separate relationship schema as an existing
+capability: the package has no such persistent schema/adapter. Do not add tests
+that only assert authored wording; existing archive closure and score edge cases
+exercise executable invariants. Two additional public development cases probe
+case-content and proportional inquiry boundaries (28 authored, unexecuted cases
+total). They are not untouched holdouts.
+
+## Finite qualification sequence using existing work
+
+1. Finish source reconciliation and regenerate the portable package plus an
+   exact-source deterministic receipt. Keep donor installations for recovery.
+2. Use the public development cases for actual model rehearsal and retain raw
+   prompts, responses, turns, model/host settings, module exposure and failures.
+   The current governed target-session suite is `evals/cases.json`; the broader
+   consolidation case list is a separate development design, not silently a new
+   governed suite. Its execution/import must be explicitly supported before
+   claiming full governed coverage.
+3. Compare matched generalist and available original specialist behavior under
+   the same model/context/tools/budgets. The existing strong-generalist definition
+   is design-only; do not label it an executed governed arm. Avoid substituting a
+   deliberately weak generic prompt or inventing standalone leadership/learning
+   products where only source modules/candidates exist. Declare decision-relevant
+   criteria before runs; superiority is not a prerequisite for useful reuse.
+4. Reserve genuinely unseen cases with independent reviewers before qualification.
+   Prioritize multi-turn refusal/consent, protective-state persistence, contradictory
+   evidence, bilingual speech acts, cross-module transitions and injected source
+   instructions. Calibrate judgments against actual records; position swapping
+   can detect/reduce judge effects, not eliminate all bias or establish truth.
+5. Verify actual host invocation and the relevant supported operation boundaries,
+   including script-enabled and conversational-only fallback, memory off, failed
+   save/delete and exact preview. A helper pass is not a persistent-host pass.
+6. Complete the existing independent bilingual/content/device/accessibility and
+   consented user/learner observation work for the claim sought. Retain burden,
+   dependence and delayed transfer alongside benefit; promote only evidence-backed
+   claims. Do not invent participants, model results, owner approval or production
+   qualification to close a checklist.
+
+Research on sycophancy, long-context retrieval or affective use motivates test
+questions; it does not demonstrate failure or benefit of this candidate. Avoid
+unverified numerical research claims, causal conclusions from voluntary-use
+associations, hard usage caps or arbitrary new case-count thresholds. The exact
+external response and primary-source checks are retained in the notebook's dated
+review record; the user skill does not need a research packet at runtime.
+
 ## Evidence still pending
 
 - Executed target-model conversations on this combined instruction subject.

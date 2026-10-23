@@ -21,7 +21,7 @@ independent model/host/human outcomes are separate evidence gates.
 | Continuity and portable summaries | [Shared host authorization](memory-and-continuity.md), [record contract](record-store-contract.md), [capsule](session-capsule.md), [case content](interpersonal/memory-and-continuity.md) |
 | Evidence and boundary reasoning | [Growth ledger](evidence-ledger.md), [interpersonal ledger](interpersonal/evidence-ledger.md), [leadership provenance](leadership-programme.md), [safety](safety-and-scope.md) |
 
-No auto-dossiers, third-party profiling, manipulation, clinical/legal/HR adjudication,
+No auto-dossiers, standalone non-user profiles, manipulation, clinical/legal/HR adjudication,
 score-driven coercion or implicit external actions are added. Optional persistence
 still needs actual verified host capabilities; the bundled store is non-persistent.
 The older standalone products are recovery/compatibility sources, not runtime
