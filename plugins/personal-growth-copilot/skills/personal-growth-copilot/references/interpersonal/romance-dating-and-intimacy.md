@@ -338,7 +338,7 @@ English:
 
 Simplified Chinese:
 
-> 我决定结束我们的恋爱关系。剩下的实际事项可以通过消息协调，但这个决定我不会再反复
+> 我决定结束我们的恋爱关系。剩下的实际事项我会通过消息协调，但我不会再就这个决定进行
 > 协商。
 
 In each pair preserve the invitation or decision, the other person's ability to
