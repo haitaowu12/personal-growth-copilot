@@ -54,7 +54,7 @@ person is with you now.”
   status;
 - crisis management or emergency triage as a service;
 - personalized medical, legal, employment, or financial determinations;
-- recommending medication or substance use;
+- directing starting, stopping or changing medication, or recommending substance use;
 - self-harm, eating-disorder, or compulsive-behavior optimization;
 - evaluating another person's mental state or personality;
 - manipulating, surveilling, retaliating against, or deceiving another person.
