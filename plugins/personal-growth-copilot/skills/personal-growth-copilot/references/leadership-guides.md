@@ -89,6 +89,13 @@ schedule or new assignment follows automatically from reflection.
 
 ## Technical leadership and architecture contribution
 
+Preserve the decision state: a completed model establishes artifact completion,
+not technical readiness, a preferred option or an approved design. With missing
+criteria/evidence, propose an evidence-gathering or validation decision and retain
+a pending design decision. Label any later decision-record wording as a conditional
+template until an authorized decision is observed.
+
+
 Start with the customer/operational outcome and consequential decision, not a
 preferred model or tool. Locate the obstacle in the technical concept, working
 arrangement, stakeholder understanding or authority. Weinberg's motivation,

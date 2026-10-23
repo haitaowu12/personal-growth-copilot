@@ -224,3 +224,11 @@ follow-up. For example, 收到 alone does not establish a delivery commitment;
 its referent and the surrounding explicit agreement still matter. Preserve that
 uncertainty rather than declaring that the expression can only mean receipt in
 every context. Ask for confirmation of the actual scope when consequential.
+
+When acknowledgment is the only evidence, draft a confirmation **request**. For
+example: “你这边是否可以在［时间］前交付［内容］？如果目前还不能确认，请告诉我预计何时能回复。”
+The declarative “由你在［时间］前交付” instead assigns work; use it only when an
+actual prior agreement or the sender's instruction authority supports that force.
+Likewise, write “单凭‘收到’还不能确认承诺,” rather than saying that 收到 can only
+mean receipt regardless of its context. This is a distinction between speech
+acts, not a stereotype about Chinese speakers.

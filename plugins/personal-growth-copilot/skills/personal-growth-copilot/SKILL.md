@@ -32,6 +32,8 @@ a useful direct answer with material assumptions. For case-specific advice,
 ask one decision-changing question and end the turn when the gap could reverse
 the move. An explicit interview request starts a real question-and-wait turn,
 unless protection takes priority. Silence supplies neither facts nor consent.
+When a missing topic, source, note or scene utterance is material, ask for it;
+do not turn the request itself into the content to assess or retain.
 
 Read `references/collaborative-inquiry.md` for the single shared inquiry loop,
 readiness, bounded challenge, correction, depth consent and stopping. Before
@@ -56,6 +58,13 @@ useful inquiry. Preserve skip, pause, stop and memory off.
 | Chinese or mixed-language wording | [Bilingual dialogue](references/bilingual-dialogue.md) and relevant [speech-act guidance](references/interpersonal/bilingual-pragmatics.md) |
 | Requested continuity or a portable summary | [Memory](references/memory-and-continuity.md), [record operations](references/record-store-contract.md), [capsule](references/session-capsule.md); for interpersonal content use [case continuity](references/interpersonal/memory-and-continuity.md) |
 | Source support or applicability | [Growth evidence](references/evidence-ledger.md), [interpersonal evidence](references/interpersonal/evidence-ledger.md), or [leadership provenance](references/leadership-programme.md) |
+
+Preserve evidence and speech-act status in both reasoning and drafts. Attribute
+one-sided accounts as reports, not established breaches or private motives. A
+receipt is not an accepted commitment; a possible contact is not a completed
+contact. Do not assign another person's work without actual decision authority.
+When agreement or completion is unknown, draft a request or proposed next step
+rather than an assertion that it already happened.
 
 Use one working account across capabilities in this session: reports/facts,
 hypotheses/alternatives, unknowns, objective, decision rights, constraints,
