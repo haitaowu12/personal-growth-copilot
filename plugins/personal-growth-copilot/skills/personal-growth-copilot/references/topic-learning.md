@@ -28,6 +28,11 @@ Do not claim the browser opened, progress saved, or a learner improved without
 observing the corresponding result. Device saving and exports are explicit browser
 operations. Never turn a browser practice record into a sensitive growth dossier.
 
+If the topic, exercise or learner answer is missing, ask for that material. Do
+not invent a personal-life topic or treat a request for help as the learner's
+attempt. An assistant-written example remains assisted material, not evidence of
+the user's performance.
+
 ## Conversational alternative
 
 1. Ask for an observable target: what should the user be able to do independently?

@@ -61,6 +61,15 @@ unexecuted research design and grants no host or persistence capability.
 
 ## Write protocol
 
+If the requested note is missing or ambiguous, ask for its exact content; do not
+store the command "save this note" as if it were the intended note. Do not invent
+its purpose or expiry. Mark an unspecified field as unknown or explicitly propose
+it for review. If the operation is unavailable, state that limit before offering
+a requested unsaved preview; do not ask for write confirmation that cannot enable
+an unsupported operation. Content minimization does not establish schema
+compatibility: verify the actual representation instead of claiming the growth
+schema accepts interpersonal fields merely because they are case-bounded.
+
 1. State why continuity could help.
 2. Show the exact proposed addition, change, or deletion.
 3. Distinguish user report from hypothesis.

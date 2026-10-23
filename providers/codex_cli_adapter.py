@@ -15,6 +15,14 @@ from pathlib import Path
 PROTOCOL = "pgc-stdio-v2"
 ALLOWED_SETTINGS = {"reasoning_effort"}
 ALLOWED_REASONING = {"low", "medium", "high", "xhigh", "max", "ultra"}
+# Current macOS app/standalone runtimes exceed the former 200 MiB bound.
+# Keep a finite read/copy ceiling and the existing exact-byte identity check.
+MAX_RUNTIME_BYTES = 320 * 1024 * 1024
+DISABLED_CODE_MODE_NOTICE = (
+    "Code Mode is unavailable because code-mode host is disabled. "
+    "Code mode will fail closed; enable `features.code_mode_host` and install "
+    "`codex-code-mode-host`."
+)
 
 
 def canonical(value: object) -> bytes:
@@ -221,6 +229,65 @@ CONVERSATION:
 ASSISTANT:"""
 
 
+def snapshot_runtime(source: Path, runtime_bytes: bytes, directory: Path) -> Path:
+    """Preserve signed macOS bundle context without changing its signature.
+
+    The executable bytes remain bound to the frozen request. For app runtimes,
+    strict signature verification also checks the bundled supporting resources;
+    a bare executable copy can be killed by macOS before it starts.
+    """
+    is_app_runtime = (
+        sys.platform == "darwin"
+        and source.parent.name == "MacOS"
+        and source.parent.parent.name == "Contents"
+        and source.parent.parent.parent.suffix == ".app"
+    )
+    if is_app_runtime:
+        bundle = source.parent.parent.parent
+        entries = list(bundle.rglob("*"))
+        if bundle.is_symlink() or any(path.is_symlink() for path in entries):
+            fail("runtime app bundle contains a symlink")
+        if any(not path.is_file() and not path.is_dir() for path in entries):
+            fail("runtime app bundle contains a non-regular entry")
+        if sum(path.stat().st_size for path in entries if path.is_file()) > MAX_RUNTIME_BYTES:
+            fail("runtime app bundle exceeds its size limit")
+        frozen_bundle = directory / bundle.name
+        try:
+            verified = subprocess.run(
+                ["/usr/bin/codesign", "--verify", "--deep", "--strict", str(bundle)],
+                capture_output=True, check=False, timeout=30,
+            )
+            if verified.returncode != 0:
+                fail("runtime app bundle signature verification failed")
+            copied = subprocess.run(
+                ["/usr/bin/ditto", str(bundle), str(frozen_bundle)],
+                capture_output=True, check=False, timeout=30,
+            )
+            if copied.returncode != 0:
+                fail("runtime app bundle snapshot failed")
+            verified_copy = subprocess.run(
+                ["/usr/bin/codesign", "--verify", "--deep", "--strict", str(frozen_bundle)],
+                capture_output=True, check=False, timeout=30,
+            )
+            if verified_copy.returncode != 0:
+                fail("runtime app bundle snapshot signature verification failed")
+        except (OSError, subprocess.TimeoutExpired):
+            fail("runtime app bundle snapshot verification unavailable")
+        frozen = frozen_bundle / source.relative_to(bundle)
+        if read_regular_bytes(frozen, maximum=MAX_RUNTIME_BYTES) != runtime_bytes:
+            fail("runtime app bundle snapshot differs from frozen executable")
+        os.chmod(frozen, 0o500)
+        return frozen
+    frozen = directory / "frozen-runtime"
+    descriptor = os.open(frozen, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o500)
+    with os.fdopen(descriptor, "wb") as stream:
+        stream.write(runtime_bytes)
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.chmod(frozen, 0o500)
+    return frozen
+
+
 def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, str]:
     codex_bin = required_path("PGC_CODEX_BIN")
     auth_root = required_path("PGC_CODEX_AUTH_ROOT", directory=True)
@@ -238,7 +305,7 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
         fail("Codex adapter requires host=codex-cli")
     if execution["tool_permissions"]:
         fail("Codex evaluation adapter requires an empty tool-permission list")
-    runtime_bytes = read_regular_bytes(codex_bin, maximum=209_715_200)
+    runtime_bytes = read_regular_bytes(codex_bin, maximum=MAX_RUNTIME_BYTES)
     if hashlib.sha256(runtime_bytes).hexdigest() != execution[
         "runtime_executable_sha256"
     ]:
@@ -246,17 +313,7 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
     with tempfile.TemporaryDirectory(prefix="pgc-codex-turn-") as directory_name:
         directory = Path(directory_name)
         output_path = directory / "last-message.json"
-        runtime_path = directory / "frozen-runtime"
-        descriptor = os.open(
-            runtime_path,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
-            0o500,
-        )
-        with os.fdopen(descriptor, "wb") as stream:
-            stream.write(runtime_bytes)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.chmod(runtime_path, 0o500)
+        runtime_path = snapshot_runtime(codex_bin, runtime_bytes, directory)
         child_environment = dict(os.environ)
         child_environment["CODEX_HOME"] = str(auth_root)
         command = [
@@ -265,6 +322,9 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
             "--ephemeral",
             "--ignore-user-config",
             "--ignore-rules",
+            # This transport promises no tools and needs no optional code-mode host.
+            "--disable",
+            "code_mode_host",
             "--skip-git-repo-check",
             "--sandbox",
             "read-only",
@@ -299,6 +359,8 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
             fail("Codex CLI did not produce schema-valid final JSON")
         thread_id = ""
         thread_started_count = 0
+        turn_started_count = 0
+        turn_completed_count = 0
         prohibited_activity: set[str] = set()
         allowed_event_types = {
             "thread.started",
@@ -325,15 +387,31 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
                     fail("Codex CLI thread event is malformed")
                 thread_started_count += 1
                 thread_id = event["thread_id"]
+            if event_type == "turn.started":
+                turn_started_count += 1
+            if event_type == "turn.completed":
+                turn_completed_count += 1
             if event_type in {"item.started", "item.updated", "item.completed"}:
                 item = event.get("item")
                 item_type = item.get("type") if isinstance(item, dict) else None
+                # This exact pre-turn notice is emitted by CLI 0.163 when the
+                # optional host is deliberately disabled above. It is not a
+                # tool invocation or model failure. All other errors fail closed.
+                if (
+                    event_type == "item.completed"
+                    and not turn_started_count
+                    and item_type == "error"
+                    and item.get("message") == DISABLED_CODE_MODE_NOTICE
+                ):
+                    continue
                 if item_type not in {"agent_message", "reasoning"}:
                     prohibited_activity.add(str(item_type or "malformed-item"))
         if prohibited_activity:
             fail("Codex CLI used a prohibited tool or non-message item")
         if thread_started_count != 1 or not thread_id:
             fail("Codex CLI did not provide exactly one provider thread identifier")
+        if turn_started_count != 1 or turn_completed_count != 1:
+            fail("Codex CLI did not complete exactly one provider turn")
         response_id = "codex-" + "".join(
             character if character.isalnum() or character in "._:-" else "-"
             for character in thread_id
