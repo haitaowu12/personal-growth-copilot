@@ -118,7 +118,7 @@ def validate() -> list[str]:
             "authentication": "ON_INSTALL",
         }:
             errors.append("marketplace plugin policy mismatch")
-    instruction_files = [skill_root / "SKILL.md", *sorted((skill_root / "references").glob("*.md"))]
+    instruction_files = [skill_root / "SKILL.md", *sorted((skill_root / "references").rglob("*.md"))]
     for instruction_file in instruction_files:
         body = instruction_file.read_text(encoding="utf-8")
         referenced_resources = set(

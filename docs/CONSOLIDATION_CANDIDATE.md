@@ -61,6 +61,12 @@ and actual-world evidence remain distinct. Portable leadership cards omit privat
 motivating context and raw source files while retaining method conditions and
 book/edition locators from the inspected source syntheses.
 
+The evaluation profile freezer, target adapter and resource validator now traverse
+nested references. Profile sections carry their full relative paths so the two
+evidence/continuity namespaces cannot be confused by a filename-only label. The
+package builder likewise checks the actual archive's nested local dependencies;
+an existing checkout file cannot hide an omitted distribution file.
+
 ## Records and permissions
 
 Session-only remains the default. No database, automatic case memory, profile

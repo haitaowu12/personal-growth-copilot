@@ -19,6 +19,10 @@ reproducibility and the requirements HTML rebuilt from the extracted skill.
 The repository's existing deterministic qualification command retains its own
 clean-source, locked-dependency and conformance conditions.
 
+The provider-adapter regression also changes a nested romance reference under a
+previously frozen request and requires rejection. This checks the real adapter
+boundary; it is not a target-model conversation or a claim of behavioural quality.
+
 ## Public development cases
 
 `evals/consolidation-cases.json` is an authored public case set, not an executed

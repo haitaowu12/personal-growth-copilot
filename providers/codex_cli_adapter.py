@@ -154,7 +154,7 @@ def load_profile(payload: dict, repository: Path) -> str:
     system_id = request["system_id"]
     if system_id == "target":
         references = sorted(
-            (repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references").glob("*.md")
+            (repository / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references").rglob("*.md")
         )
         documents = [skill_path, *references]
     elif system_id in baseline_paths:
@@ -184,7 +184,7 @@ def load_profile(payload: dict, repository: Path) -> str:
             content = read(path).decode("utf-8")
         except UnicodeError:
             fail("profile source is not UTF-8")
-        pieces.append(f"\n--- {path.name} ---\n{content}")
+        pieces.append(f"\n--- {path.relative_to(repository).as_posix()} ---\n{content}")
     return "".join(pieces)
 
 
