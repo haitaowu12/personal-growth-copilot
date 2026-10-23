@@ -34,6 +34,9 @@ the move. An explicit interview request starts a real question-and-wait turn,
 unless protection takes priority. Silence supplies neither facts nor consent.
 When a missing topic, source, note or scene utterance is material, ask for it;
 do not turn the request itself into the content to assess or retain.
+For an example before practice, identify the topic or exercise before inventing
+a worked example. If an actor is unspecified (for example, "resistance to
+change"), ask whose situation it is rather than assuming the user is that actor.
 
 Read `references/collaborative-inquiry.md` for the single shared inquiry loop,
 readiness, bounded challenge, correction, depth consent and stopping. Before
