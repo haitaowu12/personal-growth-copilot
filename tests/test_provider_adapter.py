@@ -156,6 +156,50 @@ output.write_text(json.dumps({
             finally:
                 provider.close()
 
+    def test_codex_adapter_rejects_a_changed_nested_specialist_profile(self):
+        with tempfile.TemporaryDirectory() as directory_name:
+            directory = Path(directory_name)
+            fake_codex = self.fake_codex(directory)
+            auth_root = directory / "auth"
+            auth_root.mkdir()
+            shadow = directory / "shadow"
+            for relative in (
+                "plugins/personal-growth-copilot",
+                "evals/baselines",
+                "providers",
+            ):
+                source = ROOT / relative
+                destination = shadow / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(source, destination)
+            changed = shadow / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references/interpersonal/romance-dating-and-intimacy.md"
+            changed.write_text(changed.read_text(encoding="utf-8") + "\nchanged\n")
+            cfg = self.adapter_config(fake_codex)
+            session = target_session.TargetSession(
+                suite=SUITE,
+                config=cfg,
+                case_id="advice-loop-saturation",
+                system_id="target",
+                variant_id="canonical",
+                repetition=1,
+                clock=FakeClock(),
+            )
+            provider = target_session.FrozenStdioProvider(
+                config=cfg,
+                adapter_path=ADAPTER,
+                environment={
+                    "PGC_CODEX_AUTH_ROOT": str(auth_root),
+                    "PGC_CODEX_BIN": str(fake_codex),
+                    "PGC_EVAL_REPO_ROOT": str(shadow),
+                },
+                clock=FakeClock(),
+            )
+            try:
+                with self.assertRaises(target_session.ProviderProtocolError):
+                    session.capture(provider)
+            finally:
+                provider.close()
+
     def test_profile_hash_and_prompt_use_the_same_opened_bytes(self):
         with tempfile.TemporaryDirectory() as directory_name:
             directory = Path(directory_name)
