@@ -121,3 +121,8 @@ transitions:
     event: IMMEDIATE_SUPPORT_LOST
     to: ACUTE_DANGER
     effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-022
+    from: ACUTE_DANGER
+    event: INDIRECT_ACUTE_RISK_SIGNAL
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
