@@ -1,5 +1,10 @@
 # Consolidation model walkthroughs and host operations
 
+> Subsequent safety/source repairs and native stateful checks are recorded in
+> `INDEPENDENT_SAFETY_REVIEW.md`. The observations and unchanged-byte statements
+> below retain their earlier source subjects; they do not describe every later
+> safety-helper revision.
+
 23 October 2026. **The 28 public development cases were executed, supported
 repairs are implemented, and scoped real host operations were observed.** This
 completes the portable implementation and this development-verification slice.
