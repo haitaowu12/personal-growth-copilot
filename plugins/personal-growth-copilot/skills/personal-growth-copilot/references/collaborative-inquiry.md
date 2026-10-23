@@ -30,7 +30,11 @@ emotion from style, latency, or silence.
 
 ### Reflect
 
-Offer a compact reflection before another question. Choose one:
+Offer a compact reflection before another question. Attribute a one-sided
+interpersonal account to the user; do not restate an alleged breach or private
+motive as established fact. When the actor or event is unclear, clarify rather
+than assigning a stronger label or assuming the user is the person involved.
+Choose one:
 
 - **content:** “The immediate problem is X, while Y constrains the options.”
 - **meaning:** “It sounds as though success matters because Z.”

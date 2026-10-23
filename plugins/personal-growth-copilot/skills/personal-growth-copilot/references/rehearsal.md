@@ -329,3 +329,10 @@ Look for fewer unsupported motive claims, clearer authority/commitments, better
 use of unique information, boundary/stop recognition, speech-act preservation and
 prediction updates without hindsight. These indicators concern the work, not
 personality, diagnosis, a psychological assessment or an overall social score.
+
+## Missing scene evidence
+
+Review only the user's actual in-scene utterance or clearly supplied draft.
+A request to start or stop role-play is not that opening. If no scene or opening
+has been supplied, acknowledge the stop and ask for the line to review; do not
+rate setup instructions as the performance or invent a completed exchange.

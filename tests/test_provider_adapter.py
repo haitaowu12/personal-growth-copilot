@@ -25,6 +25,7 @@ class ProviderAdapterTests(unittest.TestCase):
         directory: Path,
         *,
         name: str = "fake-codex",
+        complete_turn: bool = True,
         event_statement: str = (
             'print(json.dumps({"type": "thread.started", '
             '"thread_id": "thread_fixture_0001"}))'
@@ -48,6 +49,7 @@ output.write_text(json.dumps({
 }), encoding="utf-8")
 """
             + event_statement
+            + ("\nprint(json.dumps({'type': 'turn.started'}))\nprint(json.dumps({'type': 'turn.completed'}))" if complete_turn else "")
             + "\n",
             encoding="utf-8",
         )
@@ -111,6 +113,38 @@ output.write_text(json.dumps({
             self.assertEqual(completion.resource_claims, ())
             self.assertFalse(completion.memory_write_attempted)
             self.assertEqual(completion.provider_response_id, "codex-thread_fixture_0001")
+
+    def test_only_exact_disabled_host_notice_before_a_completed_turn_is_accepted(self):
+        notice = codex_cli_adapter.DISABLED_CODE_MODE_NOTICE
+        for message, before_turn, completed, accepted in [
+            (notice, True, True, True),
+            (notice, False, True, False),
+            ("unrecognized startup failure", True, True, False),
+            (None, True, False, False),
+        ]:
+            with self.subTest(message=message, before_turn=before_turn, completed=completed), tempfile.TemporaryDirectory() as temp:
+                directory = Path(temp)
+                statements = ["print(json.dumps({'type':'thread.started','thread_id':'thread_fixture_0001'}))"]
+                if not before_turn:
+                    statements.append("print(json.dumps({'type':'turn.started'}))")
+                if message is not None:
+                    statements.append("print(json.dumps({'type':'item.completed','item':{'type':'error','message':" + repr(message) + "}}))")
+                if before_turn and completed:
+                    statements.append("print(json.dumps({'type':'turn.started'}))")
+                if completed:
+                    statements.append("print(json.dumps({'type':'turn.completed'}))")
+                runtime = self.fake_codex(directory, complete_turn=False, event_statement="; ".join(statements))
+                auth = directory / "auth"; auth.mkdir()
+                cfg = self.adapter_config(runtime)
+                payload = {"provider_execution": {key: cfg["provider"][key] for key in ["settings", "host", "model", "runtime_executable_sha256", "tool_permissions"]}}
+                with mock.patch.dict(os.environ, {"PGC_CODEX_BIN":str(runtime), "PGC_CODEX_AUTH_ROOT":str(auth)}):
+                    if accepted:
+                        result, response = codex_cli_adapter.invoke_codex(payload, "fixture user prompt", ROOT)
+                        self.assertTrue(result["text"])
+                        self.assertTrue(response.startswith("codex-"))
+                    else:
+                        with self.assertRaises(SystemExit):
+                            codex_cli_adapter.invoke_codex(payload, "fixture user prompt", ROOT)
 
     def test_codex_adapter_rejects_a_changed_profile_bundle(self):
         with tempfile.TemporaryDirectory() as directory_name:
@@ -327,6 +361,71 @@ output.write_text(json.dumps({
                             session.capture(provider)
                     finally:
                         provider.close()
+
+
+class MacBundleSnapshotTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.source = self.root / "vendor/Runtime.app/Contents/MacOS/codex"
+        self.source.parent.mkdir(parents=True)
+        self.source.write_bytes(b"bound executable fixture")
+        (self.source.parent.parent / "Info.plist").write_text("signed metadata fixture")
+        self.destination = self.root / "snapshot"
+        self.destination.mkdir()
+
+    def copy_command(self, command, **kwargs):
+        if command[0] == "/usr/bin/ditto":
+            shutil.copytree(command[1], command[2])
+        return mock.Mock(returncode=0)
+
+    def test_verified_bundle_layout_and_bound_bytes_are_preserved(self):
+        with mock.patch.object(codex_cli_adapter.sys, "platform", "darwin"), mock.patch.object(
+            codex_cli_adapter.subprocess, "run", side_effect=self.copy_command
+        ) as calls:
+            frozen = codex_cli_adapter.snapshot_runtime(
+                self.source, self.source.read_bytes(), self.destination
+            )
+        self.assertEqual(frozen.relative_to(self.destination).as_posix(), "Runtime.app/Contents/MacOS/codex")
+        self.assertEqual(frozen.read_bytes(), self.source.read_bytes())
+        self.assertTrue((frozen.parent.parent / "Info.plist").is_file())
+        self.assertEqual(sum(call.args[0][0] == "/usr/bin/codesign" for call in calls.call_args_list), 2)
+        self.assertEqual(frozen.stat().st_mode & 0o777, 0o500)
+
+    def test_replacement_during_bundle_copy_is_rejected(self):
+        def copy_then_replace(command, **kwargs):
+            result = self.copy_command(command, **kwargs)
+            if command[0] == "/usr/bin/ditto":
+                (Path(command[2]) / "Contents/MacOS/codex").write_bytes(b"different executable")
+            return result
+        with mock.patch.object(codex_cli_adapter.sys, "platform", "darwin"), mock.patch.object(
+            codex_cli_adapter.subprocess, "run", side_effect=copy_then_replace
+        ), self.assertRaises(SystemExit):
+            codex_cli_adapter.snapshot_runtime(self.source, self.source.read_bytes(), self.destination)
+
+    def test_invalid_signature_never_reaches_copy_or_execution(self):
+        with mock.patch.object(codex_cli_adapter.sys, "platform", "darwin"), mock.patch.object(
+            codex_cli_adapter.subprocess, "run", return_value=mock.Mock(returncode=1)
+        ) as calls, self.assertRaises(SystemExit):
+            codex_cli_adapter.snapshot_runtime(self.source, self.source.read_bytes(), self.destination)
+        self.assertEqual(calls.call_count, 1)
+        self.assertEqual(list(self.destination.iterdir()), [])
+
+    def test_symlink_and_oversized_bundle_fail_before_vendor_tools(self):
+        link = self.source.parent.parent / "outside"
+        link.symlink_to(self.root)
+        with mock.patch.object(codex_cli_adapter.sys, "platform", "darwin"), mock.patch.object(
+            codex_cli_adapter.subprocess, "run"
+        ) as calls, self.assertRaises(SystemExit):
+            codex_cli_adapter.snapshot_runtime(self.source, self.source.read_bytes(), self.destination)
+        calls.assert_not_called()
+        link.unlink()
+        with mock.patch.object(codex_cli_adapter.sys, "platform", "darwin"), mock.patch.object(
+            codex_cli_adapter, "MAX_RUNTIME_BYTES", 1
+        ), mock.patch.object(codex_cli_adapter.subprocess, "run") as calls, self.assertRaises(SystemExit):
+            codex_cli_adapter.snapshot_runtime(self.source, self.source.read_bytes(), self.destination)
+        calls.assert_not_called()
 
 
 if __name__ == "__main__":

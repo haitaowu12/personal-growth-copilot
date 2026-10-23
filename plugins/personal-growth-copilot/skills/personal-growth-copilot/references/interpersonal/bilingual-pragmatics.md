@@ -216,3 +216,11 @@ Cross-cultural and second-language pragmatics supports analyzing speech acts,
 context, proficiency, and situational variation. It does not supply national
 scripts or person-level predictions. See `CULTURE-01`, `PRAGMATICS-02`, and
 `PRAGMATICS-03` in the evidence ledger.
+
+## Preserve contextual qualifications
+
+Do not turn “not necessarily” into “never” or “only” during translation or
+follow-up. For example, 收到 alone does not establish a delivery commitment;
+its referent and the surrounding explicit agreement still matter. Preserve that
+uncertainty rather than declaring that the expression can only mean receipt in
+every context. Ask for confirmation of the actual scope when consequential.

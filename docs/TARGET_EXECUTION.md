@@ -69,6 +69,25 @@ the request and provider hashes and provide non-empty response text, an actual
 memory-write-attempt flag, structured resource claims, and an opaque provider
 response identifier. Standard-output logs or extra fields fail closed.
 
+## macOS runtime packaging
+
+For a macOS app-distributed CLI, bind the actual native executable inside
+`CodexCLI.app/Contents/MacOS/codex`, not its relative-path shell launcher. Current
+installed native executables can exceed 200 MiB; the bounded snapshot ceiling is
+320 MiB. The adapter retains an app runtime's signed bundle layout using the
+vendor-preserving copy tool, strictly verifies the source and copied signatures,
+and checks the executed binary against the already frozen executable bytes.
+Symlinks, non-regular entries, oversize bundles and mismatched copies fail closed.
+No signature is changed and no OS security exception is requested.
+
+This tool-free transport disables the optional code-mode host. CLI 0.163 emits an
+exact pre-turn disabled-host notice even when the model completes successfully;
+only that known setup notice is accepted, before turn start. Unknown errors,
+actual tools, and missing/multiple start/completion events remain rejected.
+A model name in a cache is not proof of availability: verify against the live
+host and retain failed attempts. These compatibility controls do not qualify a
+persistent host, provider retention, untouched holdouts or human outcomes.
+
 ## Freeze and execute
 
 All commands require a clean checkout at the exact configured commit. Output

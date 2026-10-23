@@ -27,6 +27,13 @@ headline-score behavior. Every positive-weight dimension defaults to
 Unresolved unknowns in a critical dimension block an overall assessment even
 when someone supplied a rating. An active flag always takes precedence.
 
+Keep missing evidence distinct from active flags: with rated evidence, critical
+unknowns produce `insufficient_evidence`; no rated evidence produces
+`not_calculable`; `gated` requires an actual active flag. Do not turn an
+unknown authority into an established authority breach. Without a supplied model
+and an executed calculator result, explain the applicable condition rather than
+presenting an invented status as a returned calculation.
+
 Render `decision_status`, `interpretation`, coverage, critical unknowns, and
 flags first. `decision_fit_score` is null while gated, unassessed, or incomplete.
 `arithmetic_only.scored_dimensions_score` may be shown as partial arithmetic,
