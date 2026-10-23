@@ -8,9 +8,15 @@ another person, a relationship, a stakeholder, or an interpersonal option.
 
 The product supports optional dossiers and numerical scoring. Start with a
 session-only evidence table; do not introduce a score merely to make advice look
-precise. This is the canonical record-content policy for every method and overlay.
-Persistent decision records are permitted only under the consent and verified
-host-capability requirements in [memory and continuity](memory-and-continuity.md).
+precise. This reference defines optional interpersonal case content under
+[shared continuity](../memory-and-continuity.md) and the shared record contract;
+it does not override them. [Case continuity](memory-and-continuity.md) adds
+content minimization, freshness and correction rules. Another person's evidence
+belongs only within the user's bounded decision, not a standalone person dossier
+or a profile aggregated across unrelated cases. No separate persistent case schema
+or adapter is supplied. Persistent case content needs an actual supported host
+representation and the shared consent/attestation controls; otherwise keep it
+session-only and offer a requested unsaved portable card.
 Hidden, fixed, diagnostic, vulnerability, or manipulation profiles remain prohibited.
 
 ## Render uncertainty before arithmetic
@@ -65,9 +71,11 @@ Record the user's own confirmed information:
 - optional self-descriptions such as Big Five or MBTI, marked `user-supplied`;
 - preferred score dimensions and weights.
 
-### Counterpart profile
+### Counterpart decision context
 
-Record only decision-relevant information about the other person:
+Within the user's case, keep only decision-relevant evidence about the other
+person, using an alias or role. This supports the user's choices, not a person
+profile independent of that decision:
 
 - role or alias and relationship to the user;
 - their directly stated preferences, boundaries, decisions, and commitments;
@@ -94,20 +102,21 @@ Record the shared context without collapsing the two people:
 - power, money, housing, work, caregiving, reputation, and safety exposure;
 - options, score snapshots, selected action, review point, and stop conditions.
 
-In multi-actor cases, keep one actor card per person. Do not merge one person's
-statement, motive hypothesis, score, or boundary into another person's record.
+In multi-actor cases, distinguish each actor's evidence within the case. Do not
+merge one person's statement, motive hypothesis, score, or boundary with another's,
+or create separate reusable dossiers about non-users.
 
 ## Use an evidence-labeled dossier schema
 
 ```markdown
-# Interpersonal Dossier: [alias or role]
+# Interpersonal decision case: [bounded user decision]
 
-Profile ID: [stable alias]
+Case ID: [opaque host-issued identifier, or not saved]
 Version: [number]
 Created: [date]
 Last updated: [date]
 Review or expiry: [date or event]
-Mode: session-only | persistent
+Mode: session-only | persistent only with verified supported host representation
 Purpose: [decision this supports]
 Scope: [people and relationship context]
 Sensitive exclusions: [what must not be stored]
@@ -126,11 +135,15 @@ Sensitive exclusions: [what must not be stored]
 
 ## Decision Fit Score snapshot
 - Purpose and dimensions: [...]
-- Score: [0-100 or not calculable]
+- decision_status: [actual calculator status]
+- Interpretation: [decision limit and next information need]
+- Active flags: [none or the actual flags]
+- Critical unknowns: [missing decision-critical evidence]
 - Coverage: [percentage and dimensions missing]
 - Confidence: low | moderate | high
-- Deal-breaker or safety flag: none | present: [...]
-- Interpretation: [...]
+- decision_fit_score: [null if gated, unassessed or incomplete; otherwise 0-100]
+- Partial arithmetic, if useful: [arithmetic_only.scored_dimensions_score]
+- Sensitivity bounds, if useful: [full_model_bounds; not a confidence interval]
 
 ## Current strategy
 - Recommendation: [...]
@@ -353,11 +366,17 @@ exposure, or observable pattern using minimized evidence and explicit controls.
 For ordinary use, return:
 
 1. the score question;
-2. a dimension table with weights, ratings, evidence, and unknowns;
-3. DFS, coverage, confidence, and flags;
-4. one interpretation tied to the decision;
-5. one recommendation, update condition, and review point;
-6. any dossier change made or proposed.
+2. decision_status and its interpretation, active flags, critical unknowns,
+   coverage and evidence confidence before arithmetic;
+3. a dimension table with weights, ratings, evidence and unknowns;
+4. decision_fit_score, explicitly null when gated, unassessed or incomplete;
+   label any arithmetic_only.scored_dimensions_score and full_model_bounds as
+   partial arithmetic and sensitivity bounds, never an overall verdict;
+5. a useful action or non-action, update condition and review event;
+6. a case-record delta only when requested under the shared continuity contract.
+
+Use the same status-first order in a requested dossier or comparison. Do not
+lower weights, erase unknowns or hide flags to obtain a headline score.
 
 Do not dump the full dossier unless the user asks to inspect it or the detailed
 record is needed for correction.

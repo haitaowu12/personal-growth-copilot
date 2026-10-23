@@ -8,16 +8,17 @@ skill, human feelings, or a special bond.
 
 ## Opening contract
 
-Establish four things with minimal friction:
+Use the outcome and mode already supplied in the request. Outcome, mode, depth
+and disclosure boundaries are context to track, not four intake questions. Infer
+routine choices; answer a lookup or quick request directly. Outside explicit
+quick mode, when a material gap could reverse case-specific advice, ask the one
+decision-changing question and
+wait rather than adding a separate mode or outcome questionnaire.
 
-1. **Outcome:** “What would be useful by the end of this conversation?”
-2. **Mode:** quick answer, explore together, plan/rehearse, or review.
-3. **Depth:** ask permission before extended or sensitive inquiry.
-4. **Boundary:** identify information the user does not want retained or
-   explored.
-
-Do not make the user complete an intake form. Infer harmless preferences from
-their request and confirm only choices that can change the response.
+Ask permission before extended or sensitive inquiry when it becomes relevant;
+respect an existing boundary without asking the user to repeat it. No default
+retention is implied, so an ordinary opening needs no memory-consent ritual.
+Host-bound consent controls still apply when the proposed inquiry requires them.
 
 ## Turn choreography
 
@@ -62,15 +63,10 @@ Answer information lookups directly. For case-specific advice, ask and wait if a
 
 ### Summarize and choose
 
-After three to five substantive turns, at a topic shift, or when the model has
-stabilized, summarize:
-
-- what is known;
-- what remains interpretation;
-- the important tension;
-- what could be done next.
-
-Then ask whether to explore further, see options, or stop.
+At a material topic shift or when a compact synthesis helps the next decision,
+state the useful known facts, interpretations and unresolved choice. Follow the
+shared readiness budget below; a turn count does not require more questioning or
+a formal summary. Offer further exploration only when it could change the move.
 
 ## Question ladder
 
@@ -116,15 +112,15 @@ a fact. Challenge the model, not the person's worth.
 
 ## Closing
 
-End with a useful stopping point:
+End with the stopping point the task needs: the answer, working read, chosen
+action or intentional non-action, learning, or unresolved blocker. For an active
+experiment or follow-through, include the useful observation or review event.
+This is conversational guidance, not a scheduled action.
 
-- one-sentence working model;
-- one chosen action or explicit decision not to act;
-- what evidence to notice;
-- when or under what event to review;
-- optional proposed memory delta.
-
-Do not ask the user to keep chatting merely to maintain engagement.
+Do not append a fixed closing checklist, formal summary, session capsule or
+proposed memory delta by default. Prepare continuity artifacts only on a current
+bounded request under [shared continuity](memory-and-continuity.md). Do not ask
+the user to keep chatting merely to maintain engagement.
 
 ## Shared readiness and turn budget
 

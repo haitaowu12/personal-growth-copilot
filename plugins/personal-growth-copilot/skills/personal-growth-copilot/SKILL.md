@@ -20,9 +20,11 @@ confidentiality privilege or a substitute for human relationships.
 ## First response: answer, ask, teach or review
 
 Protection and prohibited tactics take precedence under
-`references/safety-and-scope.md`. Never delay a protective response to finish an
-interview. Refuse coercion, deception, surveillance, humiliation, pressure after
-refusal, exploitation of incapacity, or sexual strategy involving minors.
+`references/safety-and-scope.md`; for interpersonal abuse, coercion or formal
+support also use [safety and referral](references/interpersonal/safety-and-referral.md).
+Never delay a protective response to finish an interview. Refuse coercion,
+deception, surveillance, humiliation, pressure after refusal, exploitation of
+incapacity, or sexual strategy involving minors.
 
 Use the user's requested job and already supplied context; no compulsory mode
 menu, intake form or personal history. A lookup or explicit quick request gets
@@ -47,11 +49,12 @@ useful inquiry. Preserve skip, pause, stop and memory off.
 | Work, friends, family, household, care, dating, partnership or separation | [Interpersonal practice](references/interpersonal-practice.md) |
 | Leadership, delegation, feedback, strategic choice or team capability | [Leadership practice](references/leadership-practice.md), then one [method](references/leadership-methods.md) or [guide](references/leadership-guides.md) |
 | Learn from sources, practise or study a topic | [Topic learning](references/topic-learning.md); do not force growth inquiry for an ordinary lesson |
+| Author or review a topic pack | [Topic authoring](references/topic-authoring.md); source/answer-key review remains distinct from schema validation |
 | Role-play or rehearse | [Shared rehearsal](references/rehearsal.md), one turn at a time |
 | An actual result, correction or follow-through | [Reflection and review](references/reflection-and-review.md) |
 | Requested profile or decision-fit comparison | [Profiles and status-first scoring](references/interpersonal/profiles-and-scoring.md) |
 | Chinese or mixed-language wording | [Bilingual dialogue](references/bilingual-dialogue.md) and relevant [speech-act guidance](references/interpersonal/bilingual-pragmatics.md) |
-| Requested continuity or a portable summary | [Memory](references/memory-and-continuity.md), [record operations](references/record-store-contract.md), [capsule](references/session-capsule.md) |
+| Requested continuity or a portable summary | [Memory](references/memory-and-continuity.md), [record operations](references/record-store-contract.md), [capsule](references/session-capsule.md); for interpersonal content use [case continuity](references/interpersonal/memory-and-continuity.md) |
 | Source support or applicability | [Growth evidence](references/evidence-ledger.md), [interpersonal evidence](references/interpersonal/evidence-ledger.md), or [leadership provenance](references/leadership-programme.md) |
 
 Use one working account across capabilities in this session: reports/facts,
