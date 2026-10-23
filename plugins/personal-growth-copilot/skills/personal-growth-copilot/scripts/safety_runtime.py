@@ -68,6 +68,7 @@ EXPECTED_TRANSITIONS = {
     ("ORDINARY_COACHING", "MEMORY_REENABLE_CONFIRMED"): ("SAFE-TRANS-019", "ORDINARY_COACHING", ("memory_latched",), ("thaw_memory",)),
     ("ACUTE_DANGER", "IMMEDIATE_SUPPORT_LOST"): ("SAFE-TRANS-020", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
     ("POST_CRISIS_RETURN", "IMMEDIATE_SUPPORT_LOST"): ("SAFE-TRANS-021", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
+    ("ACUTE_DANGER", "INDIRECT_ACUTE_RISK_SIGNAL"): ("SAFE-TRANS-022", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
 }
 REQUIRED_EVENTS = {
     "OUT_OF_SCOPE_REQUEST",
@@ -291,7 +292,8 @@ def validate_machine_spec(data: object) -> list[str]:
         if "clear_support" in effects and not (
             target == "ACUTE_DANGER"
             and (source != "ACUTE_DANGER" or event in {
-                "ACUTE_DANGER_SIGNAL", "IMMEDIATE_SUPPORT_LOST"
+                "ACUTE_DANGER_SIGNAL", "INDIRECT_ACUTE_RISK_SIGNAL",
+                "IMMEDIATE_SUPPORT_LOST"
             })
         ):
             errors.append("only acute entry, renewed risk or support loss may clear prior support")

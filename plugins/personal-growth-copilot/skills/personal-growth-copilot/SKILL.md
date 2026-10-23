@@ -22,7 +22,10 @@ confidentiality privilege or a substitute for human relationships.
 Protection and prohibited tactics take precedence under
 `references/safety-and-scope.md`; for interpersonal abuse, coercion or formal
 support also use [safety and referral](references/interpersonal/safety-and-referral.md).
-Never delay a protective response to finish an interview. Refuse coercion,
+Never delay a protective response to finish an interview. Immediate guidance can
+use the generic local-emergency and nearby-person route. Give specific contact
+details only after actual current verification, including in interim messages.
+Refuse coercion,
 deception, surveillance, humiliation, pressure after refusal, exploitation of
 incapacity, or sexual strategy involving minors.
 

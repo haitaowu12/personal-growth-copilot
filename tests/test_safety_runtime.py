@@ -207,13 +207,15 @@ class SafetyMachineTests(unittest.TestCase):
                 self.assertFalse(session.memory_write_allowed)
 
     def test_renewed_acute_risk_cannot_reuse_a_stale_connection(self):
-        session = self.session()
-        session.transition("ACUTE_DANGER_SIGNAL")
-        session.transition("IMMEDIATE_SUPPORT_CONNECTED")
-        session.transition("ACUTE_DANGER_SIGNAL")
-        self.assertFalse(session.support_connected)
-        with self.assertRaises(safety.SafetyGuardFailed):
-            session.transition("IMMEDIATE_DANGER_REDUCED")
+        for event in ("ACUTE_DANGER_SIGNAL", "INDIRECT_ACUTE_RISK_SIGNAL"):
+            with self.subTest(event=event):
+                session = self.session()
+                session.transition("ACUTE_DANGER_SIGNAL")
+                session.transition("IMMEDIATE_SUPPORT_CONNECTED")
+                session.transition(event)
+                self.assertFalse(session.support_connected)
+                with self.assertRaises(safety.SafetyGuardFailed):
+                    session.transition("IMMEDIATE_DANGER_REDUCED")
 
     def test_transition_failure_is_atomic_before_memory_reenable(self):
         session = self.session()
