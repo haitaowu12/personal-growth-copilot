@@ -29,8 +29,8 @@ performance.
 ## Worked intake: requirements writing
 
 This example uses the shipped pack's declarations, not a new inspection of NASA's
-pages. The pack records selected-section access on 2026-09-07. Review the actual
-passages before accepting the worksheet. All numerical scenarios are invented.
+pages. Use the pack's per-source `accessed` values for its declared selected-section
+access dates. Review the actual passages before accepting the worksheet. All numerical scenarios are invented.
 
 | Concept | Evidence and scope to inspect | Teaching decision and boundary to challenge |
 |---|---|---|

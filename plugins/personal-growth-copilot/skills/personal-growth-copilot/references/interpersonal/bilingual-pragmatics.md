@@ -109,8 +109,8 @@ English:
 
 Simplified Chinese:
 
-> 会议中这项分析被表述为 Alex 的成果。模型由我建立，Alex 将其整合进了演示文稿。
-> 请在会议纪要中更正，并准确注明双方的贡献。
+> 这项分析被表述为 Alex 的成果。模型由我建立，Alex 将其整合进了演示文稿。
+> 请更正回顾记录，并准确注明双方的贡献。
 
 Do not make the English version accusatory or the Chinese version submissive.
 
@@ -124,7 +124,7 @@ English:
 
 Simplified Chinese:
 
-> 我理解当前决定。在执行前，我需要由设计权责方确认并记录这项安全例外。基于 ___，
+> 我理解当前方向。在执行前，我需要由设计权责方确认并记录这项安全例外。基于 ___，
 > 我的建议仍然是方案 A。
 
 Respectful framing does not erase the professional recommendation or required
@@ -140,7 +140,7 @@ English:
 
 Simplified Chinese:
 
-> 我发送了错误的附件，导致内部草稿被不当暴露。这是我的失误。我已经撤回访问权限、
+> 我发送了错误的附件，导致草稿暴露。这是我的失误。我已经撤回访问权限、
 > 通知了有权处理此事的负责人，并增加了双人发布复核。
 
 Do not fabricate emotion, promise the breach will never recur, or ask for

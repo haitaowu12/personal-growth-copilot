@@ -126,6 +126,24 @@ class SafetyMachineTests(unittest.TestCase):
         )
         self.assertTrue(any("transition table differs" in error for error in safety.validate_machine_spec(broken)))
 
+    def test_scope_switch_cannot_clear_impairment_without_support_confirmation(self):
+        session = self.session()
+        session.transition("SIGNIFICANT_IMPAIRMENT_SIGNAL")
+        session.transition("OUT_OF_SCOPE_REQUEST")
+        self.assertEqual(session.state, "SIGNIFICANT_IMPAIRMENT")
+        self.assertEqual(session.resource_requirement, "QUALIFIED_SUPPORT")
+        self.assertFalse(session.coaching_allowed)
+        self.assertFalse(session.memory_write_allowed)
+        history = session.history
+        with self.assertRaises(safety.InvalidTransition):
+            session.transition("SAFE_ADJACENT_TASK_ACCEPTED")
+        self.assertEqual(session.history, history)
+        with self.assertRaises(safety.RestrictedMemoryWrite):
+            session.require_memory_write_allowed()
+        session.transition("BOUNDED_SUPPORT_PLAN_CONFIRMED")
+        self.assertTrue(session.coaching_allowed)
+        self.assertEqual(session.state, "ORDINARY_COACHING")
+
     def test_acute_entry_freezes_memory_and_rejects_ordinary_coaching(self):
         session = self.session()
         result = session.transition("INDIRECT_ACUTE_RISK_SIGNAL")
@@ -167,6 +185,35 @@ class SafetyMachineTests(unittest.TestCase):
         self.assertFalse(session.memory_write_allowed)
         session.transition("MEMORY_REENABLE_CONFIRMED")
         self.assertTrue(session.memory_write_allowed)
+
+    def test_lost_support_requires_reconnection_before_acute_exit(self):
+        for starting_state in ("ACUTE_DANGER", "POST_CRISIS_RETURN"):
+            with self.subTest(starting_state=starting_state):
+                session = self.session()
+                session.transition("ACUTE_DANGER_SIGNAL")
+                session.transition("IMMEDIATE_SUPPORT_CONNECTED")
+                if starting_state == "POST_CRISIS_RETURN":
+                    session.transition("IMMEDIATE_DANGER_REDUCED")
+                session.transition("IMMEDIATE_SUPPORT_LOST")
+                self.assertEqual(session.state, "ACUTE_DANGER")
+                self.assertFalse(session.support_connected)
+                self.assertTrue(session.memory_latched)
+                self.assertFalse(session.memory_write_allowed)
+                with self.assertRaises(safety.SafetyGuardFailed):
+                    session.transition("IMMEDIATE_DANGER_REDUCED")
+                session.transition("IMMEDIATE_SUPPORT_CONNECTED")
+                session.transition("IMMEDIATE_DANGER_REDUCED")
+                self.assertEqual(session.state, "POST_CRISIS_RETURN")
+                self.assertFalse(session.memory_write_allowed)
+
+    def test_renewed_acute_risk_cannot_reuse_a_stale_connection(self):
+        session = self.session()
+        session.transition("ACUTE_DANGER_SIGNAL")
+        session.transition("IMMEDIATE_SUPPORT_CONNECTED")
+        session.transition("ACUTE_DANGER_SIGNAL")
+        self.assertFalse(session.support_connected)
+        with self.assertRaises(safety.SafetyGuardFailed):
+            session.transition("IMMEDIATE_DANGER_REDUCED")
 
     def test_transition_failure_is_atomic_before_memory_reenable(self):
         session = self.session()

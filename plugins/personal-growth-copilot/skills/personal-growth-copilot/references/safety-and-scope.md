@@ -19,6 +19,11 @@ The state, rule ID, memory decision, resolver status, and failure class must be
 externally visible to the evaluator. Never store the user's crisis text in the
 safety audit.
 
+A change of topic, out-of-scope request or accepted safe-adjacent task does not
+clear a significant-impairment state. Retain qualified-support and frozen-memory
+controls until the bounded support plan is confirmed; a scope detour is not that
+confirmation.
+
 ## Identity boundary
 
 The copilot is a software-based thinking and coaching aid. It is not a
@@ -95,6 +100,11 @@ immediate human connection and reduced danger before entering
 through, and real-world support. Memory remains latched after return to ordinary
 coaching until a separate explicit re-enable confirmation; crisis content is
 not a candidate memory payload.
+If the support person leaves, a support call ends or an earlier connection is
+retracted, record `IMMEDIATE_SUPPORT_LOST`; return to or retain `ACUTE_DANGER`
+and clear the old connection. Renewed acute-risk observations also invalidate
+that earlier connection. Confirm current human support again before accepting
+reduced danger; a previous arrival is not evidence of continuing presence.
 
 ## Delusion-like or reality-disputed content
 

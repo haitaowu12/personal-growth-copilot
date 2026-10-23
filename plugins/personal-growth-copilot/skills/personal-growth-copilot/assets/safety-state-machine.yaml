@@ -65,7 +65,7 @@ transitions:
   - id: SAFE-TRANS-010
     from: SIGNIFICANT_IMPAIRMENT
     event: OUT_OF_SCOPE_REQUEST
-    to: SCOPE_BOUNDARY
+    to: SIGNIFICANT_IMPAIRMENT
   - id: SAFE-TRANS-011
     from: SIGNIFICANT_IMPAIRMENT
     event: INDIRECT_ACUTE_RISK_SIGNAL
@@ -90,6 +90,7 @@ transitions:
     from: ACUTE_DANGER
     event: ACUTE_DANGER_SIGNAL
     to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
   - id: SAFE-TRANS-016
     from: POST_CRISIS_RETURN
     event: ACUTE_DANGER_SIGNAL
@@ -110,3 +111,13 @@ transitions:
     to: ORDINARY_COACHING
     requires: [memory_latched]
     effects: [thaw_memory]
+  - id: SAFE-TRANS-020
+    from: ACUTE_DANGER
+    event: IMMEDIATE_SUPPORT_LOST
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
+  - id: SAFE-TRANS-021
+    from: POST_CRISIS_RETURN
+    event: IMMEDIATE_SUPPORT_LOST
+    to: ACUTE_DANGER
+    effects: [freeze_memory, clear_support]
