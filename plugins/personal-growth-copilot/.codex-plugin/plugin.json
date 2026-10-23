@@ -1,7 +1,7 @@
 {
   "name": "personal-growth-copilot",
   "version": "0.5.0-alpha.1",
-  "description": "Explicit-invocation reflective growth and source-grounded topic practice with user-owned progress.",
+  "description": "One explicit-invocation agent skill for personal growth, relationships, leadership, rehearsal and source-grounded learning.",
   "author": {
     "name": "Tony Wu",
     "url": "https://github.com/haitaowu12"
@@ -14,13 +14,17 @@
     "reflective-inquiry",
     "behavior-change",
     "coaching",
-    "learning"
+    "learning",
+    "relationships",
+    "leadership",
+    "interpersonal",
+    "agent-skill"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Personal Growth Copilot",
-    "shortDescription": "Reflect, choose, experiment, and learn safely",
-    "longDescription": "A user-directed growth workflow for clarifying values and goals, examining recurring patterns, designing small behavior-change experiments, and reviewing learning across sessions. Explicit invocation only; not therapy or professional advice.",
+    "shortDescription": "Growth, relationships, leadership and learning",
+    "longDescription": "A portable user-directed agent skill combining reflection, growth experiments, everyday and workplace relationships, consent-aware relationship decisions, leadership methods, rehearsal and source-grounded learning. Explicit invocation; session-only by default. Production and host qualification remain separate.",
     "developerName": "Tony Wu",
     "category": "Productivity",
     "capabilities": [
@@ -31,7 +35,10 @@
       "Help me understand a recurring pattern.",
       "Turn a goal into a small growth experiment.",
       "Review what I learned from a recent setback.",
-      "Help me learn a topic through source-grounded practice."
+      "Help me learn a topic through source-grounded practice.",
+      "Help me prepare a difficult family conversation.",
+      "Teach me delegation and rehearse it one turn at a time.",
+      "Help me clarify relationship expectations without assuming agreement."
     ]
   }
 }

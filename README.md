@@ -1,10 +1,25 @@
 # Personal Growth Copilot
 
-Installable clean-room Codex plugin and standalone Agent Skill supporting
-context-rich personal growth, reflective dialogue, practical behavior-change
-experiments, and longitudinal learning.
+Portable explicit-invocation Agent Skill for growth, relationships, leadership
+and source-grounded learning, with an optional Codex plugin wrapper.
 
 Current version: `0.5.0-alpha.1`
+
+## Consolidated portable Agent Skill
+
+This local candidate unifies personal growth, the complete interpersonal scope
+(work, friendship, family, household, dating, partnership and separation), all
+twelve leadership methods, source-grounded learning and shared rehearsal/review.
+Invoke `$personal-growth-copilot`; the skill loads only the relevant references.
+There is no dependency on a coaching app, a live notebook or a second skill.
+The existing name/plugin identifiers stay compatible. Optional profiles and
+status-first decision scoring remain available; session-only is the default.
+
+The offline requirements lesson is retained. Leadership and relationship
+practice are conversational, not newly created offline courses. Source, host,
+human-review and outcome limits remain explicit. Read [candidate scope and
+coverage](docs/CONSOLIDATION_CANDIDATE.md) and [acceptance](docs/CONSOLIDATION_ACCEPTANCE.md).
+The published installation pin below is the older alpha, not this candidate.
 
 ## Learn through practice
 
@@ -58,8 +73,10 @@ historical `0.2.0-rc.1` candidate. See
 
 `personal-growth-copilot` owns the user's internal change system: values,
 goals, recurring patterns, experiments, reflection, practice, and retained
-learning. `interpersonal-strategist` separately owns concrete relationship and
-interaction decisions. Overlap is allowed; activation remains explicit.
+learning. The interpersonal module supports concrete relationship and interaction
+decisions within this same invoked skill. The existing standalone Interpersonal
+Strategist remains a compatibility/recovery option, not a required runtime
+dependency. Activation remains explicit.
 
 ## What this alpha adds
 
