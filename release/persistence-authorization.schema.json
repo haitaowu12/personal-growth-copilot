@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/persistence-authorization.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "payload", "key_id", "public_key_path", "public_key_sha256", "signature_base64", "authorization_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "signed-persistence-authorization"},
+    "payload": {"$ref": "#/$defs/payload"},
+    "key_id": {"type": "string", "pattern": "^key-[0-9a-f]{16}$"},
+    "public_key_path": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"},
+    "public_key_sha256": {"$ref": "#/$defs/hash"},
+    "signature_base64": {"type": "string", "minLength": 80, "maxLength": 200},
+    "authorization_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "authorization_id", "candidate_commit", "evidence_index_sha256", "privacy_artifact_sha256", "privacy_host_identity_sha256", "named_host", "environment_id", "storage_root_sha256", "issued_at", "expires_at", "nonce"],
+      "properties": {
+        "domain": {"const": "pgc-persistence-authorization-v1"},
+        "authorization_id": {"type": "string", "pattern": "^pauth_[0-9a-f]{32}$"},
+        "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evidence_index_sha256": {"$ref": "#/$defs/hash"},
+        "privacy_artifact_sha256": {"$ref": "#/$defs/hash"},
+        "privacy_host_identity_sha256": {"$ref": "#/$defs/hash"},
+        "named_host": {"type": "string", "minLength": 1, "maxLength": 200},
+        "environment_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{7,99}$"},
+        "storage_root_sha256": {"$ref": "#/$defs/hash"},
+        "issued_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time"},
+        "nonce": {"type": "string", "minLength": 16, "maxLength": 200}
+      }
+    }
+  }
+}

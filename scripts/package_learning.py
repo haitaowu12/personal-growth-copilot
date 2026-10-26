@@ -47,6 +47,8 @@ Source links open only when selected. Written exercises are not automatically gr
 The personal-growth-copilot folder is a complete explicit-invocation Agent Skill.
 Import it with your compatible host's skill installation workflow. The HTML player
 works independently of the skill and needs no Python or Node.js installation.
+The bundled persistent record adapter remains disabled unless a host verifies a
+current privacy-gate-bound signed authorization for the exact storage root.
 
 This is a research candidate, not a production-qualified coaching product or an
 independent assessment. Read the included acceptance and pilot documents.

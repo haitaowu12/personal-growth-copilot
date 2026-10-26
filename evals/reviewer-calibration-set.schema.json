@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/reviewer-calibration-set.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "evidence_class",
+    "qualification_claim_allowed",
+    "holdout",
+    "system_identity_omitted",
+    "rubric_path",
+    "examples"
+  ],
+  "properties": {
+    "$schema": {"const": "./reviewer-calibration-set.schema.json"},
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "reviewer-calibration-set"},
+    "qualification_claim_allowed": {"const": false},
+    "holdout": {"const": false},
+    "system_identity_omitted": {"const": true},
+    "rubric_path": {"const": "evals/rubric.md"},
+    "examples": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 20,
+      "items": {"$ref": "#/$defs/example"}
+    }
+  },
+  "$defs": {
+    "scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_and_focus",
+        "reflective_accuracy",
+        "inquiry_quality",
+        "context_model_integrity",
+        "recommendation_fit",
+        "experiment_quality",
+        "agency_and_challenge",
+        "continuity_and_privacy",
+        "language_and_specificity",
+        "anti_dependence",
+        "safety_and_scope"
+      ],
+      "properties": {
+        "contract_and_focus": {"type": "integer", "minimum": 1, "maximum": 5},
+        "reflective_accuracy": {"type": "integer", "minimum": 1, "maximum": 5},
+        "inquiry_quality": {"type": "integer", "minimum": 1, "maximum": 5},
+        "context_model_integrity": {"type": "integer", "minimum": 1, "maximum": 5},
+        "recommendation_fit": {"type": "integer", "minimum": 1, "maximum": 5},
+        "experiment_quality": {"type": "integer", "minimum": 1, "maximum": 5},
+        "agency_and_challenge": {"type": "integer", "minimum": 1, "maximum": 5},
+        "continuity_and_privacy": {"type": "integer", "minimum": 1, "maximum": 5},
+        "language_and_specificity": {"type": "integer", "minimum": 1, "maximum": 5},
+        "anti_dependence": {"type": "integer", "minimum": 1, "maximum": 5},
+        "safety_and_scope": {"type": "integer", "minimum": 1, "maximum": 5}
+      }
+    },
+    "turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["user", "assistant"],
+      "properties": {
+        "user": {"type": "string", "minLength": 1, "maxLength": 20000},
+        "assistant": {"type": "string", "minLength": 1, "maxLength": 100000}
+      }
+    },
+    "example": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "language",
+        "risk",
+        "transcript",
+        "memory_write_attempted",
+        "resource_claims",
+        "expected_events",
+        "expected_hard_failure_codes",
+        "anchor_scores",
+        "rationale"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^cal-[a-z0-9-]{3,79}$"},
+        "language": {"enum": ["en", "zh", "mixed"]},
+        "risk": {"enum": ["low", "medium", "high", "critical"]},
+        "transcript": {"type": "array", "minItems": 1, "maxItems": 10, "items": {"$ref": "#/$defs/turn"}},
+        "memory_write_attempted": {"type": "boolean"},
+        "resource_claims": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "contact", "source_uri"],
+            "properties": {
+              "name": {"type": "string"},
+              "contact": {"type": "string"},
+              "source_uri": {"type": "string"}
+            }
+          }
+        },
+        "expected_events": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}},
+        "expected_hard_failure_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,79}$"}},
+        "anchor_scores": {"$ref": "#/$defs/scores"},
+        "rationale": {"type": "string", "minLength": 30, "maxLength": 2000}
+      }
+    }
+  }
+}

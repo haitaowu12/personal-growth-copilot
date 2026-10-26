@@ -8,6 +8,12 @@ development evidence only until the full authored suite,
 reviewer agreement, acceptance rules, untouched holdouts, privacy gate, and
 pilot gates pass.
 
+For bounded real-model diagnostics with auxiliary model review, use
+`DEVELOPMENT_EXECUTION.md`. For the exact human-reviewed release matrix, initialize
+`scripts/campaign_workspace.py`; it creates and reconciles every frozen run
+identity without hand-maintained result selection. Release captures must still
+use the externally witnessed attempt workflow below.
+
 ## Trust boundaries
 
 - The provider is snapshotted byte-for-byte into a private temporary directory,
@@ -194,6 +200,11 @@ governed suite under one restricted evidence
 directory. Build a manifest with one `--result` argument per run; the builder
 rejects missing, duplicate, extra, invalid, out-of-directory, symlinked, or
 hash-mismatched results and orders them by the complete frozen run plan:
+
+The campaign workspace status report lists every finalized result path and
+refuses to report complete while any run is awaiting provider, human review,
+import, finalization, or repair. It is an orchestration aid, not an attempt
+witness or human-review substitute.
 
 ```text
 python scripts/campaign_cli.py build-manifest \

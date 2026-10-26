@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/campaign-workspace-status.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "qualification_claim_allowed", "candidate_commit", "generated_at", "workspace_sha256", "run_count", "counts", "runs", "complete", "status_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "authored-campaign-workspace-status"},
+    "qualification_claim_allowed": {"const": false},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "workspace_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "run_count": {"type": "integer", "minimum": 1},
+    "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "runs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/runStatus"}},
+    "complete": {"type": "boolean"},
+    "status_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "runStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "run_slug", "identity", "status", "latest_session_path", "review_request_path", "review_response_path", "result_path", "next_action", "next_command", "errors"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 1},
+        "run_slug": {"type": "string"},
+        "identity": {"type": "object"},
+        "status": {"enum": ["UNINITIALIZED", "AWAITING_PROVIDER", "AWAITING_REVIEW_EXPORT", "AWAITING_EXTERNAL_REVIEW", "READY_TO_IMPORT_REVIEW", "READY_TO_FINALIZE", "FINALIZED", "INVALID"]},
+        "latest_session_path": {"oneOf": [{"type": "string"}, {"type": "null"}]},
+        "review_request_path": {"oneOf": [{"type": "string"}, {"type": "null"}]},
+        "review_response_path": {"oneOf": [{"type": "string"}, {"type": "null"}]},
+        "result_path": {"oneOf": [{"type": "string"}, {"type": "null"}]},
+        "next_action": {"enum": ["INIT", "CAPTURE", "EXPORT_REVIEW", "WAIT_FOR_REVIEW", "IMPORT_REVIEW", "FINALIZE", "NONE", "REPAIR"]},
+        "next_command": {"oneOf": [{"type": "string"}, {"type": "null"}]},
+        "errors": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

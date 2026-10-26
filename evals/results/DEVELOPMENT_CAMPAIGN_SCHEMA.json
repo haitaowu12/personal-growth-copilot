@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/results/development-campaign.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_class",
+    "qualification_claim_allowed",
+    "source_commit",
+    "source_tree_clean",
+    "suite_sha256",
+    "target_config_sha256",
+    "development_config_sha256",
+    "provider_identity_sha256",
+    "reviewer_identity_sha256",
+    "started_at",
+    "finished_at",
+    "planned_run_count",
+    "completed_run_count",
+    "summary",
+    "runs",
+    "claim_limit",
+    "aggregate_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "model-assisted-development-campaign"},
+    "qualification_claim_allowed": {"const": false},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_tree_clean": {"const": true},
+    "suite_sha256": {"$ref": "#/$defs/hash"},
+    "target_config_sha256": {"$ref": "#/$defs/hash"},
+    "development_config_sha256": {"$ref": "#/$defs/hash"},
+    "provider_identity_sha256": {"$ref": "#/$defs/hash"},
+    "reviewer_identity_sha256": {"$ref": "#/$defs/hash"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "planned_run_count": {"type": "integer", "minimum": 1},
+    "completed_run_count": {"type": "integer", "minimum": 0},
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["automated_pass", "automated_fail", "hard_failure_runs", "branch_unresolved_runs", "auxiliary_review_count"],
+      "properties": {
+        "automated_pass": {"type": "integer", "minimum": 0},
+        "automated_fail": {"type": "integer", "minimum": 0},
+        "hard_failure_runs": {"type": "integer", "minimum": 0},
+        "branch_unresolved_runs": {"type": "integer", "minimum": 0},
+        "auxiliary_review_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "runs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/run"}
+    },
+    "claim_limit": {"type": "string", "minLength": 50, "maxLength": 1000},
+    "aggregate_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_sha256", "provider_identity_sha256", "provider_response_id", "captured_at", "completion_sha256"],
+      "properties": {
+        "request_sha256": {"$ref": "#/$defs/hash"},
+        "provider_identity_sha256": {"$ref": "#/$defs/hash"},
+        "provider_response_id": {"type": "string", "minLength": 1, "maxLength": 200},
+        "captured_at": {"type": "string", "format": "date-time"},
+        "completion_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_request_sha256", "reviewer_identity_sha256", "provider_response_id", "events", "scores", "hard_failure_codes", "resource_claims_reviewed", "uncertainty", "notes", "review_sha256"],
+      "properties": {
+        "review_request_sha256": {"$ref": "#/$defs/hash"},
+        "reviewer_identity_sha256": {"$ref": "#/$defs/hash"},
+        "provider_response_id": {"type": "string", "minLength": 1, "maxLength": 200},
+        "events": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "scores": {"type": "object"},
+        "hard_failure_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "resource_claims_reviewed": {"type": "boolean"},
+        "uncertainty": {"enum": ["low", "medium", "high"]},
+        "notes": {"type": "string", "maxLength": 1000},
+        "review_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "case_id", "system_id", "variant_id", "repetition", "language", "risk", "automated_status", "failures", "hard_failures", "transcript", "transcript_sha256", "provider_captures", "auxiliary_reviews"],
+      "properties": {
+        "run_id": {"type": "string", "pattern": "^run-[0-9a-f]{24}$"},
+        "case_id": {"type": "string"},
+        "system_id": {"type": "string"},
+        "variant_id": {"type": "string"},
+        "repetition": {"type": "integer", "minimum": 1},
+        "language": {"type": "string"},
+        "risk": {"type": "string"},
+        "automated_status": {"enum": ["pass", "fail"]},
+        "failures": {"type": "array"},
+        "hard_failures": {"type": "array"},
+        "transcript": {"type": "array", "minItems": 1},
+        "transcript_sha256": {"$ref": "#/$defs/hash"},
+        "provider_captures": {"type": "array", "items": {"$ref": "#/$defs/capture"}},
+        "auxiliary_reviews": {"type": "array", "items": {"$ref": "#/$defs/review"}}
+      }
+    }
+  }
+}

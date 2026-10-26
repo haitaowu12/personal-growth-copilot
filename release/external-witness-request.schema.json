@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/external-witness-request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_class",
+    "kind",
+    "candidate_commit",
+    "public_key_path",
+    "public_key_sha256",
+    "payload",
+    "unsigned_artifact",
+    "request_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "external-witness-signing-request"},
+    "kind": {"enum": ["holdout_attempt", "privacy_audit", "pilot_ledger"]},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "public_key_path": {"type": "string", "minLength": 1, "maxLength": 500},
+    "public_key_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "payload": {"type": "object"},
+    "unsigned_artifact": {"type": "object"},
+    "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

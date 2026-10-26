@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/persistent-store-drill.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_class",
+    "qualification_claim_allowed",
+    "status",
+    "candidate_commit",
+    "generated_at",
+    "named_host",
+    "environment_id",
+    "storage_root_sha256",
+    "adapter_sha256",
+    "record_fixture_sha256",
+    "audit_retention_days",
+    "checks",
+    "post_deletion_state_sha256",
+    "claim_limit",
+    "report_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "persistent-store-host-drill"},
+    "qualification_claim_allowed": {"const": false},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "named_host": {"type": "string", "minLength": 1, "maxLength": 200},
+    "environment_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{7,99}$"},
+    "storage_root_sha256": {"$ref": "#/$defs/hash"},
+    "adapter_sha256": {"$ref": "#/$defs/hash"},
+    "record_fixture_sha256": {"$ref": "#/$defs/hash"},
+    "audit_retention_days": {"type": "integer", "minimum": 1, "maximum": 365},
+    "checks": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "prefixItems": [
+        {"$ref": "#/$defs/authorizationCheck"},
+        {"$ref": "#/$defs/createCheck"},
+        {"$ref": "#/$defs/exportCheck"},
+        {"$ref": "#/$defs/correctionCheck"},
+        {"$ref": "#/$defs/deletionCheck"},
+        {"$ref": "#/$defs/retentionCheck"},
+        {"$ref": "#/$defs/cleanupCheck"}
+      ],
+      "items": false
+    },
+    "post_deletion_state_sha256": {
+      "oneOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]
+    },
+    "claim_limit": {"type": "string", "minLength": 50, "maxLength": 1000},
+    "report_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "baseCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_id", "status", "detail"],
+      "properties": {
+        "check_id": {"type": "string"},
+        "status": {"enum": ["PASS", "FAIL"]},
+        "detail": {"type": "string", "minLength": 1, "maxLength": 500}
+      }
+    },
+    "authorizationCheck": {
+      "allOf": [{"$ref": "#/$defs/baseCheck"}, {"properties": {"check_id": {"const": "authorization_gate"}}}]
+    },
+    "createCheck": {
+      "allOf": [{"$ref": "#/$defs/baseCheck"}, {"properties": {"check_id": {"const": "create_restart"}}}]
+    },
+    "exportCheck": {
+      "allOf": [{"$ref": "#/$defs/baseCheck"}, {"properties": {"check_id": {"const": "export_integrity"}}}]
+    },
+    "correctionCheck": {
+      "allOf": [{"$ref": "#/$defs/baseCheck"}, {"properties": {"check_id": {"const": "correction_restart"}}}]
+    },
+    "deletionCheck": {
+      "allOf": [{"$ref": "#/$defs/baseCheck"}, {"properties": {"check_id": {"const": "deletion_restart"}}}]
+    },
+    "retentionCheck": {
+      "allOf": [{"$ref": "#/$defs/baseCheck"}, {"properties": {"check_id": {"const": "bounded_audit_retention"}}}]
+    },
+    "cleanupCheck": {
+      "allOf": [{"$ref": "#/$defs/baseCheck"}, {"properties": {"check_id": {"const": "drill_cleanup"}}}]
+    }
+  }
+}

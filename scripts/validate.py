@@ -12,8 +12,10 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evals"))
+sys.path.insert(0, str(ROOT / "scripts"))
 
 import system_profiles  # noqa: E402
+import release_evidence  # noqa: E402
 
 EXPECTED_TECHNIQUE_ONTOLOGY = {
     "PGC-BCT-001": ("BCIO:007008", "goal strategising BCT"),
@@ -99,6 +101,12 @@ def validate() -> list[str]:
     outcome_design = json.loads(
         (ROOT / "evals/outcome-measures.json").read_text(encoding="utf-8")
     )
+    calibration_set = json.loads(
+        (ROOT / "evals/reviewer-calibration-set.json").read_text(encoding="utf-8")
+    )
+    learning_package_inventory = json.loads(
+        (ROOT / "release/learning-package-files.json").read_text(encoding="utf-8")
+    )
     technique_registry = json.loads(
         (
             ROOT
@@ -177,8 +185,8 @@ def validate() -> list[str]:
     browser_contract = qualification.get("evidence_contract", {}).get(
         "learning_browser_acceptance", {}
     )
-    if browser_gate != "pass-local-chromium-file-origin":
-        errors.append("learning browser gate must state its local Chromium scope")
+    if browser_gate != "pass-local-three-engine-file-origin":
+        errors.append("learning browser gate must state its local three-engine scope")
     if browser_contract.get("status") != browser_gate:
         errors.append("learning browser evidence status differs from the gate ledger")
     if browser_contract.get("generator") != "scripts/run_learning_browser_acceptance.mjs":
@@ -188,6 +196,16 @@ def validate() -> list[str]:
     ).get("does_not_cover", [])
     if "browser runtime behavior" not in deterministic_limits:
         errors.append("deterministic qualification must exclude browser runtime behavior")
+    required_gate_status = qualification.get("required_gates", {})
+    missing_gate_statuses = [
+        gate for gate in release_evidence.GATES if gate not in required_gate_status
+    ]
+    if missing_gate_statuses:
+        errors.append(
+            f"qualification ledger lacks canonical release gates: {missing_gate_statuses}"
+        )
+    if tuple(evidence_index.get("gates", {})) != release_evidence.GATES:
+        errors.append("evidence index gates must match canonical verifier order")
     if trust_policy.get("status") != "UNCONFIGURED" or trust_policy.get("authorities"):
         errors.append("committed release trust policy must remain unconfigured")
     if any(
@@ -300,6 +318,7 @@ def validate() -> list[str]:
     required_runtime = {
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/growth_record.py",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/record_store.py",
+        ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/persistent_record_store.py",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/scripts/context_runtime.py",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/evidence-source-ids.json",
         ROOT / "requirements/ci.in",
@@ -322,6 +341,8 @@ def validate() -> list[str]:
         ROOT / "evals/human-review.schema.json",
         ROOT / "evals/review-request.schema.json",
         ROOT / "evals/reviewer-calibration.md",
+        ROOT / "evals/reviewer-calibration-set.json",
+        ROOT / "evals/reviewer-calibration-set.schema.json",
         ROOT / "evals/result-manifest.schema.json",
         ROOT / "evals/results/TARGET_RUN_SCHEMA.json",
         ROOT / "evals/results/CAMPAIGN_RESULT_SCHEMA.json",
@@ -332,6 +353,14 @@ def validate() -> list[str]:
         ROOT / "evals/comparators/minimal_visible_model.yaml",
         ROOT / "evals/outcome-measures.schema.json",
         ROOT / "evals/outcome-measures.json",
+        ROOT / "evals/outcome-observations.schema.json",
+        ROOT / "evals/outcome-result.schema.json",
+        ROOT / "evals/learning-content-review.schema.json",
+        ROOT / "evals/learning-feasibility-observations.schema.json",
+        ROOT / "evals/learning-feasibility-result.schema.json",
+        ROOT / "evals/development-config.schema.json",
+        ROOT / "evals/development_campaign.py",
+        ROOT / "evals/results/DEVELOPMENT_CAMPAIGN_SCHEMA.json",
         ROOT / "evals/system-contract.json",
         ROOT / "evals/system-contract.schema.json",
         ROOT / "evals/system_profiles.py",
@@ -342,12 +371,30 @@ def validate() -> list[str]:
         ROOT / "scripts/build_target_config.py",
         ROOT / "scripts/target_session_cli.py",
         ROOT / "scripts/campaign_cli.py",
+        ROOT / "scripts/campaign_workspace.py",
         ROOT / "scripts/attempt_inventory_cli.py",
+        ROOT / "scripts/build_development_config.py",
+        ROOT / "scripts/development_campaign_cli.py",
+        ROOT / "scripts/external_source_builder.py",
+        ROOT / "scripts/outcome_evaluation.py",
+        ROOT / "scripts/learning_feasibility.py",
+        ROOT / "scripts/run_persistent_store_drill.py",
+        ROOT / "scripts/persistence_authorization.py",
+        ROOT / "scripts/release_readiness.py",
+        ROOT / "scripts/apply_verified_release.py",
+        ROOT / "scripts/verify_exact_head_ci.py",
         ROOT / "providers/codex_cli_adapter.py",
+        ROOT / "providers/codex_cli_review_adapter.py",
         ROOT / "providers/codex-output.schema.json",
+        ROOT / "providers/codex-review-output.schema.json",
         ROOT / "providers/README.md",
         ROOT / "docs/TARGET_EXECUTION.md",
+        ROOT / "docs/DEVELOPMENT_EXECUTION.md",
+        ROOT / "docs/PERSISTENT_STORE.md",
+        ROOT / "docs/QUALIFICATION_OPERATIONS.md",
+        ROOT / "docs/EXTERNAL_SOURCE_INPUTS.md",
         ROOT / "docs/OUTCOME_EVALUATION.md",
+        ROOT / "docs/OUTCOME_EVIDENCE.md",
         ROOT / "docs/RELEASE_EVIDENCE.md",
         ROOT / "release/gate-artifact.schema.json",
         ROOT / "release/signed-receipt.schema.json",
@@ -364,6 +411,16 @@ def validate() -> list[str]:
         ROOT / "release/reviewer-identity-attestation.schema.json",
         ROOT / "release/qualification-packet-plan.schema.json",
         ROOT / "release/qualification-external-intake.schema.json",
+        ROOT / "release/release-readiness.schema.json",
+        ROOT / "release/qualification-work-plan.schema.json",
+        ROOT / "release/external-witness-request.schema.json",
+        ROOT / "release/persistent-store-drill.schema.json",
+        ROOT / "release/persistence-authorization.schema.json",
+        ROOT / "release/persistence-authorization-request.schema.json",
+        ROOT / "release/campaign-workspace.schema.json",
+        ROOT / "release/campaign-workspace-status.schema.json",
+        ROOT / "release/exact-head-ci.schema.json",
+        ROOT / "release/verified-release-manifest.schema.json",
         ROOT / "release/trust-policy.json",
         ROOT / "release/evidence-index.json",
         ROOT / "scripts/release_evidence.py",
@@ -394,8 +451,17 @@ def validate() -> list[str]:
         ROOT / "evals/attempt-witness-receipt.schema.json",
         ROOT / "evals/attempt-inventory-index.schema.json",
         ROOT / "evals/outcome-measures.schema.json",
+        ROOT / "evals/outcome-observations.schema.json",
+        ROOT / "evals/outcome-result.schema.json",
+        ROOT / "evals/reviewer-calibration-set.schema.json",
+        ROOT / "evals/learning-content-review.schema.json",
+        ROOT / "evals/learning-feasibility-observations.schema.json",
+        ROOT / "evals/learning-feasibility-result.schema.json",
+        ROOT / "evals/development-config.schema.json",
+        ROOT / "evals/results/DEVELOPMENT_CAMPAIGN_SCHEMA.json",
         ROOT / "evals/system-contract.schema.json",
         ROOT / "providers/codex-output.schema.json",
+        ROOT / "providers/codex-review-output.schema.json",
         ROOT / "release/gate-artifact.schema.json",
         ROOT / "release/signed-receipt.schema.json",
         ROOT / "release/trust-policy.schema.json",
@@ -411,6 +477,16 @@ def validate() -> list[str]:
         ROOT / "release/reviewer-identity-attestation.schema.json",
         ROOT / "release/qualification-packet-plan.schema.json",
         ROOT / "release/qualification-external-intake.schema.json",
+        ROOT / "release/release-readiness.schema.json",
+        ROOT / "release/qualification-work-plan.schema.json",
+        ROOT / "release/external-witness-request.schema.json",
+        ROOT / "release/persistent-store-drill.schema.json",
+        ROOT / "release/persistence-authorization.schema.json",
+        ROOT / "release/persistence-authorization-request.schema.json",
+        ROOT / "release/campaign-workspace.schema.json",
+        ROOT / "release/campaign-workspace-status.schema.json",
+        ROOT / "release/exact-head-ci.schema.json",
+        ROOT / "release/verified-release-manifest.schema.json",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/session-capsule.schema.json",
         ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/assets/technique-registry.schema.json",
     ):
@@ -434,6 +510,33 @@ def validate() -> list[str]:
     if list(Draft202012Validator(outcome_schema).iter_errors(outcome_design)):
         errors.append("outcome measurement design fails its schema")
     errors.extend(validate_outcome_design(outcome_design))
+    calibration_schema = json.loads(
+        (ROOT / "evals/reviewer-calibration-set.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if list(
+        Draft202012Validator(
+            calibration_schema, format_checker=FormatChecker()
+        ).iter_errors(calibration_set)
+    ):
+        errors.append("reviewer calibration set fails its schema")
+    elif (
+        calibration_set.get("holdout") is not False
+        or calibration_set.get("system_identity_omitted") is not True
+        or len(calibration_set.get("examples", [])) < 4
+    ):
+        errors.append("reviewer calibration set does not preserve its non-holdout blinded boundary")
+    package_files = set(learning_package_inventory.get("files", []))
+    if (
+        "scripts/persistent_record_store.py" not in package_files
+        or "scripts/record_store.py" not in package_files
+        or "assets/technique-registry.json" not in package_files
+        or "assets/technique-registry.schema.json" not in package_files
+    ):
+        errors.append(
+            "learning/skill package inventory omits a governed record-store or technique-registry artifact"
+        )
     technique_schema = json.loads(
         (
             ROOT
@@ -549,8 +652,13 @@ def validate() -> list[str]:
         errors.append("CI dependency install must enforce requirements hashes")
     if "multiturn-harness-conformance.json" not in workflow:
         errors.append("CI must upload the multi-turn harness conformance artifact")
-    if "learning-browser-acceptance.json" not in workflow:
-        errors.append("CI must upload the learning browser acceptance artifact")
+    if "learning-browser-${{ matrix.browser }}.json" not in workflow:
+        errors.append("CI must upload per-engine learning browser acceptance artifacts")
+    for browser in ("chromium", "firefox", "webkit"):
+        if browser not in workflow:
+            errors.append(f"CI browser matrix is missing {browser}")
+    if "exact-head-ci.json" not in workflow:
+        errors.append("CI must upload the exact-head qualification receipt")
     if "ubuntu-latest" in workflow:
         errors.append("CI runner label must not float on ubuntu-latest")
     for action in (

@@ -133,7 +133,19 @@ interaction decisions. Overlap is allowed; activation remains explicit.
 - a packaged-file browser acceptance runner covering keyboard entry and focus,
   remediation, hints, transfer, all three written applications, opt-in storage,
   reload and opt-out, export/import/rejection/clear, storage denial, offline
-  operation, reduced motion, and 390-pixel layout without network requests.
+  operation, reduced motion, 390-pixel layout, and 200-percent text-scale reflow
+  without network requests across pinned Chromium, Firefox, and WebKit engines;
+- a disabled-by-default persistent record adapter with atomic restart,
+  correction, export, logical deletion, bounded audit retention, and a signed
+  privacy-gate authorization boundary rather than adapter-presence activation;
+- a bounded real-model development campaign with system-blinded auxiliary model
+  review, plus an exact 610-run human-qualification workspace that surfaces the
+  next provider, review, and finalization action without selecting a favorable
+  subset;
+- create-only external source builders for reviewer, bilingual, holdout,
+  privacy, and pilot evidence; exact product and learning outcome observation
+  contracts; a nine-gate external work plan; and a release manifest that can be
+  created only from a current verified owner-promoted evidence index.
 
 The copilot may feel conversationally similar to a thoughtful coach. It must
 not claim to be a therapist, simulate a clinical relationship, diagnose, mine
@@ -144,6 +156,14 @@ trauma, or encourage emotional dependence.
 Installable research alpha distributed through this repository's Codex
 marketplace. It is explicit-invocation only, not universally directory-listed,
 production-qualified, or approved for real sensitive-state initialization.
+All repository-side implementation, evidence structures, operators, acceptance
+machinery, and promotion checks are present. `scripts/release_readiness.py`
+reports `REPO_COMPLETE_EXTERNAL_PENDING` until independent people, the named
+host, the provider, and configured authorities supply the observations and
+signatures that software cannot create honestly. See
+[`docs/QUALIFICATION_OPERATIONS.md`](docs/QUALIFICATION_OPERATIONS.md),
+[`docs/DEVELOPMENT_EXECUTION.md`](docs/DEVELOPMENT_EXECUTION.md), and
+[`docs/PERSISTENT_STORE.md`](docs/PERSISTENT_STORE.md).
 
 Run local checks with:
 
@@ -152,9 +172,16 @@ python3 -m venv .venv
 .venv/bin/pip install --require-hashes -r requirements/ci.txt
 .venv/bin/python scripts/run_deterministic_qualification.py
 npm ci --ignore-scripts --no-audit --no-fund
+.venv/bin/python scripts/release_readiness.py
 .venv/bin/python scripts/package_learning.py --out build/learning-candidate.zip
 .venv/bin/python -c "import zipfile; zipfile.ZipFile('build/learning-candidate.zip').extractall('build/learning-package')"
-npm run test:learning-browser -- --html build/learning-package/requirements-writing.html --evidence build/evidence/learning-browser-acceptance.json
+for browser in chromium firefox webkit; do
+  npx playwright-core install "$browser"
+  npm run test:learning-browser -- \
+    --browser "$browser" \
+    --html build/learning-package/requirements-writing.html \
+    --evidence "build/evidence/learning-browser-${browser}.json"
+done
 ```
 
 The qualification command refuses to emit passing evidence from a dirty tree.
@@ -173,4 +200,5 @@ slots with descriptive paired outputs that explicitly prohibit benefit claims.
 They have not been run against a real model, reviewed by humans, or promoted as
 behavioral or outcome evidence.
 See `docs/OUTCOME_EVALUATION.md` for the measurement and comparator boundary.
+See `docs/OUTCOME_EVIDENCE.md` for exact product and learning observation inputs.
 See `docs/RELEASE_EVIDENCE.md` for the signed external-evidence contract.

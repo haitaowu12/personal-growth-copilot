@@ -12,6 +12,8 @@
     "assets/learning/topic-pack.schema.json",
     "assets/safety-state-machine.yaml",
     "assets/session-capsule.schema.json",
+    "assets/technique-registry.json",
+    "assets/technique-registry.schema.json",
     "references/behavior-change-experiments.md",
     "references/bilingual-dialogue.md",
     "references/collaborative-inquiry.md",
@@ -28,6 +30,7 @@
     "scripts/build_learning.py",
     "scripts/context_runtime.py",
     "scripts/growth_record.py",
+    "scripts/persistent_record_store.py",
     "scripts/record_store.py",
     "scripts/requirements.txt",
     "scripts/safety_runtime.py"

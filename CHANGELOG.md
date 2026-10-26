@@ -18,6 +18,16 @@
 - Reproducible packaged learning candidate and automated file-origin browser
   acceptance for the complete journey, persistence controls, imports, storage
   denial, offline execution, reduced motion, and narrow layout.
+- Cross-engine Chromium, Firefox, and WebKit acceptance plus 200-percent
+  text-scale reflow checks.
+- Disabled-by-default atomic persistent record adapter, invented-data host drill,
+  and privacy-authority-signed activation bound to current release evidence.
+- Real-model development campaign with system-blinded auxiliary review and an
+  exact resumable 610-run human-qualification workspace.
+- Reviewer calibration set; external reviewer, bilingual, holdout, privacy, and
+  pilot source builders; exact product and learning outcome analysis; nine-gate
+  qualification work plan; release-readiness report; and verified promotion
+  manifest operator.
 
 ### Changed
 
@@ -31,6 +41,11 @@
   unexecuted behavioral and user-outcome evidence.
 - Action selection now consults the governed technique registry and preserves
   intentional non-action when no technique fits.
+- Qualification metadata now mirrors the verifier's exact nine gates; auxiliary
+  model-judge calibration is no longer represented as a release gate.
+- The Codex runtime read bound is 512 MiB so the current standalone executable
+  remains hash-bound and snapshot-executable instead of failing a stale 200 MiB
+  implementation cap.
 
 ### Fixed
 
@@ -38,6 +53,8 @@
   paths before enforcing repository containment.
 - Codex output-schema bytes are now no-follow read, hash-verified, and copied to
   a private snapshot before model invocation.
+- Named-host discovery now reports an unwitnessed persistent-store drill rather
+  than claiming that no persistent adapter exists.
 - Test fixtures, reviewer evidence, campaign counts, and qualification language
   no longer assume a three-system or stdio-v2 contract.
 

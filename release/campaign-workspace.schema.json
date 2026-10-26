@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/campaign-workspace.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_class",
+    "qualification_claim_allowed",
+    "candidate_commit",
+    "created_at",
+    "workspace_root_sha256",
+    "config_path",
+    "config_sha256",
+    "suite_sha256",
+    "run_plan_sha256",
+    "run_count",
+    "runs",
+    "workspace_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "authored-campaign-workspace"},
+    "qualification_claim_allowed": {"const": false},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "workspace_root_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "config_path": {"type": "string", "minLength": 1, "maxLength": 500},
+    "config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "suite_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "run_plan_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "run_count": {"type": "integer", "minimum": 1},
+    "runs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/run"}},
+    "workspace_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "run_slug", "identity", "directory"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 1},
+        "run_slug": {"type": "string", "pattern": "^run-[0-9a-f]{24}$"},
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["case_id", "system_id", "variant_id", "repetition"],
+          "properties": {
+            "case_id": {"type": "string"},
+            "system_id": {"type": "string"},
+            "variant_id": {"type": "string"},
+            "repetition": {"type": "integer", "minimum": 1}
+          }
+        },
+        "directory": {"type": "string", "pattern": "^runs/run-[0-9a-f]{24}$"}
+      }
+    }
+  }
+}

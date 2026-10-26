@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/outcome-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "qualification_claim_allowed", "candidate_commit", "design_sha256", "observations_sha256", "generated_at", "episode_count", "participant_states", "primary_outcome_ids", "measure_summaries", "claim_limit", "result_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "product-outcome-analysis"},
+    "qualification_claim_allowed": {"const": false},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "design_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "observations_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "episode_count": {"type": "integer", "minimum": 1},
+    "participant_states": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "primary_outcome_ids": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"type": "string"}},
+    "measure_summaries": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/summary"}},
+    "claim_limit": {"type": "string", "minLength": 50, "maxLength": 1000},
+    "result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["measure_id", "layer", "role", "system_id", "collection_point", "denominator", "status_counts", "value_counts", "numeric_summary", "primary_success_count", "primary_rate_denominator", "primary_success_rate"],
+      "properties": {
+        "measure_id": {"type": "string"},
+        "layer": {"enum": ["process", "proximal", "delayed", "burden", "dependence"]},
+        "role": {"enum": ["primary", "secondary", "guardrail"]},
+        "system_id": {"type": "string"},
+        "collection_point": {"type": "string"},
+        "denominator": {"type": "integer", "minimum": 0},
+        "status_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "value_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "numeric_summary": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "object", "additionalProperties": false, "required": ["count", "minimum", "maximum", "mean"], "properties": {"count": {"type": "integer", "minimum": 1}, "minimum": {"type": "number"}, "maximum": {"type": "number"}, "mean": {"type": "number"}}}
+          ]
+        },
+        "primary_success_count": {"oneOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]},
+        "primary_rate_denominator": {"oneOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]},
+        "primary_success_rate": {"oneOf": [{"type": "number", "minimum": 0, "maximum": 1}, {"type": "null"}]}
+      }
+    }
+  }
+}

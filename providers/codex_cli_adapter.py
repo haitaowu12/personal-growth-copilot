@@ -15,6 +15,7 @@ from pathlib import Path
 PROTOCOL = "pgc-stdio-v3"
 ALLOWED_SETTINGS = {"reasoning_effort"}
 ALLOWED_REASONING = {"low", "medium", "high", "xhigh", "max", "ultra"}
+MAX_RUNTIME_BYTES = 512 * 1024 * 1024
 EXPECTED_SYSTEM_CONTRACT = (
     ("target", "product", "READ_ONLY_USER_APPROVED", "HOST_EXPLICIT_ONLY"),
     ("direct_assistant", "matched_direct_baseline", "CONVERSATION_ONLY", "DISABLED"),
@@ -335,7 +336,7 @@ def invoke_codex(payload: dict, prompt: str, repository: Path) -> tuple[dict, st
         fail("Codex output schema is not valid UTF-8 JSON")
     if not isinstance(output_schema_document, dict):
         fail("Codex output schema must contain one JSON object")
-    runtime_bytes = read_regular_bytes(codex_bin, maximum=209_715_200)
+    runtime_bytes = read_regular_bytes(codex_bin, maximum=MAX_RUNTIME_BYTES)
     if hashlib.sha256(runtime_bytes).hexdigest() != execution[
         "runtime_executable_sha256"
     ]:

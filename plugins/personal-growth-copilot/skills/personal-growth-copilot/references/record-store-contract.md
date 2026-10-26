@@ -1,5 +1,20 @@
 # Record-store contract
 
+## Persistent adapter activation
+
+The file-backed adapter in `scripts/persistent_record_store.py` implements this
+contract across process restarts, but it is disabled by default. The host may
+instantiate it only after verifying a current signed persistence authorization
+bound to the exact candidate commit, current evidence-index hash, passing privacy
+artifact, privacy-host identity, named host, environment ID, storage-root object,
+and validity window. The configured privacy authority signs that authorization;
+the model cannot create, infer, or substitute it.
+
+A local invented-data drill proves only adapter mechanics. It does not prove
+encryption, no-sync placement, backup scope, recovery, retention operations,
+incident response, or permission to store real personal content. If any current
+anchor differs, the host must fail closed and retain the in-memory store.
+
 Use `scripts/record_store.py` as the non-persistent conformance target. It does
 not authorize a real database, cloud memory, sync path, or sensitive-state
 initialization.

@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import release_evidence  # noqa: E402
 import release_packet  # noqa: E402
 import host_privacy_discovery  # noqa: E402
+import release_readiness  # noqa: E402
 
 
 PLAN_NAME = release_packet.QUALIFICATION_PLAN_NAME
@@ -28,6 +29,7 @@ PACKET_DIRECTORIES = (
     "holdout",
     "pilot",
     "privacy",
+    "promotion",
     "review",
     "target",
 )
@@ -519,6 +521,29 @@ def build_external_intake(
     return intake
 
 
+def build_external_work_plan(
+    packet_root: Path,
+    *,
+    source_identity: Callable[[Path], str] = release_evidence.source_identity,
+    clock: Callable[[], datetime] = now,
+) -> dict[str, Any]:
+    """Build a candidate-bound, non-evidentiary nine-gate execution plan."""
+
+    root = _existing_packet_root(packet_root)
+    plan = _load_plan(root)
+    candidate = source_identity(ROOT)
+    if candidate != plan["candidate_commit"]:
+        raise release_evidence.ReleaseEvidenceError(
+            "qualification plan differs from the exact clean candidate checkout"
+        )
+    return release_readiness.build_work_plan(
+        candidate_commit=candidate,
+        qualification_plan_sha256=plan["plan_sha256"],
+        generated_at=clock(),
+        hard_invariants=HARD_INVARIANTS,
+    )
+
+
 def _intake_output(root: Path, output: Path) -> Path:
     if output.exists() or output.is_symlink():
         raise release_evidence.ReleaseEvidenceError(
@@ -551,6 +576,9 @@ def parser() -> argparse.ArgumentParser:
     intake = commands.add_parser("intake")
     intake.add_argument("--packet-root", type=Path, required=True)
     intake.add_argument("--output", type=Path, required=True)
+    work_plan = commands.add_parser("work-plan")
+    work_plan.add_argument("--packet-root", type=Path, required=True)
+    work_plan.add_argument("--output", type=Path, required=True)
     return result
 
 
@@ -566,9 +594,15 @@ def main() -> int:
             )
         elif args.command == "preflight":
             result = preflight_packet(args.packet_root)
-        else:
+        elif args.command == "intake":
             root = _existing_packet_root(args.packet_root)
             result = build_external_intake(root)
+            release_packet.write_private_new(
+                _intake_output(root, args.output), result
+            )
+        else:
+            root = _existing_packet_root(args.packet_root)
+            result = build_external_work_plan(root)
             release_packet.write_private_new(
                 _intake_output(root, args.output), result
             )

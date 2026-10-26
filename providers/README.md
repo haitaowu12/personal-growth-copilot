@@ -33,3 +33,15 @@ it at a personal auth root on a host containing private data. The adapter
 intentionally does not load case files
 or embed case IDs, expected events, forbidden labels, branch predicates, or
 rubric scores in the model prompt.
+
+`codex_cli_review_adapter.py` is a separate development-only adapter for
+system-blinded auxiliary review. It receives only a transcript, structured
+observations, the rubric, and bounded event/hard-failure codebooks. It snapshots
+the exact inference runtime and review-output schema, rejects tools and unknown
+events, and returns a hash-bound review. Its output is marked non-qualifying and
+cannot replace calibrated human reviewers, bilingual adjudication, or signed
+reviewer attestations.
+
+Both adapters permit a maximum 512 MiB inference executable. The bound is large
+enough for the current standalone Codex runtime while remaining a bounded,
+no-follow, exact-hash read rather than an unrestricted executable load.

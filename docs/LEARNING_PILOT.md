@@ -4,6 +4,12 @@ Status: prospective protocol. No participants, learner outcomes, or efficacy res
 are claimed. Existing personal-growth qualification gates remain in force. This
 educational topic pilot does not initialize sensitive growth records.
 
+The repository-side evidence machinery is implemented. Independent content
+review uses `evals/learning-content-review.schema.json`; participant task and
+review evidence uses `evals/learning-feasibility-observations.schema.json`; and
+`scripts/learning_feasibility.py` validates exact baseline, immediate, and
+seven-day task coverage before producing a non-qualifying analysis.
+
 ## Question
 
 Does source-grounded practice help adults write independently checkable requirements
@@ -53,6 +59,12 @@ browser journey, correct answer keys, tested save/resume/export/import/clear flo
 and zero known content-injection or unintended-network defects. Block on misleading
 feedback, irreversible loss of unsaved work without a warning, unauthorized storage,
 or false claims of assessment, persistence, or completion.
+
+The automated Chromium, Firefox, and WebKit file-origin journeys satisfy the
+repository-side browser prerequisite for the current candidate. Independent
+answer-key review, shipping-browser/manual accessibility review, participant
+consent, task artifacts, blinded scoring, and seven-day observations remain
+external prerequisites.
 
 After the feasibility phase, proceed only if critical issues are resolved, participants
 can complete the intended workflow, and retained evidence supports the selected next

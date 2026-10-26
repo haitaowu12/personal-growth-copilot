@@ -24,6 +24,30 @@ FIXED_TIME = datetime(2026, 8, 14, 12, 0, tzinfo=timezone.utc)
 
 
 class QualificationPacketTests(unittest.TestCase):
+    def test_external_work_plan_is_candidate_bound_exact_and_non_evidentiary(self):
+        with tempfile.TemporaryDirectory() as directory_name:
+            packet = Path(directory_name) / "packet"
+            qualification_packet.init_packet(
+                packet,
+                candidate_commit=CANDIDATE,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: NOW,
+            )
+            result = qualification_packet.build_external_work_plan(
+                packet,
+                source_identity=lambda _: CANDIDATE,
+                clock=lambda: NOW,
+            )
+            self.assertEqual(
+                result["execution_order"], list(release_evidence.GATES)
+            )
+            self.assertEqual(result["status"], "AWAITING_EXTERNAL_OBSERVATIONS")
+            self.assertEqual(len(result["gates"]), 9)
+            rendered = json.dumps(result)
+            self.assertNotIn("signature_base64", rendered)
+            self.assertNotIn("private_key", rendered)
+            self.assertNotIn("participant_id", rendered)
+
     def initialize(self, parent: Path) -> Path:
         root = parent / "private-qualification"
         qualification_packet.initialize_packet(

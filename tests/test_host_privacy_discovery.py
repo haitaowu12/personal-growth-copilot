@@ -99,6 +99,10 @@ class HostPrivacyDiscoveryTests(unittest.TestCase):
                 "incident_response",
             ):
                 self.assertEqual(checks[check_id]["status"], "UNKNOWN")
+            self.assertEqual(
+                checks["correction_export_deletion"]["reason_codes"],
+                ["PERSISTENT_ADAPTER_HOST_DRILL_NOT_WITNESSED"],
+            )
             self.assertEqual(report["status"], "NOT_READY")
             self.assertFalse(report["privacy_gate_ready"])
             self.assertFalse(report["persistent_adapter_authorized"])

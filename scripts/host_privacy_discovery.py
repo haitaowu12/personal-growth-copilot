@@ -875,13 +875,13 @@ def discover(
                 "correction_export_deletion",
                 "UNKNOWN",
                 observed_at,
-                ["PERSISTENT_ADAPTER_NOT_PRESENT"],
+                ["PERSISTENT_ADAPTER_HOST_DRILL_NOT_WITNESSED"],
             ),
             check(
                 "bounded_retention",
                 "UNKNOWN",
                 observed_at,
-                ["PERSISTENT_ADAPTER_NOT_PRESENT"],
+                ["PERSISTENT_ADAPTER_HOST_DRILL_NOT_WITNESSED"],
             ),
             check(
                 "incident_response",

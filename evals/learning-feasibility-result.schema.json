@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/learning-feasibility-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "qualification_claim_allowed", "candidate_commit", "topic_sha256", "observations_sha256", "participant_count", "withdrawal_count", "task_status_counts", "condition_timepoint_summaries", "claim_limit", "result_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "learning-feasibility-analysis"},
+    "qualification_claim_allowed": {"const": false},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "topic_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "observations_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "participant_count": {"type": "integer", "minimum": 6, "maximum": 10},
+    "withdrawal_count": {"type": "integer", "minimum": 0},
+    "task_status_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "condition_timepoint_summaries": {"type": "array", "minItems": 5, "items": {"$ref": "#/$defs/summary"}},
+    "claim_limit": {"type": "string", "minLength": 50, "maxLength": 1000},
+    "result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition", "timepoint", "denominator", "observed_count", "missing_or_withdrawn_count", "mean_primary_score", "minimum_primary_score", "maximum_primary_score", "mean_reviewer_absolute_difference", "mean_duration_seconds", "help_use_count"],
+      "properties": {
+        "condition": {"enum": ["baseline", "player", "source_reading"]},
+        "timepoint": {"enum": ["baseline", "immediate", "seven_day"]},
+        "denominator": {"type": "integer", "minimum": 0},
+        "observed_count": {"type": "integer", "minimum": 0},
+        "missing_or_withdrawn_count": {"type": "integer", "minimum": 0},
+        "mean_primary_score": {"oneOf": [{"type": "number", "minimum": 0, "maximum": 8}, {"type": "null"}]},
+        "minimum_primary_score": {"oneOf": [{"type": "number", "minimum": 0, "maximum": 8}, {"type": "null"}]},
+        "maximum_primary_score": {"oneOf": [{"type": "number", "minimum": 0, "maximum": 8}, {"type": "null"}]},
+        "mean_reviewer_absolute_difference": {"oneOf": [{"type": "number", "minimum": 0, "maximum": 8}, {"type": "null"}]},
+        "mean_duration_seconds": {"oneOf": [{"type": "number", "minimum": 0}, {"type": "null"}]},
+        "help_use_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

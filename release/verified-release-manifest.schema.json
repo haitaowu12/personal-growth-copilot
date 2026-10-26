@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/verified-release-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "status", "candidate_commit", "release", "generated_at", "trust_policy_sha256", "evidence_index_sha256", "verified_gate_count", "qualification_update_allowed", "claim", "manifest_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "verified-release-manifest"},
+    "status": {"const": "PROMOTED"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "release": {"type": "string", "minLength": 1, "maxLength": 100},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "trust_policy_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evidence_index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "verified_gate_count": {"const": 9},
+    "qualification_update_allowed": {"const": true},
+    "claim": {"const": "production-promotion-authorized-by-current-verified-evidence"},
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

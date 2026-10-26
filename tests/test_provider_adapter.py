@@ -23,6 +23,9 @@ ADAPTER = ROOT / "providers/codex_cli_adapter.py"
 
 
 class ProviderAdapterTests(unittest.TestCase):
+    def test_runtime_size_bound_supports_current_standalone_codex(self):
+        self.assertGreaterEqual(codex_cli_adapter.MAX_RUNTIME_BYTES, 300_000_000)
+
     def fake_codex(
         self,
         directory: Path,

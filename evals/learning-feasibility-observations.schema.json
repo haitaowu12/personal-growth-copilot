@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/evals/learning-feasibility-observations.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_class", "qualification_claim_allowed", "candidate_commit", "topic_sha256", "protocol_sha256", "content_review_path", "content_review_sha256", "generated_at", "reviewers", "participants"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "learning-feasibility-observations"},
+    "qualification_claim_allowed": {"const": false},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "topic_sha256": {"$ref": "#/$defs/hash"},
+    "protocol_sha256": {"$ref": "#/$defs/hash"},
+    "content_review_path": {"$ref": "#/$defs/path"},
+    "content_review_sha256": {"$ref": "#/$defs/hash"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "reviewers": {"type": "array", "minItems": 2, "maxItems": 20, "items": {"$ref": "#/$defs/reviewerIdentity"}},
+    "participants": {"type": "array", "minItems": 6, "maxItems": 10, "items": {"$ref": "#/$defs/participant"}}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "path": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"},
+    "scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["responsible_product", "single_obligation", "acceptance_boundary", "verification_evidence"],
+      "properties": {
+        "responsible_product": {"type": "integer", "minimum": 0, "maximum": 2},
+        "single_obligation": {"type": "integer", "minimum": 0, "maximum": 2},
+        "acceptance_boundary": {"type": "integer", "minimum": 0, "maximum": 2},
+        "verification_evidence": {"type": "integer", "minimum": 0, "maximum": 2}
+      }
+    },
+    "reviewerIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer_id", "identity_evidence_path", "identity_evidence_sha256", "independence_evidence_path", "independence_evidence_sha256"],
+      "properties": {
+        "reviewer_id": {"type": "string", "pattern": "^reviewer-[0-9a-f]{16}$"},
+        "identity_evidence_path": {"$ref": "#/$defs/path"},
+        "identity_evidence_sha256": {"$ref": "#/$defs/hash"},
+        "independence_evidence_path": {"$ref": "#/$defs/path"},
+        "independence_evidence_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer_id", "condition_blinded", "submitted_at", "scores"],
+      "properties": {
+        "reviewer_id": {"type": "string", "pattern": "^reviewer-[0-9a-f]{16}$"},
+        "condition_blinded": {"const": true},
+        "submitted_at": {"type": "string", "format": "date-time"},
+        "scores": {"$ref": "#/$defs/scores"}
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "condition", "timepoint", "status", "completed_at", "duration_seconds", "help_used", "artifact_path", "artifact_sha256", "reviews"],
+      "properties": {
+        "task_id": {"type": "string", "pattern": "^task-[0-9a-f]{16}$"},
+        "condition": {"enum": ["baseline", "player", "source_reading"]},
+        "timepoint": {"enum": ["baseline", "immediate", "seven_day"]},
+        "status": {"enum": ["OBSERVED", "MISSING", "WITHDRAWN"]},
+        "completed_at": {"oneOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]},
+        "duration_seconds": {"oneOf": [{"type": "number", "minimum": 0}, {"type": "null"}]},
+        "help_used": {"oneOf": [{"type": "boolean"}, {"type": "null"}]},
+        "artifact_path": {"oneOf": [{"$ref": "#/$defs/path"}, {"type": "null"}]},
+        "artifact_sha256": {"oneOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]},
+        "reviews": {"type": "array", "minItems": 0, "maxItems": 2, "items": {"$ref": "#/$defs/review"}}
+      }
+    },
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["participant_id", "prior_experience", "sequence", "session_completed_at", "consent_evidence_path", "consent_evidence_sha256", "withdrawn", "tasks"],
+      "properties": {
+        "participant_id": {"type": "string", "pattern": "^learner-[0-9a-f]{16}$"},
+        "prior_experience": {"enum": ["none", "limited", "regular", "expert"]},
+        "sequence": {"enum": ["player_first", "source_reading_first"]},
+        "session_completed_at": {"type": "string", "format": "date-time"},
+        "consent_evidence_path": {"$ref": "#/$defs/path"},
+        "consent_evidence_sha256": {"$ref": "#/$defs/hash"},
+        "withdrawn": {"type": "boolean"},
+        "tasks": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"$ref": "#/$defs/task"}}
+      }
+    }
+  }
+}

@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "build/evidence/deterministic-qualification.json"
 CHECKS = (
     ("repository-validation", ("scripts/validate.py",)),
+    ("release-readiness", ("scripts/release_readiness.py",)),
     ("evaluation-manifest-lint", ("scripts/lint_eval_manifest.py",)),
     (
         "learning-pack-validation",

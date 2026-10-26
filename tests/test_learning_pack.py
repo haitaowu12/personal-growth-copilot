@@ -99,6 +99,12 @@ class LearningDistributionTests(unittest.TestCase):
             names = set(archive.namelist())
             self.assertIn("requirements-writing.html", names)
             self.assertIn("personal-growth-copilot/scripts/build_learning.py", names)
+            self.assertIn(
+                "personal-growth-copilot/scripts/persistent_record_store.py", names
+            )
+            self.assertIn(
+                "personal-growth-copilot/assets/technique-registry.json", names
+            )
             self.assertFalse(
                 any(
                     "progress" in n or "__pycache__" in n or "target-results" in n

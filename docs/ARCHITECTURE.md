@@ -115,7 +115,12 @@ conformance target for exact previews, verified host attestations, store-owned
 time, opaque revisions, atomic validation, correction, export, and verified
 content deletion across revisions and pending previews. An eventual persistent
 adapter must preserve those semantics and pass host privacy preflight before
-real state.
+real state. `scripts/persistent_record_store.py` now provides that optional
+file-backed implementation with no-follow bounded reads, canonical self-hashed
+state, cross-process locking, private temporary writes, `fsync`, atomic replace,
+restart replay, and bounded content-free audit retention. It remains disabled
+until a current privacy gate and privacy-authority signature authorize the exact
+candidate, evidence index, host, environment, and storage-root object.
 
 Schema `1.1` stores evidence as typed, referenced items rather than free-text
 hypothesis support; stores scale definitions separately from user-entered
@@ -133,6 +138,14 @@ permanent profile. Review-due material must be reconfirmed before use.
 6. untouched holdouts;
 7. consented privacy-safe pilot;
 8. independent release review and owner decision.
+
+Repository-side orchestration now covers every layer: exact run workspaces,
+auxiliary non-qualifying model review, calibrated reviewer inputs, externally
+witnessed source-pack builders, outcome and learning analysis, release-readiness
+reporting, and owner-promotion verification. Layers 4–8 still require the real
+model, independent people, named infrastructure, observations, and signatures
+specified by `docs/QUALIFICATION_OPERATIONS.md`; code cannot self-satisfy those
+trust boundaries.
 
 External gate claims cross a cryptographic trust boundary defined in
 `docs/RELEASE_EVIDENCE.md`. Role-scoped Ed25519 receipts bind every gate artifact

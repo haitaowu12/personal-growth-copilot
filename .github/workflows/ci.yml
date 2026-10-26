@@ -31,6 +31,13 @@ jobs:
         run: openssl version
       - run: python3 -m pip install --require-hashes -r requirements/ci.txt
       - run: python3 scripts/run_deterministic_qualification.py
+      - name: Bind qualification to hosted checkout
+        if: matrix.os == 'ubuntu-24.04' && matrix.python-version == '3.13.15'
+        run: |
+          python3 scripts/verify_exact_head_ci.py \
+            --qualification build/evidence/deterministic-qualification.json \
+            --expected-sha "$GITHUB_SHA" \
+            --output build/evidence/exact-head-ci.json
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -39,8 +46,18 @@ jobs:
             build/evidence/deterministic-qualification.json
             build/evidence/multiturn-harness-conformance.json
           if-no-files-found: error
+      - if: always() && matrix.os == 'ubuntu-24.04' && matrix.python-version == '3.13.15'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: exact-head-qualification
+          path: build/evidence/exact-head-ci.json
+          if-no-files-found: error
 
   learning-browser:
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -53,17 +70,23 @@ jobs:
           cache: npm
       - run: python3 -m pip install --require-hashes -r requirements/ci.txt
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install browser engine
+        run: npx playwright-core install --with-deps ${{ matrix.browser }}
       - name: Build packaged learning candidate
         run: |
           python3 scripts/package_learning.py --out build/learning-candidate.zip
           python3 -c "import zipfile; zipfile.ZipFile('build/learning-candidate.zip').extractall('build/learning-package')"
       - name: Run packaged-file browser acceptance
-        run: npm run test:learning-browser -- --html build/learning-package/requirements-writing.html --evidence build/evidence/learning-browser-acceptance.json
+        run: |
+          npm run test:learning-browser -- \
+            --browser ${{ matrix.browser }} \
+            --html build/learning-package/requirements-writing.html \
+            --evidence build/evidence/learning-browser-${{ matrix.browser }}.json
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: learning-browser-acceptance
+          name: learning-browser-acceptance-${{ matrix.browser }}
           path: |
-            build/evidence/learning-browser-acceptance.json
+            build/evidence/learning-browser-${{ matrix.browser }}.json
             build/learning-candidate.zip
           if-no-files-found: error

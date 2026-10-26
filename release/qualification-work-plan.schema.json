@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/qualification-work-plan.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_class",
+    "status",
+    "candidate_commit",
+    "generated_at",
+    "qualification_plan_sha256",
+    "gates",
+    "execution_order",
+    "hard_invariants",
+    "claim_limit",
+    "work_plan_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "qualification-external-work-plan"},
+    "status": {"const": "AWAITING_EXTERNAL_OBSERVATIONS"},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "qualification_plan_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gates": {"type": "array", "minItems": 9, "maxItems": 9, "items": {"$ref": "#/$defs/gate"}},
+    "execution_order": {"type": "array", "minItems": 9, "maxItems": 9, "uniqueItems": true, "items": {"type": "string"}},
+    "hard_invariants": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "minLength": 10, "maxLength": 500}},
+    "claim_limit": {"type": "string", "minLength": 50, "maxLength": 1000},
+    "work_plan_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_id", "role", "prerequisites", "repo_commands", "source_schema", "source_builder", "external_observations", "output_directory", "completion_condition"],
+      "properties": {
+        "gate_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,79}$"},
+        "role": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,79}$"},
+        "prerequisites": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "repo_commands": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5, "maxLength": 1000}},
+        "source_schema": {"type": "string", "minLength": 1, "maxLength": 500},
+        "source_builder": {"type": "string", "minLength": 1, "maxLength": 500},
+        "external_observations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 10, "maxLength": 1000}},
+        "output_directory": {"type": "string", "minLength": 1, "maxLength": 300},
+        "completion_condition": {"type": "string", "minLength": 10, "maxLength": 1000}
+      }
+    }
+  }
+}

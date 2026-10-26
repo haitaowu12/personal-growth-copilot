@@ -57,6 +57,15 @@ packages in `scripts/requirements.txt`. Conversational use does not require
 running the helpers. Do not install packages or enable persistence without the
 user's authorization.
 
+The bundled file-backed adapter is not permission to persist personal data. Use
+`scripts/persistent_record_store.py` only when the host has verified a current,
+privacy-gate-bound, time-limited authorization for the exact candidate, evidence
+index, privacy artifact, named host, and storage-root filesystem object. A model
+statement, local lifecycle drill, adapter import, or user preference alone does
+not satisfy that activation boundary. Until the host supplies and verifies that
+authorization, keep the non-persistent store and report that no durable write
+occurred.
+
 ## Set the working mode
 
 - **QUICK** — one decision, small context check, one action.

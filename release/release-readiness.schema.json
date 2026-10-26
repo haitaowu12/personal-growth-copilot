@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personal-growth-copilot.local/release/release-readiness.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_class",
+    "status",
+    "candidate_commit",
+    "generated_at",
+    "repo_side_complete",
+    "production_qualified",
+    "qualification_status",
+    "trust_policy_status",
+    "evidence_index_status",
+    "gates",
+    "missing_repo_artifacts",
+    "external_observations_pending",
+    "claim_limit",
+    "report_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_class": {"const": "release-readiness-report"},
+    "status": {"enum": ["REPO_COMPLETE_EXTERNAL_PENDING", "REPO_GAPS", "PRODUCTION_PROMOTED"]},
+    "candidate_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "repo_side_complete": {"type": "boolean"},
+    "production_qualified": {"type": "boolean"},
+    "qualification_status": {"type": "string"},
+    "trust_policy_status": {"type": "string"},
+    "evidence_index_status": {"type": "string"},
+    "gates": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": {"$ref": "#/$defs/gate"}
+    },
+    "missing_repo_artifacts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 500}
+    },
+    "external_observations_pending": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 100}
+    },
+    "claim_limit": {"type": "string", "minLength": 50, "maxLength": 1000},
+    "report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_id", "role", "repo_status", "evidence_status", "repo_artifacts", "external_requirement"],
+      "properties": {
+        "gate_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,79}$"},
+        "role": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,79}$"},
+        "repo_status": {"enum": ["PASS", "FAIL"]},
+        "evidence_status": {"enum": ["PENDING", "PASS", "FAIL", "INVALIDATED", "DECLINED"]},
+        "repo_artifacts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+        "external_requirement": {"type": "string", "minLength": 10, "maxLength": 1000}
+      }
+    }
+  }
+}

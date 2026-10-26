@@ -6,14 +6,16 @@ import { dirname, resolve } from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 
-import { chromium } from "playwright-core";
+import { chromium, firefox, webkit } from "playwright-core";
 
 const args = new Map();
 for (let index = 2; index < process.argv.length; index += 2) {
   const name = process.argv[index];
   const value = process.argv[index + 1];
   if (!name?.startsWith("--") || !value) {
-    throw new Error("Usage: run_learning_browser_acceptance.mjs --html FILE --evidence FILE");
+    throw new Error(
+      "Usage: run_learning_browser_acceptance.mjs --html FILE --evidence FILE [--browser chromium|firefox|webkit] [--browser-executable FILE]",
+    );
   }
   args.set(name.slice(2), value);
 }
@@ -22,14 +24,26 @@ const htmlPath = resolve(args.get("html") || "build/learning-package/requirement
 const evidencePath = resolve(
   args.get("evidence") || "build/evidence/learning-browser-acceptance.json",
 );
+const browserName = args.get("browser") || "chromium";
+const browserTypes = { chromium, firefox, webkit };
+if (!Object.hasOwn(browserTypes, browserName)) {
+  throw new Error(`Unsupported browser engine: ${browserName}`);
+}
 const sentinelKey = "pgc-browser-acceptance-unrelated";
 const sentinelValue = "preserve-this-value";
 if (!existsSync(htmlPath)) throw new Error(`Learning HTML is absent: ${htmlPath}`);
 
 function browserExecutable() {
-  const configured = process.env.PGC_BROWSER_EXECUTABLE;
+  const configured = args.get("browser-executable") || process.env.PGC_BROWSER_EXECUTABLE;
+  if (configured) {
+    const resolved = resolve(configured);
+    if (!existsSync(resolved)) {
+      throw new Error(`Configured browser executable is absent: ${resolved}`);
+    }
+    return resolved;
+  }
+  if (browserName !== "chromium") return undefined;
   const candidates = [
-    configured,
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
@@ -39,11 +53,6 @@ function browserExecutable() {
     "/usr/bin/chromium-browser",
   ].filter(Boolean);
   const found = candidates.find((candidate) => existsSync(candidate));
-  if (!found) {
-    throw new Error(
-      "No supported Chromium browser was found. Set PGC_BROWSER_EXECUTABLE to an installed Chrome, Edge, or Chromium executable.",
-    );
-  }
   return found;
 }
 
@@ -178,10 +187,10 @@ async function completeCorrectPath(page, concept, useHint, suffix) {
 }
 
 const browserPath = browserExecutable();
-const browser = await chromium.launch({
-  executablePath: browserPath,
+const browser = await browserTypes[browserName].launch({
+  ...(browserPath ? { executablePath: browserPath } : {}),
   headless: true,
-  args: ["--disable-dev-shm-usage"],
+  ...(browserName === "chromium" ? { args: ["--disable-dev-shm-usage"] } : {}),
 });
 const scenarios = [];
 
@@ -374,6 +383,66 @@ try {
       await context.close();
     }
   });
+
+  await scenario("200-percent text-scale reflow without horizontal overflow", async () => {
+    const { context, page, signals } = await loadPage(browser, {
+      viewport: { width: 390, height: 844 },
+    });
+    try {
+      const scale = await page.evaluate(() => {
+        const before = getComputedStyle(document.documentElement).fontSize;
+        document.documentElement.style.fontSize = "200%";
+        for (const element of document.querySelectorAll(
+          "input, button, textarea, select",
+        )) {
+          element.style.fontSize = "1rem";
+        }
+        return {
+          before,
+          after: getComputedStyle(document.documentElement).fontSize,
+        };
+      });
+      check(scale.before !== scale.after, "Text-scale CSSOM change did not take effect");
+      await page.getByRole("button", { name: "Start practice" }).click();
+      const geometry = await page.evaluate(() => {
+        const interactive = Array.from(
+          document.querySelectorAll("button:not([disabled]), input:not([type=hidden]), textarea, a[href]"),
+        ).map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            width: rect.width,
+            height: rect.height,
+            left: rect.left,
+            right: rect.right,
+          };
+        });
+        return {
+          clientWidth: document.documentElement.clientWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+          interactive,
+        };
+      });
+      check(
+        geometry.scrollWidth <= geometry.clientWidth,
+        `Text-scale layout overflows horizontally: ${geometry.scrollWidth} > ${geometry.clientWidth}`,
+      );
+      check(geometry.interactive.length > 0, "Text-scale scenario exposed no interactive controls");
+      check(
+        geometry.interactive.every(
+          (item) => item.width > 0 && item.height > 0 && item.left >= 0 && item.right <= geometry.clientWidth + 1,
+        ),
+        "A text-scale interactive control is clipped outside the viewport",
+      );
+      await assertHealthy(signals, "text-scale reflow");
+      return {
+        text_scale_percent: 200,
+        clientWidth: geometry.clientWidth,
+        scrollWidth: geometry.scrollWidth,
+      };
+    } finally {
+      await context.close();
+    }
+  });
 } finally {
   const browserVersion = browser.version();
   await browser.close();
@@ -384,7 +453,8 @@ try {
     evidence_class: "local-browser-acceptance",
     status,
     generated_at: new Date().toISOString(),
-    browser_executable: browserPath,
+    browser_name: browserName,
+    browser_executable: browserPath || null,
     browser_version: browserVersion,
     html_path: htmlPath,
     html_sha256: createHash("sha256").update(html).digest("hex"),
@@ -393,7 +463,9 @@ try {
       network_blocked: true,
       reduced_motion_checked: true,
       mobile_width_px: 390,
-      claim_limit: "Local browser behavior only; this is not learner-outcome or cross-browser compatibility evidence.",
+      text_scale_percent: 200,
+      claim_limit:
+        "Automated engine-local browser behavior only; this is not real-device, assistive-technology, manual browser-zoom, learner-outcome, or efficacy evidence.",
     },
     scenarios,
   };
