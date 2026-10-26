@@ -108,3 +108,8 @@ replacement run. When provider access is unavailable, configs, workspaces, and
 source packs may be prepared, but no real-model passage is claimed until the
 provider returns authentic completions.
 
+
+
+## Preserved implementation branch — 26 October 2026
+
+The older development, persistence and release-tooling work is retained on `mac/preserve-qualification-tooling-20261026`. It diverges from current main and the later consolidated agent skill. It is a recovery/review candidate, not a qualified release or the active installed skill. The deterministic run reported five unit-test errors: the persistent-store API, three obsolete release-gate lookups, and the qualification-packet initializer. Its harness also ran from a dirty source tree and therefore did not pass its clean-source gate. All 610 synthetic automated harness cases passed, with human review still pending; these are harness checks, not authentic behavioral qualification. Reconcile useful tooling with current owners before integration.
