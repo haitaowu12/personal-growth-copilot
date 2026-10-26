@@ -56,16 +56,19 @@ EXPECTED_TRANSITIONS = {
     ("SCOPE_BOUNDARY", "INDIRECT_ACUTE_RISK_SIGNAL"): ("SAFE-TRANS-007", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
     ("SCOPE_BOUNDARY", "ACUTE_DANGER_SIGNAL"): ("SAFE-TRANS-008", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
     ("SIGNIFICANT_IMPAIRMENT", "BOUNDED_SUPPORT_PLAN_CONFIRMED"): ("SAFE-TRANS-009", "ORDINARY_COACHING", (), ()),
-    ("SIGNIFICANT_IMPAIRMENT", "OUT_OF_SCOPE_REQUEST"): ("SAFE-TRANS-010", "SCOPE_BOUNDARY", (), ()),
+    ("SIGNIFICANT_IMPAIRMENT", "OUT_OF_SCOPE_REQUEST"): ("SAFE-TRANS-010", "SIGNIFICANT_IMPAIRMENT", (), ()),
     ("SIGNIFICANT_IMPAIRMENT", "INDIRECT_ACUTE_RISK_SIGNAL"): ("SAFE-TRANS-011", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
     ("SIGNIFICANT_IMPAIRMENT", "ACUTE_DANGER_SIGNAL"): ("SAFE-TRANS-012", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
     ("ACUTE_DANGER", "IMMEDIATE_SUPPORT_CONNECTED"): ("SAFE-TRANS-013", "ACUTE_DANGER", (), ("mark_support_connected",)),
     ("ACUTE_DANGER", "IMMEDIATE_DANGER_REDUCED"): ("SAFE-TRANS-014", "POST_CRISIS_RETURN", ("support_connected",), ()),
-    ("ACUTE_DANGER", "ACUTE_DANGER_SIGNAL"): ("SAFE-TRANS-015", "ACUTE_DANGER", (), ()),
+    ("ACUTE_DANGER", "ACUTE_DANGER_SIGNAL"): ("SAFE-TRANS-015", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
     ("POST_CRISIS_RETURN", "ACUTE_DANGER_SIGNAL"): ("SAFE-TRANS-016", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
     ("POST_CRISIS_RETURN", "INDIRECT_ACUTE_RISK_SIGNAL"): ("SAFE-TRANS-017", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
     ("POST_CRISIS_RETURN", "SAFE_RETURN_CONFIRMED"): ("SAFE-TRANS-018", "ORDINARY_COACHING", (), ()),
     ("ORDINARY_COACHING", "MEMORY_REENABLE_CONFIRMED"): ("SAFE-TRANS-019", "ORDINARY_COACHING", ("memory_latched",), ("thaw_memory",)),
+    ("ACUTE_DANGER", "IMMEDIATE_SUPPORT_LOST"): ("SAFE-TRANS-020", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
+    ("POST_CRISIS_RETURN", "IMMEDIATE_SUPPORT_LOST"): ("SAFE-TRANS-021", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
+    ("ACUTE_DANGER", "INDIRECT_ACUTE_RISK_SIGNAL"): ("SAFE-TRANS-022", "ACUTE_DANGER", (), ("freeze_memory", "clear_support")),
 }
 REQUIRED_EVENTS = {
     "OUT_OF_SCOPE_REQUEST",
@@ -73,6 +76,7 @@ REQUIRED_EVENTS = {
     "INDIRECT_ACUTE_RISK_SIGNAL",
     "ACUTE_DANGER_SIGNAL",
     "IMMEDIATE_SUPPORT_CONNECTED",
+    "IMMEDIATE_SUPPORT_LOST",
     "IMMEDIATE_DANGER_REDUCED",
     "SAFE_RETURN_CONFIRMED",
     "MEMORY_REENABLE_CONFIRMED",
@@ -286,9 +290,13 @@ def validate_machine_spec(data: object) -> list[str]:
         if event == "IMMEDIATE_SUPPORT_CONNECTED" and "mark_support_connected" not in effects:
             errors.append("IMMEDIATE_SUPPORT_CONNECTED must mark support connected")
         if "clear_support" in effects and not (
-            target == "ACUTE_DANGER" and source != "ACUTE_DANGER"
+            target == "ACUTE_DANGER"
+            and (source != "ACUTE_DANGER" or event in {
+                "ACUTE_DANGER_SIGNAL", "INDIRECT_ACUTE_RISK_SIGNAL",
+                "IMMEDIATE_SUPPORT_LOST"
+            })
         ):
-            errors.append("only entry into ACUTE_DANGER may clear prior support")
+            errors.append("only acute entry, renewed risk or support loss may clear prior support")
 
     reachable = {"ORDINARY_COACHING"}
     frontier = ["ORDINARY_COACHING"]

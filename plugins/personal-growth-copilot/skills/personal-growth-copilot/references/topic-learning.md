@@ -28,6 +28,11 @@ Do not claim the browser opened, progress saved, or a learner improved without
 observing the corresponding result. Device saving and exports are explicit browser
 operations. Never turn a browser practice record into a sensitive growth dossier.
 
+If the topic, exercise or learner answer is missing, ask for that material. Do
+not invent a personal-life topic or treat a request for help as the learner's
+attempt. An assistant-written example remains assisted material, not evidence of
+the user's performance.
+
 ## Conversational alternative
 
 1. Ask for an observable target: what should the user be able to do independently?
@@ -109,3 +114,7 @@ provisional thresholds from approved promises, and permits shared observations
 for verification and validation. Ask what intended-use outcome and success basis
 would support the learner's conclusion. Do not equate user participation alone
 with validation. The separate offline-player pilot cannot validate tutor behavior.
+
+## Rehearsal and application
+
+Use the [shared rehearsal controller](rehearsal.md) for role-play without a second intake. Leadership learning uses [the twelve methods](leadership-methods.md) and [practice guides](leadership-guides.md). Preserve hints/example exposure and the distinction between rehearsal, self-review, tutor judgment and independent application. The offline topic format and progress records are unchanged.

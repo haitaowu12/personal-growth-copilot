@@ -113,7 +113,7 @@ def profile_bundle_sha256() -> dict[str, str]:
     skill_path = ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/SKILL.md"
     target_paths = [
         skill_path,
-        *sorted((ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references").glob("*.md")),
+        *sorted((ROOT / "plugins/personal-growth-copilot/skills/personal-growth-copilot/references").rglob("*.md")),
     ]
     bundles = {
         "target": target_paths,
