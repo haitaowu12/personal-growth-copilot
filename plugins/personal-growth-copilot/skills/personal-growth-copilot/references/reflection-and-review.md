@@ -74,3 +74,7 @@ Review event/date:
 ```
 
 Ask the user to correct it before any persistence.
+
+## Shared ownership
+
+This is the actual-outcome review owner for growth, leadership and interpersonal work. Rehearsal state and drills live in [rehearsal](rehearsal.md); teaching criteria stay in [topic learning](topic-learning.md). A concise close is ordinary output, not an automatically created capsule. Follow [current memory rules](memory-and-continuity.md) and [capsule rules](session-capsule.md) only on request. Missing follow-up, non-attempt, declined action, burden and unintended effects remain visible.

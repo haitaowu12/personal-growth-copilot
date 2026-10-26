@@ -1,6 +1,6 @@
 interface:
   display_name: "Personal Growth Copilot"
-  short_description: "Reflect, practise, and learn from grounded sources"
-  default_prompt: "Use $personal-growth-copilot to understand my situation, clarify what I want to change, and design a practical growth experiment."
+  short_description: "Growth, relationships, leadership and learning"
+  default_prompt: "Use $personal-growth-copilot as my thinking and practice partner for personal growth, relationships, leadership or learning. Use what I have already shared, ask and wait when material context is missing, honor quick mode, and help me choose, rehearse or review a useful next step."
 policy:
   allow_implicit_invocation: false

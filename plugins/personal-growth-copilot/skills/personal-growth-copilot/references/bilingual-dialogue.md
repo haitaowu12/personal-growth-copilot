@@ -33,6 +33,13 @@ Examples:
 | unknown | 目前还不清楚 | 隐瞒 / 抗拒 |
 | confidence | 对这个具体行动的把握 | 自信人格分数 |
 
+Preserve contextual qualifications across languages: “not necessarily” must
+not become “never” or “only.” 收到 alone does not establish a commitment, but
+its referent and any explicit surrounding agreement still matter.
+Keep the speaker of a quotation unchanged. If a first-person quote has no
+identified speaker, ask before drafting from the user's perspective; do not
+turn someone else's uncertainty into the user's promise or progress report.
+
 ## Cultural humility
 
 Do not assume collectivism, filial duty, career values, gender roles, family
