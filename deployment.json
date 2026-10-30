@@ -1,0 +1,21 @@
+{
+  "source_commit": "4fd413aa478d8104fa435faefb90264d6539fac3",
+  "hosting": "GitHub Pages branch publishing",
+  "files": [
+    {
+      "path": "index.html",
+      "bytes": 3458,
+      "sha256": "9d85cb7132c798358b722ff7310d62efd99e1e7f718b8e3a95495a2a87cb7145"
+    },
+    {
+      "path": "personal-growth-copilot-learning.zip",
+      "bytes": 319709,
+      "sha256": "74f16b0421ff3a4aa65326383619ee05e10fefc28865172041482e46289fddb6"
+    },
+    {
+      "path": "requirements-writing.html",
+      "bytes": 71059,
+      "sha256": "d3270e4a5f18180bdee4178d48ecf339a5871e25b18649c0b51e71d6e7552b7d"
+    }
+  ]
+}

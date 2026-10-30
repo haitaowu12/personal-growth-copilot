@@ -1,0 +1,1754 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'; script-src 'sha256-4kNlj3MtByO7l2yrlkjuQpCIu8EgWKrgQ+nuRaCl6lY=' 'sha256-2zFo0AGpvSfuSg5LdSaemQtgJkMD2J8m94qGTER/Qpk='; style-src 'sha256-Q3lbPHCeNppPaFV1bw3Z7MoA0jxXdtV6Giy9HpvrgvA='"><meta name="referrer" content="no-referrer">
+<title>Write requirements you can verify · Learning Lab</title><style>:root {
+  color-scheme: light;
+  --paper: #f7f6f1;
+  --white: #fffefa;
+  --ink: #202c2b;
+  --muted: #586663;
+  --line: #d9dfd8;
+  --accent: #176154;
+  --wash: #e6eee8;
+  --warn: #874b22;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button,
+.file-button {
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--white);
+  color: var(--ink);
+  padding: 10px 16px;
+  min-height: 44px;
+  font-size: 14px;
+  line-height: 1.5;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+button:hover,
+.file-button:hover {
+  background: var(--wash);
+  border-color: #91a89e;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+button.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  font-weight: 650;
+}
+button.primary:hover {
+  background: #124d43;
+}
+button.quiet {
+  border-color: transparent;
+  background: transparent;
+  padding-left: 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+.hint:focus,
+.file-button:focus-within {
+  outline: 3px solid #9c610a;
+  outline-offset: 3px;
+}
+.skip {
+  position: absolute;
+  top: -80px;
+  background: white;
+  padding: 12px;
+  z-index: 10;
+}
+.skip:focus {
+  top: 0;
+}
+header {
+  height: 84px;
+  margin: 0 4vw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+}
+.wordmark {
+  font-weight: 750;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: -0.5px;
+}
+.wordmark span {
+  font-weight: 400;
+  color: var(--muted);
+}
+.edition,
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 1.6px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.layout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 680px) minmax(200px, 270px);
+  max-width: 1320px;
+  margin: 0 auto;
+  min-height: calc(100vh - 225px);
+  padding: 46px 4vw;
+  gap: 40px;
+}
+nav {
+  border-right: 1px solid var(--line);
+  padding-right: 20px;
+}
+nav button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  margin: 4px 0;
+  padding: 11px 12px;
+}
+nav button.active {
+  background: var(--wash);
+  color: var(--accent);
+  font-weight: 700;
+}
+nav small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
+main {
+  min-width: 0;
+}
+main:focus {
+  outline: none;
+}
+h1,
+h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -1px;
+}
+h1 {
+  font-size: clamp(34px, 4vw, 52px);
+  margin: 14px 0 22px;
+  max-width: 620px;
+}
+h2 {
+  font-size: 34px;
+  margin: 14px 0 20px;
+}
+h3 {
+  font-size: 17px;
+  line-height: 1.4;
+  margin: 26px 0 10px;
+}
+p {
+  margin: 0 0 18px;
+}
+.intro {
+  font-size: 19px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.meta {
+  font-size: 13px;
+  color: var(--muted);
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.rule {
+  height: 1px;
+  background: var(--line);
+  margin: 28px 0;
+}
+.path {
+  padding-left: 22px;
+}
+.path li {
+  padding: 7px 0;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 24px 0;
+}
+legend {
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-bottom: 22px;
+  width: 100%;
+}
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  border-radius: 5px;
+  margin: 10px 0;
+  cursor: pointer;
+  line-height: 1.5;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+.choice:has(input:enabled):hover {
+  background: var(--wash);
+  border-color: #91a89e;
+}
+.choice:has(input:disabled) {
+  cursor: not-allowed;
+}
+.choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--wash);
+}
+.choice input {
+  margin-top: 6px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.feedback {
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px;
+  background: var(--wash);
+  margin: 22px 0;
+  animation: appear 0.18s ease-out;
+}
+.feedback h3 {
+  margin: 0 0 8px;
+}
+.feedback p:last-child {
+  margin-bottom: 0;
+}
+.feedback.wrong {
+  border-color: var(--warn);
+  background: #f5ebdd;
+}
+.hint {
+  color: var(--accent);
+  font-size: 15px;
+}
+.example {
+  border-left: 2px solid var(--line);
+  padding: 4px 0 4px 20px;
+  margin: 20px 0;
+}
+.example .label {
+  display: block;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 190px;
+  border: 1px solid #92a69c;
+  background: var(--white);
+  border-radius: 5px;
+  padding: 16px;
+  line-height: 1.6;
+  resize: vertical;
+  color: var(--ink);
+}
+.char-count {
+  margin-top: -12px;
+  text-align: right;
+}
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 14px 0;
+  cursor: pointer;
+}
+.check input {
+  margin-top: 7px;
+  accent-color: var(--accent);
+}
+aside {
+  font-size: 13px;
+  color: var(--muted);
+}
+aside h3 {
+  margin-top: 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.source {
+  padding: 0 0 16px;
+  margin: 0 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+.source p {
+  margin: 8px 0;
+}
+.metric {
+  font-family: Georgia, serif;
+  font-size: 34px;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.progress-row span:last-child {
+  color: var(--muted);
+}
+footer {
+  border-top: 1px solid var(--line);
+  padding: 20px 4vw;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+footer p {
+  width: 100%;
+  margin: 0;
+  min-height: 20px;
+}
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+#import {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+#storage label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+#storage input {
+  accent-color: var(--accent);
+}
+.error {
+  color: #963629;
+  font-weight: 600;
+}
+.tag {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 650;
+}
+.empty {
+  padding: 16px 0;
+  color: var(--muted);
+}
+.report {
+  margin-top: 28px;
+}
+.notice-box {
+  font-size: 13px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  margin-top: 28px;
+}
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 28px;
+  }
+  aside {
+    grid-column: 2;
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+  }
+}
+@media (max-width: 700px) {
+  header {
+    height: 72px;
+  }
+  .wordmark span {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0;
+  }
+  .edition {
+    font-size: 10px;
+  }
+  .layout {
+    display: block;
+    padding: 22px 5vw;
+  }
+  nav {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 0 0 14px;
+    margin-bottom: 28px;
+    display: flex;
+    overflow-x: auto;
+    gap: 4px;
+  }
+  nav button {
+    width: auto;
+    min-width: 120px;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 8px;
+  }
+  nav small {
+    font-size: 10px;
+  }
+  h1 {
+    font-size: 38px;
+  }
+  h2 {
+    font-size: 32px;
+  }
+  legend {
+    font-size: 19px;
+  }
+  aside {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+  footer {
+    padding: 20px 5vw;
+  }
+  .file-actions {
+    margin-left: 0;
+    gap: 8px;
+  }
+  footer button,
+  .file-button {
+    font-size: 12px;
+    padding: 9px 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+p,
+legend,
+.choice span {
+  overflow-wrap: anywhere;
+}
+p {
+  white-space: pre-line;
+}
+
+.confirmation {
+  width: min(32rem, calc(100vw - 48px));
+  box-sizing: border-box;
+  padding: 24px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.confirmation::backdrop { background: rgb(0 0 0 / 45%); }
+.confirmation .actions { flex-wrap: wrap; }
+.confirmation h2 { margin-top: 0; }
+.criteria-preview { margin-block: 24px; }
+.criteria-preview li { margin-block: 8px; }
+</style></head>
+<body><a class="skip" href="#workspace">Skip to practice</a>
+<header><a class="wordmark" href="#">Personal Growth <span> / Learning Lab</span></a><span class="edition">TOPIC 1.0.2</span></header>
+<div class="layout"><nav id="navigation" aria-label="Lesson navigation"></nav><main id="workspace" tabindex="-1"></main><aside id="context" aria-label="Evidence and progress"></aside></div>
+<footer><div id="storage"></div><div class="file-actions"><button id="export">Export progress</button><label class="file-button" for="import">Import progress<input id="import" type="file" accept="application/json,.json"></label><button id="clear">Clear progress</button></div><p id="notice" role="status" aria-live="polite"></p></footer>
+<noscript>This offline lesson requires JavaScript. Use the accompanying topic JSON and learning reference with a tutor if JavaScript is unavailable.</noscript>
+<script type="application/json" id="topic-data">{"pack":{"schema_version":"1.0","id":"requirements-writing","version":"1.0.2","title":"Write requirements you can verify","subtitle":"Turn a vague request into an observable obligation. Practice applying it and checking its intended use.","audience":"Adults new to requirements writing. No systems engineering background required.","minutes":20,"review_days":[7,21],"sources":[{"id":"nasa-c","title":"NASA Systems Engineering Handbook — Appendix C","url":"https://www.nasa.gov/reference/appendix-c-how-to-write-a-good-requirement/","section":"C.1; C.2 Product Requirement; C.3; C.4 Clarity, Completeness, Correctness, Performance and Verifiability/Testability","accessed":"2026-10-03","coverage":"selected-sections","claim":"A requirement names its responsible product, states one obligation, and supports an objective compliance check. Ambiguous terms and unjustified assumptions weaken it.","limits":"Selected guidance, not a complete requirements standard or approval checklist. Local project rules and justified design constraints still apply. Web edition inspected by the authoring agent on 2026-10-03; no independent human source approval is claimed."},{"id":"nasa-v","title":"NASA Systems Engineering Handbook — Product Verification","url":"https://www.nasa.gov/reference/5-3-product-verification/","section":"5.3 introduction; 5.3.1.1 Inputs; 5.3.1.2.1 Product Verification Preparation, Methods of Verification","accessed":"2026-10-03","coverage":"selected-sections","claim":"Verification compares a realized product with its specified requirements using planned evidence. Inspection, analysis, demonstration, and test can contribute.","limits":"The appropriate evidence method depends on the requirement and product. A measurement example here is not a full test procedure. Web edition inspected by the authoring agent on 2026-10-03; no independent human source approval is claimed."},{"id":"nasa-validation","title":"NASA Systems Engineering Handbook — Product Validation","url":"https://www.nasa.gov/reference/5-4-product-validation/","section":"5.4 introduction; 5.4.1.1 Inputs; 5.4.1.2 Process Activities and Methods of Validation","accessed":"2026-10-03","coverage":"selected-sections","claim":"Product validation examines whether the product fulfills its intended use and stakeholder expectations in the relevant environment.","limits":"Passing a specified threshold alone does not establish fitness for the real use. Requirements validation and product validation are distinct activities. Web edition inspected by the authoring agent on 2026-10-03; no independent human source approval is claimed. Appendix C.4 addresses requirements validation; this page concerns the realized product."}],"content_notice":"Original, AI-assisted instructional synthesis and invented exercises informed by the linked NASA guidance; source text and media are not redistributed. Numerical thresholds and project facts are teaching assumptions, not NASA requirements. No NASA endorsement, certification or independent human content approval is implied. Source links identify the inspected guidance.","concepts":[{"id":"obligation","title":"One clear obligation","objective":"Identify the responsible product and separate independent obligations.","prerequisites":[],"source_ids":["nasa-c"],"explanation":"Name the product and its required behavior. Split obligations that can pass or fail independently. Put the reason for a requirement in a separate rationale.","misconception":"Adding “shall” does not make an ambiguous or compound sentence verifiable.","example":{"before":"The desk service should be helpful and notify users and keep records.","after":"DESK-01: The desk service shall send a receipt to the requester after accepting a support request.","why":"This isolates one behavior. Receipt content and delivery timing still need separate agreed criteria; this sentence is not yet a finished baseline."},"questions":{"diagnostic":{"prompt":"A draft says: “The station display shall show departures and archive maintenance logs.” What is the first useful repair?","choices":[{"id":"a","text":"Split departure display behavior from maintenance-log archiving.","feedback":"Yes. Each obligation can fail while the other succeeds. Separate them before defining detailed acceptance criteria."},{"id":"b","text":"Replace “shall” with “will.”","feedback":"Changing the verb does not resolve the two independent obligations."},{"id":"c","text":"Add “reliably” to the end.","feedback":"“Reliably” adds no measurable criterion and leaves both obligations tangled."}],"correct":"a","hint":"Could one part pass while the other fails?"},"practice":{"prompt":"Which draft isolates one product obligation?","choices":[{"id":"a","text":"The sensor shall log readings, email alerts, and stay easy to maintain.","feedback":"This combines logging, notification, and a vague maintenance goal."},{"id":"b","text":"The sensor shall record a timestamp with each accepted reading.","feedback":"Yes. One product performs one observable behavior. The timestamp format can be specified next."},{"id":"c","text":"The operator will probably review the readings.","feedback":"This describes an uncertain human activity, not a sensor obligation."}],"correct":"b","hint":"Find one named product and one observable behavior."},"transfer":{"prompt":"A library kiosk must print a receipt and erase a patron’s temporary session data. Why write two requirements?","choices":[{"id":"a","text":"To make the document look more detailed.","feedback":"Document length does not justify decomposition."},{"id":"b","text":"Because every sentence must have a numerical threshold.","feedback":"Not every requirement needs a number; some use observable states or content rules."},{"id":"c","text":"Because printing and erasure need independently checked outcomes.","feedback":"Yes. A printed receipt does not show that temporary data was erased."}],"correct":"c","hint":"Which outcomes would you need to observe before accepting the kiosk?"},"review":{"prompt":"A new draft says: “The pump shall report pressure and alert an operator when pressure is low.” What is the appropriate next step?","choices":[{"id":"a","text":"Check the acceptance evidence needed for reporting and alerting separately.","feedback":"Yes. Each independently failing outcome needs evidence. A single trial can provide both observations."},{"id":"b","text":"Accept one successful pressure reading as evidence that both behaviors work.","feedback":"A pressure reading does not demonstrate alert behavior. Check the evidence needed for each independently failing outcome."},{"id":"c","text":"Treat a shared responsible product as sufficient reason to accept both behaviors together.","feedback":"A shared responsible product does not establish that either behavior works. Each independently failing outcome needs evidence."}],"correct":"a","hint":"Look for independently failing behaviors."}},"writing":{"prompt":"A meeting-room service must confirm bookings and remove cancelled bookings from the room display. Write two separate product requirements. Leave unknown timing as an explicit open issue instead of inventing a promise.","criteria":[{"id":"subject","text":"Each statement names the responsible product."},{"id":"single","text":"Each statement contains one independently checkable obligation."},{"id":"unknown","text":"Unknown criteria are named as open issues, not hidden assumptions."}],"example":"ROOM-01: The booking service shall send a confirmation to the requester after accepting a booking. ROOM-02: After accepting a booking cancellation, the booking service shall remove that booking from the room display. Open issues: agree timing and confirmation content with the service owner.","notes":"This example treats the booking service as the system responsible for the displayed outcome, including cancellation propagation. A justified component allocation is also valid if it preserves the obligation from service acceptance of the cancellation through removal from the display. Starting only when the display receives a cancellation leaves undelivered cancellations uncovered. Compare the observable obligations and open issues, not exact wording. This self-check does not approve an engineering baseline."}},{"id":"measure","title":"Make the outcome observable","objective":"Specify an observable result, conditions, and a defensible acceptance boundary.","prerequisites":["obligation"],"source_ids":["nasa-c","nasa-v"],"explanation":"Replace vague performance words with an observable result and its conditions. Trace an approved threshold to the scenario or an agreed stakeholder basis. During drafting, a justified provisional estimate may be marked for resolution with its rationale, responsible owner and resolution date. Do not present it as an approved commitment; confirm assumptions before baselining.","misconception":"An exact number is not evidence that the number is justified.","example":{"before":"The desk service shall respond quickly.","after":"Teaching assumption: the service owner agrees a 5-second receipt target. DESK-02: When an online request is accepted, the desk service shall deliver its receipt within 5 seconds of acceptance.","why":"A tester can compare the acceptance and receipt timestamps. The assumed target needs validation before real use."},"questions":{"diagnostic":{"prompt":"The owner asks for a “fast” receipt but gives no timing target. What should you do?","choices":[{"id":"a","text":"Declare a 10-millisecond target because it is precise.","feedback":"Precision does not justify a target or prove feasibility."},{"id":"b","text":"Agree a justified timing target and conditions with the owner.","feedback":"Yes. Resolve the missing criterion and its basis instead of quietly inventing it."},{"id":"c","text":"Accept “fast” because everyone understands it.","feedback":"Different readers can interpret “fast” differently."}],"correct":"b","hint":"Where does the proposed acceptance threshold come from?"},"practice":{"prompt":"Teaching assumption: an owner agrees that offline events must be uploaded within 60 seconds after connectivity returns. Which draft is checkable?","choices":[{"id":"a","text":"The client shall upload offline events soon.","feedback":"“Soon” has no agreed test boundary."},{"id":"b","text":"The client shall upload offline events as appropriate.","feedback":"“As appropriate” leaves the triggering conditions unspecified."},{"id":"c","text":"After connectivity returns, the client shall upload its queued offline events within 60 seconds.","feedback":"Yes. This is the best checkable draft under the stated assumption: it retains the trigger, result and 60-second boundary. A complete test specification would also define conditions such as backlog and connectivity."}],"correct":"c","hint":"Use the supplied condition and threshold."},"transfer":{"prompt":"A luggage counter must update within 2 seconds after a scan. What evidence directly checks that timing?","choices":[{"id":"a","text":"Elapsed time from the scan to transmission of the update request, without observing the counter update.","feedback":"This stops at an intermediate event. It does not measure the full interval from the scan to the required counter update."},{"id":"b","text":"The difference between scan and counter-update timestamps under the specified conditions.","feedback":"Yes. Observe the defined trigger and result using an adequate time measurement method."},{"id":"c","text":"A user saying the counter looks modern.","feedback":"Appearance does not establish timing compliance."}],"correct":"b","hint":"Measure the interval named in the requirement."},"review":{"prompt":"An invented scenario specifies a temperature reading within ±0.5 °C at 20 °C. Which result violates that requirement?","choices":[{"id":"a","text":"20.2 °C","feedback":"This is 0.2 °C above the reference and inside the stated boundary."},{"id":"b","text":"19.6 °C","feedback":"This is 0.4 °C below the reference and inside the stated boundary."},{"id":"c","text":"20.7 °C","feedback":"Yes. The error is +0.7 °C, beyond the supplied ±0.5 °C criterion."}],"correct":"c","hint":"Compare absolute error with the supplied tolerance."}},"writing":{"prompt":"Teaching assumption: after a parcel scan is accepted, its status must appear on the operator display within 3 seconds. Write the requirement and describe what you would measure.","criteria":[{"id":"trigger","text":"The timing starts at scan acceptance."},{"id":"result","text":"The result is the parcel status appearing on the operator display."},{"id":"bound","text":"The 3-second limit is present and attributed to the scenario."},{"id":"evidence","text":"The proposed method measures the interval from scan acceptance to the displayed update adequately for the 3-second boundary; timestamps are one possible method."}],"example":"PARCEL-01: After a parcel scan is accepted, the operator display shall show that parcel’s updated status within 3 seconds. Measure elapsed time between acceptance and the displayed update using a method with adequate resolution and uncertainty for this boundary, such as synchronized event records or a suitable video timing measurement. The limit is a teaching assumption.","notes":"Real verification planning also defines instrumentation, conditions, sample coverage, and uncertainty. This exercise covers the basic evidence link."}},{"id":"purpose","title":"Check the promise and the purpose","objective":"Distinguish evidence of requirement compliance from evidence of useful operation.","prerequisites":["measure"],"source_ids":["nasa-v","nasa-validation"],"explanation":"Verification checks the product against specified requirements. Product validation examines intended use and stakeholder expectations in the relevant environment. They answer different questions against different criteria; evidence and trials may overlap.","misconception":"A common mistake is assuming that meeting a stated requirement proves that the product fulfills the actual user need. Instead, check intended use: a product can meet the requirement while failing that need.","example":{"before":"The receipt arrives within 5 seconds, so the service is useful.","after":"Verification: measure receipt timing. Product validation: observe whether requesters can use the receipt to track the right request in their real workflow.","why":"Fast delivery alone does not establish that the receipt helps the requester."},"questions":{"diagnostic":{"prompt":"A booking receipt passes its timing test, but users cannot identify the room it confirms. What follows?","choices":[{"id":"a","text":"The timing requirement may pass while the intended use remains unmet.","feedback":"Yes. The evidence answers the timing question, not every user-need question."},{"id":"b","text":"Passing timing proves the full service is useful.","feedback":"The timing result does not establish that users can identify their booking."},{"id":"c","text":"Verification should be abandoned.","feedback":"Compliance checks remain useful; they need complementary evidence about use."}],"correct":"a","hint":"What exactly did the timing test establish?"},"practice":{"prompt":"Which activity directly examines the intended use of helping users reach their booked room?","choices":[{"id":"a","text":"Checking that the confirmation arrives within its specified time limit, without observing whether users reach the room.","feedback":"This checks timing compliance but does not establish whether the confirmation helps users identify and reach their booked room."},{"id":"b","text":"Watching representative users identify and reach their booked room using the confirmation.","feedback":"Yes. This examines the intended outcome in a relevant workflow. The purpose and acceptance basis distinguish validation from verification; either can involve users."},{"id":"c","text":"Counting the number of requirement pages.","feedback":"Document size does not establish fitness for use."}],"correct":"b","hint":"Observe the user outcome that motivated the system."},"transfer":{"prompt":"A flood-warning display updates within its specified interval, but its symbols confuse operators in a drill. What is the useful next step?","choices":[{"id":"a","text":"Claim complete success based on update timing.","feedback":"This would generalize beyond the evidence."},{"id":"b","text":"Remove the timing requirement from the report.","feedback":"A real timing result should be retained with its proper scope."},{"id":"c","text":"Keep the timing result and investigate operator understanding in the intended context.","feedback":"Yes. Preserve the supported result and investigate the unmet operational need."}],"correct":"c","hint":"Keep supported evidence; name what it does not establish."},"review":{"prompt":"A warehouse route planner meets a computation-time limit. Workers still cannot follow its route instructions. Which conclusion is justified?","choices":[{"id":"a","text":"All requirements must be wrong.","feedback":"One unmet use need does not invalidate every requirement."},{"id":"b","text":"The speed check passed, but route guidance failed for these workers in the stated scenario; investigate the causes and intended context.","feedback":"Yes. Preserve both the timing pass and the observed inability to follow the instructions. Investigate the causes and relevant operating conditions without generalizing beyond this scenario."},{"id":"c","text":"Workers should be excluded from evaluation.","feedback":"Representative users are relevant to evaluating intended use."}],"correct":"b","hint":"Distinguish measured compliance from useful operation."}},"writing":{"prompt":"A community centre replaces its sign-in desk with a kiosk. Teaching assumption: it must issue a visitor pass within 15 seconds after a valid sign-in. Write one verification check and one product-validation scenario.","criteria":[{"id":"verify","text":"Verification checks the specified 15-second interval and trigger."},{"id":"validate","text":"Validation identifies the intended visitor outcome, representative users and conditions, and an observable basis for judging success."},{"id":"limits","text":"The answer does not equate a timing pass with complete operational success."}],"example":"Verification: measure from accepted valid sign-in to pass issuance and compare with 15 seconds. Product validation: observe representative visitors, including people with relevant accessibility needs, signing in and using the pass to reach the correct activity in the intended setting. For this teaching scenario, success means reaching that activity with a valid pass and any agreed accessibility support, without staff correcting a destination error caused by the kiosk or pass. Record legitimate support separately from corrective help and failures. Agree the real acceptance basis with stakeholders. One trial may provide both timing and intended-use observations; a timing pass alone is insufficient.","notes":"These are original teaching scenarios. State the intended-use outcome, conditions and success basis; merely watching a user is insufficient. Designed assistance and accessibility support can be part of successful intended use; needing any help is not automatically failure. Alternative observable checks are valid. This exercise does not replace a project validation plan or stakeholder acceptance."}}]},"digest":"6f43f8a93ade1d4688d98bc63e7fc5d58c00128c43702b564657ba64e116112e"}</script>
+<script>/* Shared, deterministic learning transitions. No DOM, storage, network, or model. */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.LearningCore = api;
+})(typeof globalThis === "object" ? globalThis : this, function () {
+  "use strict";
+  const MAX_EVENTS = 2000;
+  const MAX_IMPORT = 1000000;
+  const bytes = (text) => new TextEncoder().encode(text).length;
+  function fail(message) {
+    throw new Error(message);
+  }
+  function time(value) {
+    if (
+      typeof value !== "string" ||
+      !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) ||
+      !Number.isFinite(Date.parse(value)) ||
+      new Date(value).toISOString() !== value
+    )
+      fail("Invalid timestamp.");
+    return Date.parse(value);
+  }
+  function exact(value, keys) {
+    if (
+      !value ||
+      typeof value !== "object" ||
+      Array.isArray(value) ||
+      Object.keys(value).sort().join("|") !== [...keys].sort().join("|")
+    )
+      fail("Unexpected progress fields.");
+  }
+  function createSession(pack, digest, now) {
+    time(now);
+    if (!/^[a-f0-9]{64}$/.test(digest)) fail("Invalid topic fingerprint.");
+    return {
+      schema_version: "1.0",
+      pack_id: pack.id,
+      pack_version: pack.version,
+      pack_digest: digest,
+      started_at: now,
+      events: [],
+    };
+  }
+  function conceptFor(pack, id) {
+    return pack.concepts.find((c) => c.id === id) || fail("Unknown concept.");
+  }
+  function eventsFor(session, id) {
+    return session.events.filter((e) => e.concept === id);
+  }
+  function hasReview(session, id) {
+    return session.events.some(
+      (e) => e.concept === id && e.type === "self-review",
+    );
+  }
+  function status(
+    pack,
+    session,
+    id,
+    now,
+    precomputedEvents,
+    precomputedEventsByConcept,
+  ) {
+    const c = conceptFor(pack, id);
+    const missing = c.prerequisites.filter((p) => {
+      if (precomputedEventsByConcept) {
+        const pEvents = precomputedEventsByConcept.get(p);
+        return !(pEvents && pEvents.some((e) => e.type === "self-review"));
+      }
+      return !hasReview(session, p);
+    });
+    if (missing.length) return { stage: "locked", missing };
+
+    const events = precomputedEvents || eventsFor(session, id);
+
+    let diagnosis = null;
+    let hasStudy = false;
+    let hasPracticeCorrect = false;
+    let hasTransfer = false;
+    let lastWrite = -1;
+    let lastCheck = -1;
+    let firstCheckEvent = null;
+    const recalls = [];
+
+    for (let i = 0; i < events.length; i++) {
+      const e = events[i];
+      if (e.type === "answer") {
+        if (e.stage === "diagnostic" && !diagnosis) diagnosis = e;
+        else if (
+          e.stage === "practice" &&
+          e.choice === c.questions.practice.correct
+        )
+          hasPracticeCorrect = true;
+        else if (e.stage === "transfer") hasTransfer = true;
+        else if (e.stage === "review") recalls.push(e);
+      } else if (e.type === "study") {
+        hasStudy = true;
+      } else if (e.type === "write") {
+        lastWrite = i;
+      } else if (e.type === "self-review") {
+        lastCheck = i;
+        if (!firstCheckEvent) firstCheckEvent = e;
+      }
+    }
+
+    if (!diagnosis) return { stage: "diagnostic" };
+    if (diagnosis.choice !== c.questions.diagnostic.correct) {
+      if (!hasStudy) return { stage: "lesson" };
+      if (!hasPracticeCorrect) return { stage: "practice" };
+    }
+    if (!hasTransfer) return { stage: "transfer" };
+    if (lastWrite < 0 || lastCheck < lastWrite) return { stage: "writing" };
+
+    const last = recalls.at(-1);
+    const anchor = last || firstCheckEvent;
+    const days =
+      last && last.choice !== c.questions.review.correct
+        ? 1
+        : pack.review_days[
+            Math.min(recalls.length, pack.review_days.length - 1)
+          ];
+    const due = new Date(time(anchor.at) + days * 86400000).toISOString();
+    return {
+      stage: time(now) >= time(due) ? "review" : "complete",
+      due,
+      review_count: recalls.length,
+      self_checks: events[lastCheck].criteria.length,
+      criteria_count: c.writing.criteria.length,
+    };
+  }
+  function dispatch(pack, session, action, now) {
+    if (!Array.isArray(session.events) || session.events.length >= MAX_EVENTS)
+      fail(
+        "Progress limit reached. Export this record and start a new session.",
+      );
+    if (time(now) < time(session.events.at(-1)?.at || session.started_at))
+      fail("Device time moved backwards. Correct the clock before continuing.");
+    const c = conceptFor(pack, action.concept),
+      s = status(pack, session, c.id, now);
+    if (s.stage === "locked") fail("Complete prerequisite practice first.");
+    const prior = eventsFor(session, c.id);
+    let event;
+    switch (action.type) {
+      case "answer": {
+        exact(action, ["type", "concept", "choice"]);
+        if (!["diagnostic", "practice", "transfer", "review"].includes(s.stage))
+          fail("No question is open.");
+        const q = c.questions[s.stage];
+        if (!q.choices.some((x) => x.id === action.choice))
+          fail("Choose a listed answer.");
+        // Match the due-date interval: later writing self-reviews must not
+        // erase help received since the first self-review or latest recall.
+        let lastRecall = -1;
+        let firstSelfReview = -1;
+        let helped = false;
+
+        for (let i = 0; i < prior.length; i++) {
+          const e = prior[i];
+          if (e.type === "answer" && e.stage === "review") lastRecall = i;
+          else if (e.type === "self-review" && firstSelfReview === -1)
+            firstSelfReview = i;
+        }
+
+        const reviewAnchor =
+          s.stage === "review"
+            ? lastRecall >= 0
+              ? lastRecall
+              : firstSelfReview
+            : -1;
+
+        for (let i = 0; i < prior.length; i++) {
+          const e = prior[i];
+          if (e.type === "answer" && e.stage === s.stage) {
+            helped = true;
+            break;
+          }
+          if (i > reviewAnchor) {
+            if (
+              ["study", "writing-example"].includes(e.type) ||
+              (e.type === "hint" && e.stage === s.stage)
+            ) {
+              helped = true;
+              break;
+            }
+          }
+        }
+        event = { ...action, stage: s.stage, helped, at: now };
+        break;
+      }
+      case "hint":
+        exact(action, ["type", "concept"]);
+        if (!["diagnostic", "practice", "transfer", "review"].includes(s.stage))
+          fail("No question is open.");
+        event = { ...action, stage: s.stage, at: now };
+        break;
+      case "study":
+        exact(action, ["type", "concept"]);
+        // Study is always an explicit learner action. It marks later responses assisted.
+        event = { ...action, at: now };
+        break;
+      case "writing-example":
+        exact(action, ["type", "concept"]);
+        if (!prior.some((e) => e.type === "write"))
+          fail("Save a draft before opening a worked writing response.");
+        event = { ...action, at: now };
+        break;
+      case "write":
+        exact(action, ["type", "concept", "text"]);
+        if (!prior.some((e) => e.type === "answer" && e.stage === "transfer"))
+          fail("Try the application question first.");
+        if (
+          typeof action.text !== "string" ||
+          action.text.trim().length < 10 ||
+          action.text.length > 4000
+        )
+          fail("Write between 10 and 4,000 characters.");
+        event = { ...action, at: now };
+        break;
+      case "self-review":
+        exact(action, ["type", "concept", "criteria"]);
+        if (s.stage !== "writing" || !prior.some((e) => e.type === "write"))
+          fail("Save a draft before checking it.");
+        if (
+          !Array.isArray(action.criteria) ||
+          new Set(action.criteria).size !== action.criteria.length ||
+          action.criteria.some(
+            (id) => !c.writing.criteria.some((x) => x.id === id),
+          )
+        )
+          fail("Invalid self-review criteria.");
+        event = { ...action, criteria: [...action.criteria], at: now };
+        break;
+      default:
+        fail("Unsupported learner action.");
+    }
+    const next = { ...session, events: [...session.events, event] };
+    if (bytes(JSON.stringify(next)) > MAX_IMPORT)
+      fail(
+        "Progress size limit reached. Export this record and start a new session.",
+      );
+    return next;
+  }
+  function importSession(pack, digest, input, now) {
+    if (typeof input !== "string" || bytes(input) > MAX_IMPORT)
+      fail("Progress file is too large.");
+    let raw;
+    try {
+      raw = JSON.parse(input);
+    } catch (_) {
+      fail("Progress file is not valid JSON.");
+    }
+    exact(raw, [
+      "schema_version",
+      "pack_id",
+      "pack_version",
+      "pack_digest",
+      "started_at",
+      "events",
+    ]);
+    if (raw.schema_version !== "1.0") fail("Unsupported progress version.");
+    if (
+      raw.pack_id !== pack.id ||
+      raw.pack_version !== pack.version ||
+      raw.pack_digest !== digest
+    )
+      fail(
+        "Progress belongs to different topic content. Open the matching lesson version.",
+      );
+    if (!Array.isArray(raw.events) || raw.events.length > MAX_EVENTS)
+      fail("Invalid event history.");
+    if (time(raw.started_at) > time(now))
+      fail("Progress contains future timestamps.");
+    let replay = createSession(pack, digest, raw.started_at);
+    for (const e of raw.events) {
+      if (!e || typeof e !== "object" || time(e.at) > time(now))
+        fail("Progress contains invalid or future events.");
+      const action = { type: e.type, concept: e.concept };
+      if (e.type === "answer") action.choice = e.choice;
+      if (e.type === "write") action.text = e.text;
+      if (e.type === "self-review") action.criteria = e.criteria;
+      replay = dispatch(pack, replay, action, e.at);
+      const expected = replay.events.at(-1);
+      exact(e, Object.keys(expected));
+      if (
+        JSON.stringify(
+          Object.keys(e)
+            .sort()
+            .map((k) => [k, e[k]]),
+        ) !==
+        JSON.stringify(
+          Object.keys(expected)
+            .sort()
+            .map((k) => [k, expected[k]]),
+        )
+      )
+        fail("Progress has inconsistent assessment metadata.");
+    }
+    return replay;
+  }
+  function summary(pack, session, now) {
+    const eventsByConcept = new Map(pack.concepts.map((c) => [c.id, []]));
+    for (const e of session.events) {
+      if (eventsByConcept.has(e.concept)) {
+        eventsByConcept.get(e.concept).push(e);
+      }
+    }
+    return pack.concepts.map((c) => {
+      const events = eventsByConcept.get(c.id);
+      const answers = events.filter((e) => e.type === "answer");
+      // Optimize O(n^2) filter to O(n) using a Set
+      const seenStages = new Set();
+      const first = answers.filter((e) => {
+        if (seenStages.has(e.stage)) return false;
+        seenStages.add(e.stage);
+        return true;
+      });
+      // Optimize O(n^2) write after example check to O(n)
+      let seenExample = false;
+      let writingAfterExample = false;
+      for (const e of events) {
+        if (e.type === "writing-example") {
+          seenExample = true;
+        } else if (e.type === "write" && seenExample) {
+          writingAfterExample = true;
+          break;
+        }
+      }
+      return {
+        id: c.id,
+        ...status(pack, session, c.id, now, events, eventsByConcept),
+        attempts: answers.length,
+        first_correct: first.filter(
+          (e) => e.choice === c.questions[e.stage].correct,
+        ).length,
+        first_total: first.length,
+        assisted: answers.filter((e) => e.helped).length,
+        writing_example_views: events.filter(
+          (e) => e.type === "writing-example",
+        ).length,
+        writing_after_example: writingAfterExample,
+        written: events.some((e) => e.type === "write"),
+        reviewed: events.some((e) => e.type === "self-review"),
+      };
+    });
+  }
+  return {
+    createSession,
+    status,
+    dispatch,
+    importSession,
+    summary,
+    MAX_IMPORT,
+  };
+});
+</script><script>(function () {
+  "use strict";
+  const { pack, digest } = JSON.parse(
+    document.getElementById("topic-data").textContent,
+  );
+  const core = window.LearningCore;
+  const now = () => new Date().toISOString();
+  const key = `pgc-learning:${pack.id}:${digest}`;
+  let session = core.createSession(pack, digest, now()),
+    saved = false,
+    selected = null,
+    dirtyDraft = false,
+    displayedStage = null,
+    storageSnapshot,
+    storageWarning = null;
+  const main = document.getElementById("workspace"),
+    nav = document.getElementById("navigation"),
+    aside = document.getElementById("context");
+  const notice = document.getElementById("notice");
+  function el(tag, text, cls) {
+    const n = document.createElement(tag);
+    if (text !== undefined) n.textContent = text;
+    if (cls) n.className = cls;
+    return n;
+  }
+  function button(text, fn, cls) {
+    const b = el("button", text, cls);
+    b.type = "button";
+    b.addEventListener("click", fn);
+    return b;
+  }
+  function tell(text, error = false) {
+    notice.textContent = storageWarning && text !== storageWarning
+      ? `${storageWarning}\n${text}` : text;
+    notice.className = error || storageWarning ? "error" : "";
+  }
+  function last(type, id) {
+    return session.events.findLast((e) => e.type === type && e.concept === id);
+  }
+  let confirmationOpen = false;
+  function confirmAction(title, message, acceptLabel) {
+    if (confirmationOpen) return Promise.resolve(false);
+    confirmationOpen = true;
+    const previousFocus = document.activeElement;
+    const dialog = el("dialog", undefined, "confirmation");
+    const heading = el("h2", title), description = el("p", message);
+    heading.id = "confirmation-title";
+    description.id = "confirmation-description";
+    dialog.setAttribute("aria-labelledby", heading.id);
+    dialog.setAttribute("aria-describedby", description.id);
+    const cancel = button("Cancel", () => dialog.close("cancel"));
+    const accept = button(acceptLabel, () => dialog.close("accept"), "primary");
+    const actions = el("div", undefined, "actions");
+    actions.append(cancel, accept);
+    dialog.append(heading, description, actions);
+    document.body.append(dialog);
+    return new Promise((resolve) => {
+      dialog.addEventListener("close", () => {
+        const accepted = dialog.returnValue === "accept";
+        dialog.remove();
+        confirmationOpen = false;
+        if (previousFocus?.isConnected) previousFocus.focus();
+        resolve(accepted);
+      }, { once: true });
+      try {
+        dialog.showModal();
+        cancel.focus();
+      } catch (_) {
+        dialog.remove();
+        confirmationOpen = false;
+        if (previousFocus?.isConnected) previousFocus.focus();
+        tell("This browser could not open the confirmation. Your progress has not changed.", true);
+        resolve(false);
+      }
+    });
+  }
+  async function confirmLeave() {
+    return !dirtyDraft || await confirmAction(
+      "Leave this exercise?",
+      "Your unsaved draft will be lost. Cancel to keep editing or save it first.",
+      "Discard draft and leave",
+    );
+  }
+  function storageProblem(message) {
+    saved = false;
+    storageWarning = message;
+    storageUI();
+    tell(message, true);
+  }
+  function writeBrowserCopy() {
+    try {
+      // This detects changed snapshots; localStorage read/write is not an
+      // atomic transaction and does not guarantee simultaneous-writer safety.
+      if (storageSnapshot === undefined || localStorage.getItem(key) !== storageSnapshot) {
+        storageProblem("Browser progress changed or could not be compared. Saving is off; this tab's work remains here. Export it, then reload to review the browser copy. No browser copy was overwritten.");
+        return false;
+      }
+      const bytes = JSON.stringify(session);
+      localStorage.setItem(key, bytes);
+      storageSnapshot = bytes;
+      return true;
+    } catch (_) {
+      storageProblem("Saving failed. This tab may have newer progress than the browser copy. Saving is off; export before closing.");
+      return false;
+    }
+  }
+  function removeBrowserCopy() {
+    try {
+      if (storageSnapshot === undefined || localStorage.getItem(key) !== storageSnapshot)
+        return "changed";
+      localStorage.removeItem(key);
+      storageSnapshot = null;
+      return "removed";
+    } catch (_) {
+      return "failed";
+    }
+  }
+  function storageUI() {
+    const box = document.getElementById("storage");
+    box.replaceChildren();
+    const label = el("label"),
+      input = el("input");
+    input.type = "checkbox";
+    input.checked = saved;
+    input.addEventListener("change", () => {
+      if (input.checked) {
+        if (writeBrowserCopy()) {
+          saved = true;
+          storageWarning = null;
+          tell(
+            "Progress is saved in this browser. Written exercises are included. Exports and browser backups are separate copies.",
+          );
+        }
+      } else {
+        // Opt-out takes effect even if the browser refuses deletion.
+        saved = false;
+        const removal = removeBrowserCopy();
+        if (removal === "removed") {
+          storageWarning = null;
+          tell(
+            "This lesson’s browser copy was removed. Current tab progress remains. Downloaded files and backups are unchanged.",
+          );
+        } else {
+          storageProblem(
+            removal === "changed"
+              ? "Saving is off for this tab. A changed or unverified browser copy was retained. Export this tab's work, then reload to review that copy."
+              : "Saving is off for this tab, but the browser copy could not be removed. Export this tab's work; use browser site-data controls to remove the browser copy.",
+          );
+        }
+      }
+      storageUI();
+    });
+    label.append(
+      input,
+      document.createTextNode("Save progress on this device"),
+    );
+    box.append(label);
+  }
+  function persist() {
+    if (!saved) return;
+    writeBrowserCopy();
+  }
+  function act(action) {
+    try {
+      session = core.dispatch(pack, session, action, now());
+      persist();
+      return true;
+    } catch (e) {
+      tell(e.message, true);
+      return false;
+    }
+  }
+  function download(name, text) {
+    const url = URL.createObjectURL(
+      new Blob([text], { type: "application/json" }),
+    );
+    const a = el("a");
+    a.href = url;
+    a.download = name;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function go(id) {
+    if (!(await confirmLeave())) return;
+    dirtyDraft = false;
+    selected = id;
+    render();
+    main.focus();
+  }
+  function firstAvailable() {
+    return (
+      pack.concepts.find(
+        (c) =>
+          !["locked", "complete"].includes(
+            core.status(pack, session, c.id, now()).stage,
+          ),
+      )?.id || pack.concepts[0].id
+    );
+  }
+  function navigation() {
+    nav.replaceChildren();
+    const home = button(
+      "Your learning path",
+      () => go(null),
+      selected === null ? "active" : "",
+    );
+    nav.append(home);
+    if (selected === null) home.setAttribute("aria-current", "page");
+    const labels = {
+      locked: "Complete earlier practice",
+      diagnostic: "Start with a question",
+      lesson: "Worked example",
+      practice: "Practise the method",
+      transfer: "Practice in a similar setting",
+      writing: "Write and self-review",
+      review: "Review is due",
+      complete: "Practice complete",
+    };
+    for (const [i, c] of pack.concepts.entries()) {
+      const st = core.status(pack, session, c.id, now());
+      const b = button(
+        `${String(i + 1).padStart(2, "0")}  ${c.title}`,
+        () => go(c.id),
+        selected === c.id ? "active" : "",
+      );
+      b.append(el("small", labels[st.stage]));
+      b.disabled = st.stage === "locked";
+      if (selected === c.id) b.setAttribute("aria-current", "page");
+      nav.append(b);
+    }
+  }
+  function evidence(c) {
+    aside.replaceChildren();
+    aside.append(el("h3", "Evidence, not a score"));
+    const rows = core.summary(pack, session, now());
+    const completed = rows.filter((r) => r.reviewed).length;
+    aside.append(
+      el("div", `${completed} / ${pack.concepts.length}`, "metric"),
+      el("p", "concepts practised and self-reviewed"),
+    );
+    if (c) {
+      const r = rows.find((x) => x.id === c.id);
+      aside.append(
+        el(
+          "p",
+          `${r.first_correct}/${r.first_total} first quiz answers correct · ${r.assisted} supported or repeated quiz attempts`,
+        ),
+      );
+      aside.append(
+        el(
+          "p",
+          "Writing checks are your own assessment. Quiz results do not establish independent writing skill.",
+        ),
+      );
+      if (r.writing_example_views) {
+        aside.append(el("p", `Worked writing response opened ${r.writing_example_views} time(s). ${r.writing_after_example ? "At least one draft was saved after viewing an example." : "No later draft has been saved."} This is assisted practice context, not independent writing evidence.`));
+      }
+      aside.append(el("h3", "Source notes"));
+      for (const id of c.source_ids) {
+        const s = pack.sources.find((x) => x.id === id),
+          block = el("div", undefined, "source");
+        const a = el("a", s.title);
+        a.href = s.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.addEventListener("click", () =>
+          act({ type: "study", concept: c.id }),
+        );
+        block.append(
+          a,
+          el("p", s.section),
+          el("p", `Inspected ${s.accessed} · selected material`),
+        );
+        aside.append(block);
+      }
+      aside.append(
+        button(
+          "Read explanation & limits",
+          () => {
+            if (!act({ type: "study", concept: c.id })) return;
+            const block = el("div", undefined, "source");
+            block.append(
+              el("h3", "Explanation"),
+              el("p", c.explanation),
+              el("p", c.misconception),
+            );
+            for (const id of c.source_ids) {
+              const s = pack.sources.find((x) => x.id === id);
+              block.append(el("p", s.claim), el("p", s.limits));
+            }
+            aside.replaceChildren(block);
+            aside.append(
+              button("Back to progress", () => evidence(c), "quiet"),
+            );
+          },
+          "quiet",
+        ),
+      );
+      const report = el("div", undefined, "report");
+      report.append(
+        el("h3", "Something unclear?"),
+        el(
+          "p",
+          "Export a topic issue for the author. It contains topic identity and category, never your answers.",
+        ),
+      );
+      for (const [category, label] of [
+        ["confusing", "Confusing wording"],
+        ["answer-key", "Question or answer issue"],
+        ["source", "Source needs review"],
+      ]) {
+        report.append(
+          button(
+            label,
+            () => {
+              download(
+                `${pack.id}-issue.json`,
+                JSON.stringify(
+                  {
+                    schema_version: "1.0",
+                    type: "improvement-candidate",
+                    topic: pack.id,
+                    version: pack.version,
+                    digest,
+                    concept: c.id,
+                    question_stage: displayedStage,
+                    category,
+                    created_at: now(),
+                    status: "unreviewed",
+                  },
+                  null,
+                  2,
+                ),
+              );
+              tell(
+                "Issue file prepared for download. Nothing was sent and no lesson content changed.",
+              );
+            },
+            "quiet",
+          ),
+        );
+      }
+      aside.append(report);
+    } else {
+      aside.append(
+        el(
+          "p",
+          "No account. No tracking. Works offline. Source links open only when you choose them.",
+        ),
+      );
+      aside.append(
+        el("h3", "Keep your work"),
+        el(
+          "p",
+          "Progress starts in this tab only. Enable device saving or export a file before closing. Avoid confidential project or personal information.",
+        ),
+      );
+      aside.append(
+        el("h3", "Review policy"),
+        el(
+          "p",
+          `First review: ${pack.review_days[0]} days after self-review. Later reviews: ${pack.review_days.at(-1)} days after a correct answer; one day after a wrong answer. These intervals are a starting policy, not a personalized prediction.`,
+        ),
+      );
+    }
+  }
+  function overview() {
+    main.append(
+      el("p", "LEARN · PRACTISE · RETURN", "eyebrow"),
+      el("h1", pack.title),
+      el("p", pack.subtitle, "intro"),
+      el(
+        "p",
+        `About ${pack.minutes} minutes to start (estimate) · ${pack.concepts.length} concepts · source-grounded examples`,
+        "meta",
+      ),
+    );
+    const list = el("ol", undefined, "path");
+    for (const c of pack.concepts) list.append(el("li", c.objective));
+    main.append(list);
+    main.append(
+      button(
+        session.events.length ? "Continue practice" : "Start practice",
+        () => go(firstAvailable()),
+        "primary",
+      ),
+    );
+    main.append(
+      el("div", undefined, "rule"),
+      el("h3", "How this works"),
+      el(
+        "p",
+        "Try a short scenario first. A wrong answer opens a worked example and practice. A correct answer moves to a new application. Then write your own response, self-review it, and return for retrieval.",
+      ),
+    );
+    const rows = core.summary(pack, session, now());
+    for (const row of rows.filter((r) => r.due)) {
+      const c = pack.concepts.find((x) => x.id === row.id);
+      const d = el("div", undefined, "progress-row");
+      d.append(
+        el("span", c.title),
+        el(
+          "span",
+          row.stage === "review"
+            ? "Review due now"
+            : `Review ${new Date(row.due).toLocaleDateString()}`,
+        ),
+      );
+      main.append(d);
+    }
+    main.append(el("p", pack.content_notice, "notice-box"));
+  }
+  function worked(c) {
+    main.append(el("p", c.explanation, "intro"));
+    for (const [label, text] of [
+      ["Draft", c.example.before],
+      ["Worked example", c.example.after],
+      ["Why it helps", c.example.why],
+    ]) {
+      const block = el("div", undefined, "example");
+      block.append(el("span", label, "label"), el("p", text));
+      main.append(block);
+    }
+    main.append(
+      el("p", c.misconception),
+      button(
+        "Try a practice question",
+        () => {
+          if (act({ type: "study", concept: c.id })) render();
+        },
+        "primary",
+      ),
+    );
+  }
+  function question(c, stage) {
+    const q = c.questions[stage],
+      form = el("form"),
+      field = el("fieldset");
+    field.append(el("legend", q.prompt));
+    for (const option of q.choices) {
+      const label = el("label", undefined, "choice"),
+        input = el("input");
+      input.type = "radio";
+      input.name = "answer";
+      input.value = option.id;
+      input.required = true;
+      label.append(input, el("span", option.text));
+      field.append(label);
+    }
+    const check = el("button", "Check answer", "primary");
+    check.type = "submit";
+    const hintArea = el("p", undefined, "hint");
+    hintArea.setAttribute("aria-live", "polite");
+    const hint = button(
+      "Give me a hint",
+      () => {
+        if (act({ type: "hint", concept: c.id })) {
+          hintArea.textContent = q.hint;
+          hintArea.tabIndex = -1;
+          hintArea.focus();
+          hint.disabled = true;
+        }
+      },
+      "quiet",
+    );
+    const actions = el("div", undefined, "actions");
+    actions.append(check, hint);
+    form.append(field, actions, hintArea);
+    form.addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const chosen = new FormData(form).get("answer");
+      if (!chosen) return;
+      if (!act({ type: "answer", concept: c.id, choice: chosen })) return;
+      field.disabled = true;
+      check.disabled = true;
+      hint.disabled = true;
+      const receipt = session.events.at(-1),
+        correct = chosen === q.correct;
+      const feedback = el(
+        "section",
+        undefined,
+        `feedback${correct ? "" : " wrong"}`,
+      );
+      feedback.tabIndex = -1;
+      feedback.append(
+        el(
+          "h3",
+          correct
+            ? "That follows from the scenario."
+            : "Look at the evidence again.",
+        ),
+        el("p", q.choices.find((x) => x.id === chosen).feedback),
+      );
+      if (!correct)
+        feedback.append(
+          el(
+            "p",
+            `Supported answer: ${q.choices.find((x) => x.id === q.correct).text}`,
+          ),
+        );
+      feedback.append(
+        el(
+          "p",
+          receipt.helped
+            ? "Support or a prior attempt was used. This is practice evidence."
+            : "First answer without recorded support for this question.",
+          "meta",
+        ),
+      );
+      const next = button(
+        stage === "review" ? "See your review status" : "Continue",
+        () => {
+          render();
+          main.focus();
+        },
+        "primary",
+      );
+      feedback.append(next);
+      form.append(feedback);
+      feedback.focus();
+      evidence(c);
+      navigation();
+    });
+    main.append(form);
+  }
+  function writing(c, edit = false) {
+    main.append(el("p", c.writing.prompt, "intro"));
+    const criteriaPreview = el("section", undefined, "criteria-preview");
+    criteriaPreview.append(el("h3", "What to include"));
+    const criteriaList = el("ul");
+    for (const criterion of c.writing.criteria) criteriaList.append(el("li", criterion.text));
+    criteriaPreview.append(criteriaList, el("p", c.writing.notes, "meta"));
+    main.append(criteriaPreview);
+    const label = el("label", "Your response");
+    label.htmlFor = "draft";
+    const draft = el("textarea");
+    draft.id = "draft";
+    draft.maxLength = 4000;
+    draft.setAttribute("aria-describedby", "draft-helper draft-char-count");
+    draft.value = last("write", c.id)?.text || "";
+    const charCount = el("p", `${draft.value.length} / 4000`, "meta char-count");
+    charCount.id = "draft-char-count";
+    draft.addEventListener("input", () => {
+      dirtyDraft = true;
+      recovery.disabled = false;
+      charCount.textContent = `${draft.value.length} / 4000`;
+    });
+    const helperText = el(
+      "p",
+      "10–4,000 characters. Use invented examples; omit confidential information.",
+      "meta",
+    );
+    helperText.id = "draft-helper";
+    main.append(
+      label,
+      draft,
+      helperText,
+      charCount,
+    );
+    const recovery = button("Download unsaved draft", () => {
+      if (!dirtyDraft) return;
+      download(`${pack.id}-${c.id}-unsaved-draft.json`, JSON.stringify({
+        type: "draft-recovery",
+        notice: "Unsaved text recovery only. This is not a replayable progress file and cannot be imported as lesson progress.",
+        topic: pack.id,
+        version: pack.version,
+        digest,
+        concept: c.id,
+        text: draft.value,
+        created_at: now(),
+      }, null, 2));
+      tell("Unsaved draft recovery file prepared for download. It is not replayable progress. Your draft remains unsaved in this tab; export recorded progress separately if needed.");
+    }, "quiet");
+    recovery.disabled = !dirtyDraft;
+    main.append(recovery);
+    const reviewArea = el("section");
+    const save = button(
+      "Save draft & self-review",
+      () => {
+        if (!act({ type: "write", concept: c.id, text: draft.value })) return;
+        dirtyDraft = false;
+        recovery.disabled = true;
+        renderChecks();
+        tell(
+          saved
+            ? "Draft saved in this browser."
+            : "Draft retained in this tab. Export or enable device saving to keep it.",
+        );
+      },
+      "primary",
+    );
+    main.append(save, reviewArea);
+    function renderChecks() {
+      reviewArea.replaceChildren();
+      const reviewHeading = el("h3", "Check your work");
+      reviewHeading.id = "review-heading";
+      const reviewDesc = el(
+        "p",
+        "Select only criteria your draft meets. Leave uncertain items unchecked. This is self-review, not automated grading.",
+      );
+      reviewDesc.id = "review-description";
+      reviewArea.append(reviewHeading, reviewDesc);
+
+      const group = el("div");
+      group.setAttribute("role", "group");
+      group.setAttribute("aria-labelledby", "review-heading");
+      group.setAttribute("aria-describedby", "review-description");
+
+      const inputs = [];
+      for (const criterion of c.writing.criteria) {
+        const l = el("label", undefined, "check"),
+          i = el("input");
+        i.type = "checkbox";
+        i.value = criterion.id;
+        inputs.push(i);
+        l.append(i, el("span", criterion.text));
+        group.append(l);
+      }
+      reviewArea.append(group);
+      const example = el("div");
+      reviewArea.append(
+        button(
+          "Compare a worked response",
+          () => {
+            if (!act({ type: "writing-example", concept: c.id })) return;
+            evidence(c);
+            example.replaceChildren(
+              el("p", c.writing.example),
+              el("p", c.writing.notes, "meta"),
+            );
+          },
+          "quiet",
+        ),
+        example,
+      );
+      reviewArea.append(
+        button(
+          "Record self-review",
+          () => {
+            if (dirtyDraft) {
+              tell(
+                "Save your changed draft before recording its self-review.",
+                true,
+              );
+              return;
+            }
+            if (
+              act({
+                type: "self-review",
+                concept: c.id,
+                criteria: inputs.filter((i) => i.checked).map((i) => i.value),
+              })
+            ) {
+              render();
+              main.focus();
+            }
+          },
+          "primary",
+        ),
+      );
+    }
+    if (last("write", c.id) && !edit) renderChecks();
+  }
+  function completion(c, s) {
+    main.append(
+      el("p", "Practice recorded", "tag"),
+      el("h2", "Leave room for recall."),
+      el(
+        "p",
+        `Your next question is due ${new Date(s.due).toLocaleString()}. Return without looking at the explanation first.`,
+        "intro",
+      ),
+    );
+    main.append(
+      el(
+        "p",
+        `${s.self_checks} of ${s.criteria_count} writing criteria checked by you. ${s.self_checks < s.criteria_count ? "Unmet or uncertain criteria remain worth revising." : "A tutor can review your draft for evidence beyond this self-check."}`,
+      ),
+    );
+    main.append(
+      el(
+        "p",
+        "Completing this practice does not certify mastery. Review answers test a limited skill; later repetitions are not unseen assessments.",
+        "meta",
+      ),
+    );
+    const actions = el("div", undefined, "actions");
+    const next = pack.concepts.find(
+      (x) =>
+        !["complete", "locked"].includes(
+          core.status(pack, session, x.id, now()).stage,
+        ),
+    );
+    actions.append(
+      button(
+        next ? "Continue to the next task" : "Back to your learning path",
+        () => go(next?.id || null),
+        "primary",
+      ),
+    );
+    actions.append(
+      button(
+        "Revise my draft",
+        () => {
+          main.replaceChildren(
+            el("p", c.title, "eyebrow"),
+            el("h2", "Revise your response"),
+          );
+          writing(c, true);
+        },
+        "quiet",
+      ),
+    );
+    main.append(actions);
+    main.append(
+      el("div", undefined, "rule"),
+      el("h3", "Your saved draft"),
+      el("p", last("write", c.id).text),
+    );
+  }
+  function render() {
+    main.replaceChildren();
+    navigation();
+    const c = pack.concepts.find((x) => x.id === selected);
+    evidence(c);
+    if (!c) {
+      document.title = `${pack.title} · Learning Lab`;
+      overview();
+      return;
+    }
+    document.title = `${c.title} · ${pack.title} · Learning Lab`;
+    const s = core.status(pack, session, c.id, now());
+    displayedStage = s.stage;
+    main.append(
+      el(
+        "p",
+        `${String(pack.concepts.indexOf(c) + 1).padStart(2, "0")} / ${String(pack.concepts.length).padStart(2, "0")} · ${s.stage.toUpperCase()}`,
+        "eyebrow",
+      ),
+    );
+    if (s.stage !== "complete") main.append(el("h2", c.title));
+    if (["diagnostic", "practice", "transfer", "review"].includes(s.stage))
+      question(c, s.stage);
+    else if (s.stage === "lesson") worked(c);
+    else if (s.stage === "writing") writing(c);
+    else if (s.stage === "complete") completion(c, s);
+    else main.append(el("p", "Complete the prerequisite practice first."));
+  }
+  document.querySelector(".wordmark").addEventListener("click", (e) => {
+    e.preventDefault();
+    go(null);
+  });
+  document.getElementById("export").addEventListener("click", () => {
+    download(`${pack.id}-progress.json`, JSON.stringify(session));
+    if (dirtyDraft) {
+      tell(
+        "Recorded progress file prepared for download. Your unsaved draft is not included and remains in this tab. Use Download unsaved draft separately before closing. Neither download saves that text into lesson progress.",
+        true,
+      );
+      return;
+    }
+    tell(
+      "Progress file prepared for download. It includes written exercises. Keep it private or remove text before sharing.",
+    );
+  });
+  document.getElementById("import").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      if (file.size > core.MAX_IMPORT)
+        throw new Error("Progress file exceeds 1 MB.");
+      const candidate = core.importSession(
+        pack,
+        digest,
+        await file.text(),
+        now(),
+      );
+      if (
+        !(await confirmAction(
+          "Replace tab progress?",
+          "Replace current tab progress, including unsaved text, with this imported record? Device saving will be turned off. Any existing browser copy stays unchanged.",
+          "Replace tab progress",
+        ))
+      )
+        return;
+      // Do not mutate a previously saved browser copy during import.
+      session = candidate;
+      saved = false;
+      dirtyDraft = false;
+      selected = null;
+      storageUI();
+      render();
+      tell(
+        "Imported into this tab. Device saving is off; any prior browser copy remains until you save or clear it.",
+      );
+    } catch (error) {
+      tell(
+        `Import rejected. ${error.message} Current progress is unchanged.`,
+        true,
+      );
+    } finally {
+      e.target.value = "";
+    }
+  });
+  document.getElementById("clear").addEventListener("click", async () => {
+    if (
+      !(await confirmAction(
+        "Clear this topic?",
+        "Clear this topic’s progress from this tab and browser? Downloaded files, other topic versions, and backups will remain.",
+        "Clear topic progress",
+      ))
+    )
+      return;
+    const removal = removeBrowserCopy();
+    session = core.createSession(pack, digest, now());
+    saved = false;
+    selected = null;
+    dirtyDraft = false;
+    storageUI();
+    render();
+    if (removal === "removed") {
+      storageWarning = null;
+      tell("This topic’s tab and browser progress cleared. Other copies remain unchanged.");
+    } else {
+      storageProblem(removal === "changed"
+        ? "Tab progress cleared. A changed or unverified browser copy was retained; reload to review it. Downloaded files and backups remain."
+        : "Tab progress cleared. The browser copy could not be removed; use browser site-data controls. Downloaded files and backups remain.");
+    }
+  });
+  window.addEventListener("storage", (event) => {
+    if (event.key !== null && event.key !== key) return;
+    try {
+      if (event.storageArea && event.storageArea !== localStorage) return;
+      // Read current bytes rather than a possibly queued, older event value.
+      if (localStorage.getItem(key) === storageSnapshot) return;
+    } catch (_) {
+      // An unreadable browser copy is also unsafe to overwrite.
+    }
+    storageProblem("Browser progress changed in another tab or window. Saving is off; this tab's work remains here. Export it, then reload to review the browser copy. Changes are not merged automatically.");
+  });
+  window.addEventListener("beforeunload", (e) => {
+    if (dirtyDraft || (!saved && session.events.length)) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+  try {
+    const stored = localStorage.getItem(key);
+    storageSnapshot = stored;
+    if (stored) {
+      session = core.importSession(pack, digest, stored, now());
+      saved = true;
+    }
+  } catch (error) {
+    storageProblem(
+      `Saved progress could not be loaded: ${error.message} Start in this tab or import a valid export.`,
+    );
+  }
+  storageUI();
+  render();
+})();
+</script></body></html>
