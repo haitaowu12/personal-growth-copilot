@@ -183,3 +183,7 @@ The strong-generalist and minimal-visible-model comparators remain
 design-only; current schemas do not execute them as governed run slots.
 See `docs/OUTCOME_EVALUATION.md` for the measurement and comparator boundary.
 See `docs/RELEASE_EVIDENCE.md` for the signed external-evidence contract.
+
+## Public lesson and candidate download
+
+https://haitaowu12.github.io/personal-growth-copilot/ offers the self-contained requirements-writing lesson and current portable learning/skill candidate. Generate the public files with the declared Python environment: `python scripts/build_pages.py`. The build uses the existing explicit package allowlist and excludes learner records. The older published installation tag remains separate.
