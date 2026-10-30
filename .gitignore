@@ -7,3 +7,5 @@ build/
 external-feedback/
 handoff-briefs/
 .DS_Store
+
+build/pages/
