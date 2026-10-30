@@ -7,6 +7,8 @@ build/
 external-feedback/
 handoff-briefs/
 .DS_Store
+
+build/pages/
 node_modules/
 .codex/
 .openai/
