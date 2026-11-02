@@ -25,9 +25,8 @@ Approved packet SHA-256:
 `7dd0f7954efbaff834038458b805b76c396f539f37db85b8728ab9d0913bcbbc`.
 Its attachment nonce, matching hash and file count were confirmed. The packet
 contains topic 1.0.1 and rubric 1.1, so any review conclusions apply to that snapshot;
-local follow-up changes require their own verification. The completed review is at
-https://chatgpt.com/c/6ac16f7d-c764-83e9-a690-b682a0a24bcd. Complete captured feedback
-is retained locally with SHA-256
+local follow-up changes require their own verification. The completed review and
+captured feedback are retained privately with SHA-256
 `4e28c0f2582ed46c742a1efde777564517123d24a2ad660ad30ce9ca4bbb48b1`.
 Pro's four perspectives are simulations within one review, not four independent people.
 
