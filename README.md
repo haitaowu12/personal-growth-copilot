@@ -186,6 +186,16 @@ See `docs/RELEASE_EVIDENCE.md` for the signed external-evidence contract.
 
 ## Public lesson and candidate download
 
-https://haitaowu12.github.io/personal-growth-copilot/ offers the self-contained requirements-writing lesson and current portable learning/skill candidate. Generate the public files with the declared Python environment: `python scripts/build_pages.py`. The build uses the existing explicit package allowlist and excludes learner records. The older published installation tag remains separate.
+https://personal-growth-copilot.web.app/ offers the self-contained requirements-writing lesson and current portable learning/skill candidate. Generate the public files with the declared Python environment: `python scripts/build_pages.py`. The build uses the existing explicit package allowlist and excludes learner records. The older published installation tag remains separate.
 
 Built by [Tony Wu](https://haitaowu12.github.io/tony-wu-home/) · [More projects](https://haitaowu12.github.io/tony-wu-home/#work).
+
+## Firebase Hosting
+
+[Open the published project](https://personal-growth-copilot.web.app/). Firebase Hosting is the primary destination for future releases. Use the declared Python environment and existing release checks, then `python scripts/build_pages.py`. Publish only the reviewed `build/pages/` lesson and archive; learner records stay excluded.
+
+```sh
+firebase deploy --only hosting --project tony-wu-projects
+```
+
+The repository configuration selects the site and public output directory. Hosting uses the no-cost Spark plan; source pushes do not deploy automatically. Existing hosts remain available.
